@@ -1,21 +1,32 @@
-import { useEffect, useState } from 'react'
+import { Outlet, Route, Routes } from 'react-router'
 import './App.css'
+import Sidebar from './components/Sidebar.tsx'
+import LoginPage from './pages/LoginPage.tsx'
+import NotePage from './pages/NotePage.tsx'
+import NotFoundPage from './pages/NotFoundPage.tsx'
+import WorkspaceHome from './pages/WorkspaceHome.tsx'
+
+function Workspace() {
+  return (
+    <div className="workspace">
+      <Sidebar />
+      <main className="page">
+        <Outlet />
+      </main>
+    </div>
+  )
+}
 
 function App() {
-  const [status, setStatus] = useState('checking...')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((data: { status: string }) => setStatus(data.status))
-      .catch(() => setStatus('unreachable'))
-  }, [])
-
   return (
-    <main>
-      <h1>Campi</h1>
-      <p>API status: {status}</p>
-    </main>
+    <Routes>
+      <Route element={<Workspace />}>
+        <Route index element={<WorkspaceHome />} />
+        <Route path="notes/:noteId" element={<NotePage />} />
+      </Route>
+      <Route path="login" element={<LoginPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   )
 }
 
