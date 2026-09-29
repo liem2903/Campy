@@ -1,2 +1,64 @@
 # Campi
-Note taking app that has local memory. 
+
+Campi is a note-taking app with built-in AI study tools. Write your notes, then use them to actually learn the material through blurting practice, active-recall quizzes, and flashcards — graded against criteria you define.
+
+## Features
+
+- **Note taking** – create, edit, organize, and delete notes.
+- **Authentication** – user accounts so your notes stay private to you.
+- **Blurting practice** – write down everything you remember about a note from memory; AI compares your attempt against the original and highlights what you missed.
+- **Active recall quizzing** – AI generates quiz questions from your notes to test understanding.
+- **Flashcards** – automatically generate flashcards from your notes for review.
+- **Custom grading criteria** – define your own criteria for what counts as "correct" or "complete", and have your blurts and quiz answers marked against them.
+
+## Roadmap
+
+### Sprint 1 — Core notes + authentication
+- Basic note CRUD (create, read, update, delete)
+- User sign-up / login
+- Notes scoped to the authenticated user
+
+### Sprint 2 — AI features
+- Blurting practice with AI feedback
+- AI-generated active recall quizzes
+- AI-generated flashcards
+- User-defined marking criteria
+
+### Sprint 3 — Concurrency
+- Support concurrent access and editing (e.g. multiple sessions/users working on notes at the same time) safely and consistently
+
+## Tech stack
+
+- TypeScript
+- Node.js + Express
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 22+ and npm
+
+### Install
+
+```bash
+npm install
+```
+
+### Run in development (auto-reload)
+
+```bash
+npm run dev
+```
+
+### Build and run
+
+```bash
+npm run build
+npm start
+```
+
+The server listens on `http://localhost:3000` by default (override with the `PORT` env var). Check that it's up with:
+
+```bash
+curl http://localhost:3000/health
+```
