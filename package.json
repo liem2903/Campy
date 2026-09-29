@@ -1,0 +1,25 @@
+{
+  "name": "campi",
+  "version": "0.1.0",
+  "description": "Note taking app that has local memory.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "dev:client": "npm --prefix client run dev",
+    "dev:all": "concurrently -n server,client \"npm run dev\" \"npm run dev:client\"",
+    "build": "tsc && npm run build:client",
+    "build:client": "npm --prefix client run build",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.1",
+    "concurrently": "^10.0.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

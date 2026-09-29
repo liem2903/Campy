@@ -44,11 +44,21 @@ Campi is a note-taking app with built-in AI study tools. Write your notes, then 
 npm install
 ```
 
+The front end lives in `client/` (Vite + React + TypeScript) and has its own dependencies:
+
+```bash
+npm install --prefix client
+```
+
 ### Run in development (auto-reload)
 
 ```bash
-npm run dev
+npm run dev:all
 ```
+
+This starts the Express API on `http://localhost:3000` and the Vite dev server on `http://localhost:5173`. Open **http://localhost:5173** — requests to `/api/*` are proxied to Express. You can also run them separately with `npm run dev` (server) and `npm run dev:client` (client).
+
+If port 3000 is taken, set `PORT` (e.g. `PORT=3001 npm run dev:all`). The Vite proxy reads the same variable.
 
 ### Build and run
 
@@ -57,8 +67,8 @@ npm run build
 npm start
 ```
 
-The server listens on `http://localhost:3000` by default (override with the `PORT` env var). Check that it's up with:
+This builds the server and the client, then Express serves both the API and the built front end on `http://localhost:3000` (override with the `PORT` env var). Check that the API is up with:
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:3000/api/health
 ```
