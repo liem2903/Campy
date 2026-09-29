@@ -37,6 +37,7 @@ Campi is a note-taking app with built-in AI study tools. Write your notes, then 
 ### Prerequisites
 
 - Node.js 22+ and npm
+- Docker (for the local database)
 
 ### Install
 
@@ -71,4 +72,43 @@ This builds the server and the client, then Express serves both the API and the 
 
 ```bash
 curl http://localhost:3000/api/health
+```
+
+## Database
+
+Campi uses [Supabase](https://supabase.com) Postgres. The schema is versioned as plain SQL migrations in `supabase/migrations/`, which run in filename (timestamp) order. The same files are applied locally and in production.
+
+### Local database
+
+```bash
+cp .env.example .env   # first time only
+npm run db:start       # starts local Supabase in Docker (Postgres on port 54322)
+npm run db:stop        # stops it
+```
+
+`npm run db:start` also prints a local Studio URL where you can browse the data.
+
+### Adding a migration
+
+```bash
+npm run db:new -- create_users   # creates supabase/migrations/<timestamp>_create_users.sql
+# write your SQL in that file, then:
+npm run db:reset                 # rebuilds the local DB from all migrations
+```
+
+Never edit a migration that has already been applied (pushed or shared). Add a new migration to change the schema.
+
+### Production (hosted Supabase)
+
+One-time setup: create a project in the Supabase dashboard, then:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+```
+
+Apply pending migrations to the hosted database:
+
+```bash
+npm run db:push
 ```
