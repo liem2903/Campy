@@ -24,14 +24,14 @@ change password, breached-password check.
 | Area | Decision |
 |---|---|
 | Sessions | Opaque 32-byte base64url token. Only its SHA-256 hash is stored in `sessions`. Sliding 30-day expiry; `expires_at` is bumped at most once a day. |
-| Cookie | `sid`, `httpOnly; Secure; SameSite=Lax; Path=/` |
-| CSRF | SameSite=Lax, plus mutating `/api` requests must be `Content-Type: application/json` (otherwise 415) |
+| Cookie | `sid`, `httpOnly; Secure; SameSite=Lax; Path=/`. `Secure` is configurable via `createApp()` options (on by default, off in tests, because Supertest won't send `Secure` cookies back over http) |
+| CSRF | SameSite=Lax, plus mutating `/api` requests must be `Content-Type: application/json` (otherwise 415). The client sends `{}` as JSON on body-less requests (e.g. logout) so they pass the check |
 | Password hashing | argon2id via `argon2` (fallback: `crypto.scrypt`) |
 | Password policy | 8–128 characters, no composition rules |
-| Rate limiting | `express-rate-limit`, in-memory store, limiters created inside `createApp()` |
+| Rate limiting | `express-rate-limit`, in-memory store, limiters created inside `createApp()`. Limits are overridable through `createApp()` options so tests can raise them; only the dedicated 429 tests use the real limits |
 | Proxy | `app.set('trust proxy', TRUST_PROXY)`: off locally, `1` on Railway |
 | DB client | `postgres` (postgres.js) tagged-template queries |
-| Env | `--env-file-if-exists=.env` in `dev`/`test` scripts. Fail fast if `DATABASE_URL` is missing. On Railway, use the Supabase **session pooler** URL (IPv4). |
+| Env | `--env-file-if-exists=.env` in `dev`/`test` scripts (needs Node ≥ 22.9; set `engines.node` in `package.json`). Fail fast if `DATABASE_URL` is missing. On Railway, use the Supabase **session pooler** URL (IPv4). |
 | Tests | Jest + ts-jest (ESM preset, `NODE_OPTIONS=--experimental-vm-modules`, `moduleNameMapper` stripping `.js`) + Supertest, in top-level `test/`. They run against local Supabase and use unique `test-<uuid>@example.com` users that are deleted afterwards. |
 | Enumeration | Login always says "Invalid email or password". Signup returns 409 for a taken email (accepted until email verification exists). |
 | Ownership | `requireAuth` sets `req.user`. All note/block queries are scoped by `user_id`, and another user's note returns 404. |
@@ -51,15 +51,19 @@ change password, breached-password check.
 session cookie, and they land in the workspace.
 
 ### Foundation
-- [ ] Edit `supabase/migrations/20260929103133_create_users.sql`. This is allowed **only because
-  it has not been pushed yet**.
+- [ ] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
+  the CLAUDE.md rule "never edit an applied migration": it has only been applied to local DBs and
+  **has not been pushed to the hosted project**. Anyone with a local DB must run `npm run db:reset`
+  afterwards.
   - Rename `refresh_tokens` → `sessions` (and `refresh_tokens_user_id_idx` → `sessions_user_id_idx`)
   - Add `last_used_at timestamptz not null default now()`
 - [ ] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
 - [ ] `npm run db:start` + `npm run db:reset`
 - [ ] Add `postgres` dependency and create `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
-- [ ] Add `TRUST_PROXY` to `.env.example`, and add `--env-file-if-exists=.env` to the `dev` script
-- [ ] Split `src/index.ts` → `src/app.ts` (`createApp()`) + `src/index.ts` (`listen` only)
+- [ ] Add `TRUST_PROXY` to `.env.example`, add `--env-file-if-exists=.env` to the `dev` script, and
+  set `engines.node` to `>=22.9`
+- [ ] Split `src/index.ts` → `src/app.ts` (`createApp(options)`) + `src/index.ts` (`listen` only).
+  Options: `secureCookies`, rate-limit overrides
 - [ ] Unknown `/api/*` routes return 404 JSON instead of the SPA fallback
 - [ ] Jest + ts-jest + Supertest setup, `test/` folder with its own tsconfig, `npm test` script
 
@@ -97,7 +101,9 @@ sends you to `/login`, and notes are scoped to their owner.
   `user | null | loading`)
 - [ ] Client: `RequireAuth` wrapper around the `Workspace` route in `client/src/App.tsx`; blank or
   loading state while pending (no login flash)
-- [ ] Client: any 401 from the API → redirect to `/login`
+- [ ] Client: a 401 from a protected API call → redirect to `/login`. **Excludes `/api/auth/*`**:
+  a wrong password (login 401) must show its error, and `AuthProvider`'s initial `/me` 401 must
+  not bounce users off `/signup` or `/login`
 
 ### Acceptance tests
 - [ ] No cookie → 401
@@ -105,7 +111,7 @@ sends you to `/login`, and notes are scoped to their owner.
 - [ ] Expired session → 401
 - [ ] Revoked session → 401
 - [ ] Valid session → 200 with the correct user
-- [ ] Sliding bump only writes when `expires_at` was last bumped more than a day ago
+- [ ] Sliding bump only writes when `last_used_at` is more than a day old
 - [ ] Cross-user note access → 404 (once notes routes exist)
 
 **Demo:** Sign up → reload stays in the workspace; delete the cookie → `/` redirects to `/login`.
@@ -120,7 +126,7 @@ sends you to `/login`, and notes are scoped to their owner.
 - [ ] `POST /api/auth/login`:
   - Always responds "Invalid email or password" on failure
   - Runs a dummy argon2 verify when the email doesn't exist (timing parity)
-  - Deletes that user's expired sessions opportunistically
+  - Deletes that user's expired or revoked sessions opportunistically
   - Limiters: 5 per 15 min per IP+email, 20 per 15 min per IP
 - [ ] Client: wire `LoginPage` to the API, show the error message, redirect to `/` (or the
   originally requested page)
@@ -130,7 +136,7 @@ sends you to `/login`, and notes are scoped to their owner.
 - [ ] Wrong password and unknown email → both 401 with an identical body
 - [ ] Email matched case-insensitively
 - [ ] 6th bad attempt for one email within 15 min → 429
-- [ ] Expired sessions for that user are deleted on login
+- [ ] Expired and revoked sessions for that user are deleted on login
 
 **Demo:** Log in with the Ticket 1 account; a wrong password shows the error.
 
@@ -143,7 +149,8 @@ sends you to `/login`, and notes are scoped to their owner.
 ### Tasks
 - [ ] `POST /api/auth/logout`: set `revoked_at` on the current session, clear the cookie,
   idempotent (204 even without a session)
-- [ ] Client: logout button in `Sidebar`; clears the `AuthProvider` user and navigates to `/login`
+- [ ] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
+  navigates to `/login`
 - [ ] After merge: create the hosted Supabase project (developer) → `supabase link` →
   `npm run db:push`. **The migration is frozen from here; later changes need new migrations.**
 
@@ -151,6 +158,7 @@ sends you to `/login`, and notes are scoped to their owner.
 - [ ] After logout, the old cookie → 401 on `/api/auth/me`
 - [ ] Logout response clears the `sid` cookie
 - [ ] Logout with no cookie → 204
+- [ ] Logout without a JSON `Content-Type` → 415
 
 **Demo:** Log in → log out → reload or back button stays on `/login`.
 
