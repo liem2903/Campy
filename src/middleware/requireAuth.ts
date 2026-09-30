@@ -1,6 +1,6 @@
 import type { RequestHandler, Response } from "express";
 import { asyncHandler } from "../asyncHandler.js";
-import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from "../controllers/sessionCookie.js";
+import { clearSessionCookie, readSessionToken, setSessionCookie } from "../controllers/sessionCookie.js";
 import type { AuthUser } from "../db/types.js";
 import * as authService from "../services/auth.service.js";
 
@@ -22,8 +22,8 @@ export function createRequireAuth(secureCookies: boolean): RequestHandler {
   return asyncHandler(async (req, res, next) => {
     // Responses behind auth are per-user: never let a browser or proxy cache them.
     res.set("Cache-Control", "no-store");
-    const token: unknown = req.cookies?.[SESSION_COOKIE];
-    if (typeof token !== "string" || token === "") {
+    const token = readSessionToken(req);
+    if (!token) {
       unauthorized(res);
       return;
     }

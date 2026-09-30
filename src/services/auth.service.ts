@@ -46,7 +46,12 @@ function getDummyHash(): Promise<string> {
 
 // Checks the credentials and starts a new session. Throws InvalidCredentialsError for an
 // unknown email and a wrong password alike. Returns the raw session token for the cookie.
-export async function logIn({ email, password }: Credentials): Promise<{ user: AuthUser; token: string }> {
+// `previousToken` is the browser's current sid, if any: its session is revoked, since the
+// cookie is about to be overwritten and that session would otherwise stay live, unseen.
+export async function logIn(
+  { email, password }: Credentials,
+  previousToken?: string,
+): Promise<{ user: AuthUser; token: string }> {
   // No account can have a longer password, and this caps the argon2 work an attacker can ask for.
   if (passwordLength(password) > PASSWORD_MAX_LENGTH) throw new InvalidCredentialsError();
 
@@ -63,6 +68,7 @@ export async function logIn({ email, password }: Credentials): Promise<{ user: A
   const token = generateToken();
   const now = new Date();
   await sql.begin(async (tx) => {
+    if (previousToken) await revokeSession(hashToken(previousToken), now, tx);
     // Opportunistic cleanup, so dead sessions don't pile up without a cron job.
     await deleteDeadSessions(user.id, now, tx);
     await insertSession(user.id, hashToken(token), new Date(now.getTime() + SESSION_TTL_MS), tx);

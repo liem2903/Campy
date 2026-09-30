@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { EmailTakenError, InvalidCredentialsError } from "../errors.js";
 import * as authService from "../services/auth.service.js";
-import { setSessionCookie } from "./sessionCookie.js";
+import { clearSessionCookie, readSessionToken, setSessionCookie } from "./sessionCookie.js";
 import { parseCredentials, parseLoginCredentials } from "./validation.js";
 
 export type AuthControllerConfig = { secureCookies: boolean };
@@ -37,7 +37,7 @@ export function createAuthController(config: AuthControllerConfig) {
       }
 
       try {
-        const { user, token } = await authService.logIn(parsed.value);
+        const { user, token } = await authService.logIn(parsed.value, readSessionToken(req));
         res.set("Cache-Control", "no-store");
         setSessionCookie(res, token, config.secureCookies);
         res.json(user);
@@ -48,6 +48,18 @@ export function createAuthController(config: AuthControllerConfig) {
         }
         throw err;
       }
+    },
+
+    // Idempotent: 204 whether or not there was a live session, so a retry or a second tab
+    // never shows an error. Not behind requireAuth for the same reason.
+    async logout(req: Request, res: Response): Promise<void> {
+      // Headers first: if revoking fails, the 500 still carries them, so the browser drops
+      // the cookie even though the session row lives on until it expires.
+      res.set("Cache-Control", "no-store");
+      clearSessionCookie(res, config.secureCookies);
+      const token = readSessionToken(req);
+      if (token) await authService.logOut(token);
+      res.status(204).end();
     },
 
     // Mounted after requireAuth; the check guards against wiring it up without it.

@@ -168,24 +168,35 @@ sends you to `/login`, and notes are scoped to their owner.
 **Slice:** Clicking logout ends the session on the server and returns you to `/login`.
 
 ### Tasks
-- [ ] `POST /api/auth/logout`: set `revoked_at` on the current session, clear the cookie,
+- [x] `POST /api/auth/logout`: set `revoked_at` on the current session, clear the cookie,
   idempotent (204 even without a session)
-- [ ] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
+- [x] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
   navigates to `/login`
 - [ ] After merge: create the hosted Supabase project (developer) → `supabase link` →
   `npm run db:push`. **The migration is frozen from here; later changes need new migrations.**
+  *Not done: needs the developer to create the hosted project.*
 
 ### Acceptance tests
-- [ ] After logout, the old cookie → 401 on `/api/auth/me`
-- [ ] Logout response clears the `sid` cookie
-- [ ] Logout with no cookie → 204
-- [ ] Logout without a JSON `Content-Type` → 415
+- [x] After logout, the old cookie → 401 on `/api/auth/me`
+- [x] Logout response clears the `sid` cookie
+- [x] Logout with no cookie → 204
+- [x] Logout without a JSON `Content-Type` → 415
 
 **Demo:** Log in → log out → reload or back button stays on `/login`.
+
+### Notes (from implementation and review)
+- Logout is not behind `requireAuth`, and it only ends the current session (other devices stay
+  logged in). The cookie is cleared before the DB update, so even a 500 drops it in the browser.
+- Logging in while the browser still holds a `sid` revokes that session (Ticket 3 review follow-up).
+- The sidebar shows the user's email and a "Log out" button (replacing the old "Log in" link). If
+  the request fails it logs out locally anyway.
+- Browser-only notes are now keyed per user (`campi.notes.<userId>`), which closes the Ticket 2 gap.
+  Old `campi.notes` data goes to the first user who loads their notes. This is not a security
+  boundary: other users' notes are still readable in DevTools until the notes API exists.
 
 ---
 
 ## Overall verification (after Ticket 4)
 - [ ] Full flow in `npm run dev:all`: sign up → reload → log out → log in → 6 bad logins → 429
-- [ ] `npm run build` and `npm test` pass
-- [ ] `curl localhost:3000/api/auth/me` without a cookie → 401
+- [x] `npm run build` and `npm test` pass
+- [x] `curl localhost:3000/api/auth/me` without a cookie → 401

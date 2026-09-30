@@ -54,6 +54,7 @@ export function createAuthRouter(config: AuthRouterConfig): Router {
     }),
     asyncHandler(controller.login),
   );
+  router.post("/logout", asyncHandler(controller.logout));
   router.get("/me", requireAuth, asyncHandler(controller.me));
 
   return router;

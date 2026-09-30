@@ -94,9 +94,18 @@
   color: var(--text);
 }
 
-.login-link,
+.logout-button,
 .theme-toggle {
   color: var(--muted);
+}
+
+.account-email {
+  margin: 8px 10px 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Page */
