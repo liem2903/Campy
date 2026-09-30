@@ -5,7 +5,7 @@ import express, {
   type RequestHandler,
 } from "express";
 import path from "node:path";
-import { createAuthRouter } from "./auth/routes.js";
+import { createAuthRouter } from "./routes/auth.routes.js";
 
 export type AppOptions = {
   // Off in tests: Supertest won't send Secure cookies back over plain http.

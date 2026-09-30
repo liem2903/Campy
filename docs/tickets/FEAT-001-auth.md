@@ -68,8 +68,8 @@ session cookie, and they land in the workspace.
 - [x] Jest + ts-jest + Supertest setup, `test/` folder with its own tsconfig, `npm test` script
 
 ### Feature
-- [x] `src/auth/password.ts`: argon2id hash/verify
-- [x] `src/auth/sessions.ts`: create a session (random token, store hash, set cookie)
+- [x] `src/services/password.ts`: argon2id hash/verify
+- [x] `src/services/sessionToken.ts` + `sessions.repository.ts` + `controllers/sessionCookie.ts`: create a session (random token, store hash, set cookie)
 - [x] `POST /api/auth/signup`: validate the email and password policy, 409 on a taken email,
   creates the user and logs them in; signup limiter 5/hour per IP
 - [x] Client: `/signup` page (email + password), link from `LoginPage`, redirect to `/` on success
@@ -92,29 +92,40 @@ session cookie, and they land in the workspace.
 sends you to `/login`, and notes are scoped to their owner.
 
 ### Tasks
-- [ ] `src/auth/requireAuth.ts`: hash the cookie, look up an unexpired and unrevoked session,
+- [x] `src/middleware/requireAuth.ts` (+ `authService.authenticate`): hash the cookie, look up an unexpired and unrevoked session,
   set `req.user`, sliding bump at most daily (updates `expires_at` and `last_used_at`)
-- [ ] `GET /api/auth/me` → `{ id, email }` or 401
+- [x] `GET /api/auth/me` → `{ id, email }` or 401
 - [ ] Apply `requireAuth` + `user_id` scoping to any existing notes/blocks routes (blocks scoped
-  via a join to `notes`); another user's note → 404
-- [ ] Client: `client/src/AuthProvider.tsx` (calls `/api/auth/me` on load; state
+  via a join to `notes`); another user's note → 404. *N/A so far: no notes routes exist yet (notes
+  are still browser-only). Applies when the notes API is built.*
+- [x] Client: `client/src/AuthProvider.tsx` (calls `/api/auth/me` on load; state
   `user | null | loading`)
-- [ ] Client: `RequireAuth` wrapper around the `Workspace` route in `client/src/App.tsx`; blank or
+- [x] Client: `RequireAuth` wrapper around the `Workspace` route in `client/src/App.tsx`; blank or
   loading state while pending (no login flash)
-- [ ] Client: a 401 from a protected API call → redirect to `/login`. **Excludes `/api/auth/*`**:
+- [x] Client: a 401 from a protected API call → redirect to `/login`. **Excludes `/api/auth/*`**:
   a wrong password (login 401) must show its error, and `AuthProvider`'s initial `/me` 401 must
   not bounce users off `/signup` or `/login`
 
 ### Acceptance tests
-- [ ] No cookie → 401
-- [ ] Garbage cookie → 401
-- [ ] Expired session → 401
-- [ ] Revoked session → 401
-- [ ] Valid session → 200 with the correct user
-- [ ] Sliding bump only writes when `last_used_at` is more than a day old
-- [ ] Cross-user note access → 404 (once notes routes exist)
+- [x] No cookie → 401
+- [x] Garbage cookie → 401
+- [x] Expired session → 401
+- [x] Revoked session → 401
+- [x] Valid session → 200 with the correct user
+- [x] Sliding bump only writes when `last_used_at` is more than a day old
+- [ ] Cross-user note access → 404 (once notes routes exist). *Deferred with the notes API.*
 
 **Demo:** Sign up → reload stays in the workspace; delete the cookie → `/` redirects to `/login`.
+
+### Known gaps (from review)
+- A session that expires or is revoked while the workspace is open only redirects to `/login` on the
+  next reload. The 401 interceptor skips `/api/auth/*`, and no other API routes exist yet. This
+  fixes itself once the notes API exists.
+- Notes are still in one shared `localStorage` key, so users on the same browser see each other's
+  notes. Handle this by ticket 4 (key the storage by `user.id`, or clear it on logout), or with the
+  notes API.
+- Sliding expiry has no absolute cap, so an active session never expires unless it's revoked.
+  Consider `created_at + 90d` in `findActiveSession` later.
 
 ---
 

@@ -1,10 +1,10 @@
+import type { Credentials } from "../services/auth.service.js";
+
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
 const EMAIL_MAX_LENGTH = 254;
 // Deliberately loose: one @, no spaces, a dot in the domain. Real validation is email verification.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export type Credentials = { email: string; password: string };
 
 export type ParseResult = { ok: true; value: Credentials } | { ok: false; error: string };
 

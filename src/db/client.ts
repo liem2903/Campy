@@ -7,3 +7,6 @@ if (!databaseUrl) {
 
 // Shared connection pool. Use tagged templates (sql`...`) so values are always parameterized.
 export const sql = postgres(databaseUrl);
+
+// Repositories take this so services can pass either the pool or a transaction.
+export type Db = postgres.Sql | postgres.TransactionSql;

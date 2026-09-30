@@ -11,6 +11,9 @@ export type User = {
   updated_at: Date;
 };
 
+// The user fields that are safe to expose: no password hash.
+export type AuthUser = Pick<User, "id" | "email">;
+
 export type Session = {
   id: string;
   user_id: string;

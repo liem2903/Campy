@@ -1,3 +1,4 @@
+import request from "supertest";
 import { randomUUID } from "node:crypto";
 import { createApp, type AppOptions } from "../src/app.js";
 import { sql } from "../src/db/client.js";
@@ -30,3 +31,14 @@ export async function deleteTestUsers(): Promise<void> {
 }
 
 export const validPassword = "correct horse battery";
+
+// Signs up a fresh user and returns it with the "sid=..." pair to send as a Cookie header.
+export async function signUp(app: ReturnType<typeof testApp>) {
+  const res = await request(app)
+    .post("/api/auth/signup")
+    .send({ email: uniqueEmail(), password: validPassword })
+    .expect(201);
+  const header = res.headers["set-cookie"] as unknown as string[];
+  const cookie = header.find((c) => c.startsWith("sid="))!.split(";")[0];
+  return { id: res.body.id as string, email: res.body.email as string, cookie };
+}

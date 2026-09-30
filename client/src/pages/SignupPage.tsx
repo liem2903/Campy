@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, errorMessage } from '../api.ts'
+import { useAuth, type User } from '../auth.ts'
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -14,7 +16,8 @@ function SignupPage() {
     setError(null)
     setSubmitting(true)
     try {
-      await api.post('/api/auth/signup', { email, password })
+      const res = await api.post<User>('/api/auth/signup', { email, password })
+      setUser(res.data)
       navigate('/')
     } catch (err) {
       setError(errorMessage(err))

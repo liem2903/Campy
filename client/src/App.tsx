@@ -1,5 +1,6 @@
 import { Outlet, Route, Routes } from 'react-router'
 import './App.css'
+import RequireAuth from './components/RequireAuth.tsx'
 import Sidebar from './components/Sidebar.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
@@ -21,7 +22,13 @@ function Workspace() {
 function App() {
   return (
     <Routes>
-      <Route element={<Workspace />}>
+      <Route
+        element={
+          <RequireAuth>
+            <Workspace />
+          </RequireAuth>
+        }
+      >
         <Route index element={<WorkspaceHome />} />
         <Route path="notes/:noteId" element={<NotePage />} />
       </Route>

@@ -20,6 +20,11 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Strict TypeScript. Avoid `any`.
 - Source lives only in `src/`. Never edit `dist/`.
 - Secrets go in `.env*` files (gitignored). Never hard-code them.
+- Back-end layers, each calling only the one below:
+  - `src/routes/`: wiring only (paths, rate limiters, middleware → controller methods).
+  - `src/controllers/` + `src/middleware/`: HTTP only. Parse/validate `req`, call a service, map results and domain errors (`src/errors.ts`) to status codes, JSON and cookies. No SQL.
+  - `src/services/`: business rules and transactions (`sql.begin`). No `req`/`res`, no SQL text.
+  - `src/repositories/`: SQL only. Take a `db: Db = sql` last parameter so services can pass a transaction; return typed plain objects.
 
 ## Sub-agents
 - After back-end changes, use the `backend-reviewer` sub-agent (`.claude/agents/backend-reviewer.md`) to review them before committing.
