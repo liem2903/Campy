@@ -134,22 +134,32 @@ sends you to `/login`, and notes are scoped to their owner.
 **Slice:** An existing user logs in from `/login` and lands in the workspace.
 
 ### Tasks
-- [ ] `POST /api/auth/login`:
+- [x] `POST /api/auth/login`:
   - Always responds "Invalid email or password" on failure
   - Runs a dummy argon2 verify when the email doesn't exist (timing parity)
   - Deletes that user's expired or revoked sessions opportunistically
   - Limiters: 5 per 15 min per IP+email, 20 per 15 min per IP
-- [ ] Client: wire `LoginPage` to the API, show the error message, redirect to `/` (or the
+- [x] Client: wire `LoginPage` to the API, show the error message, redirect to `/` (or the
   originally requested page)
 
 ### Acceptance tests
-- [ ] Correct credentials → 200 + cookie that works on `/api/auth/me`
-- [ ] Wrong password and unknown email → both 401 with an identical body
-- [ ] Email matched case-insensitively
-- [ ] 6th bad attempt for one email within 15 min → 429
-- [ ] Expired and revoked sessions for that user are deleted on login
+- [x] Correct credentials → 200 + cookie that works on `/api/auth/me`
+- [x] Wrong password and unknown email → both 401 with an identical body
+- [x] Email matched case-insensitively
+- [x] 6th bad attempt for one email within 15 min → 429
+- [x] Expired and revoked sessions for that user are deleted on login
 
 **Demo:** Log in with the Ticket 1 account; a wrong password shows the error.
+
+### Notes (from implementation and review)
+- Login checks only the body's shape (400 if email/password missing or email > 254 chars), not the
+  signup password policy, so a password from an older policy still works. Passwords over 128 code
+  points get the same 401 without hashing (caps argon2 work).
+- The per-IP+email limiter counts only failures (`skipSuccessfulRequests`); its key is the
+  `ipKeyGenerator` IP + the normalized, truncated email. The per-IP limiter counts everything.
+- Login and signup responses send `Cache-Control: no-store`.
+- Logging in over an existing session leaves the old one live; fixed in Ticket 4 (login revokes
+  the incoming `sid`).
 
 ---
 

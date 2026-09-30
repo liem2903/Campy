@@ -58,3 +58,21 @@ export async function extendSessionIfIdle(
   `;
   return result.count > 0;
 }
+
+// Housekeeping: drops the user's sessions that can never be used again.
+export async function deleteDeadSessions(userId: string, now: Date, db: Db = sql): Promise<void> {
+  await db`
+    delete from sessions
+    where user_id = ${userId}
+      and (revoked_at is not null or expires_at <= ${now})
+  `;
+}
+
+// No-op if the token is unknown or already revoked.
+export async function revokeSession(tokenHash: string, now: Date, db: Db = sql): Promise<void> {
+  await db`
+    update sessions
+    set revoked_at = ${now}
+    where token_hash = ${tokenHash} and revoked_at is null
+  `;
+}

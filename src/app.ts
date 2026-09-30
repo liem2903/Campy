@@ -11,7 +11,7 @@ export type AppOptions = {
   // Off in tests: Supertest won't send Secure cookies back over plain http.
   secureCookies?: boolean;
   // Tests raise these so only the dedicated 429 tests hit the real limits.
-  rateLimits?: { signupPerHour?: number };
+  rateLimits?: { signupPerHour?: number; loginPerIpEmail?: number; loginPerIp?: number };
 };
 
 const clientDist = path.resolve("client/dist");
@@ -77,7 +77,11 @@ export function createApp(options: AppOptions = {}): Express {
     "/api/auth",
     createAuthRouter({
       secureCookies: options.secureCookies ?? true,
-      limits: { signupPerHour: options.rateLimits?.signupPerHour ?? 5 },
+      limits: {
+        signupPerHour: options.rateLimits?.signupPerHour ?? 5,
+        loginPerIpEmail: options.rateLimits?.loginPerIpEmail ?? 5,
+        loginPerIp: options.rateLimits?.loginPerIp ?? 20,
+      },
     }),
   );
   // Unknown API routes get JSON, not the SPA's index.html.

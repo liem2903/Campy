@@ -16,3 +16,17 @@ export async function insertUser(
   `;
   return user ?? null;
 }
+
+export type UserWithPassword = AuthUser & { passwordHash: string };
+
+// citext column, so the match is case-insensitive.
+export async function findUserByEmail(
+  email: string,
+  db: Db = sql,
+): Promise<UserWithPassword | null> {
+  const [row] = await db<{ id: string; email: string; password_hash: string }[]>`
+    select id, email, password_hash from users where email = ${email}
+  `;
+  if (!row) return null;
+  return { id: row.id, email: row.email, passwordHash: row.password_hash };
+}

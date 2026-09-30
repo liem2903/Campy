@@ -1,13 +1,15 @@
 import { sql } from "../db/client.js";
 import type { AuthUser } from "../db/types.js";
-import { EmailTakenError } from "../errors.js";
+import { EmailTakenError, InvalidCredentialsError } from "../errors.js";
 import {
+  deleteDeadSessions,
   extendSessionIfIdle,
   findActiveSession,
   insertSession,
+  revokeSession,
 } from "../repositories/sessions.repository.js";
-import { insertUser } from "../repositories/users.repository.js";
-import { hashPassword } from "./password.js";
+import { findUserByEmail, insertUser } from "../repositories/users.repository.js";
+import { hashPassword, PASSWORD_MAX_LENGTH, passwordLength, verifyPassword } from "./password.js";
 import { generateToken, hashToken, SESSION_TTL_MS } from "./sessionToken.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -28,6 +30,49 @@ export async function signUp({ email, password }: Credentials): Promise<{ user: 
     await insertSession(user.id, hashToken(token), expiresAt, tx);
     return { user, token };
   });
+}
+
+// Verified against when the email is unknown, so that path costs the same argon2 time as a
+// wrong password. Created on first use so importing this module stays cheap.
+let dummyHash: Promise<string> | undefined;
+function getDummyHash(): Promise<string> {
+  // Forget a failed attempt so one bad call doesn't break every later unknown-email login.
+  dummyHash ??= hashPassword("campi-timing-parity-dummy-password").catch((err: unknown) => {
+    dummyHash = undefined;
+    throw err;
+  });
+  return dummyHash;
+}
+
+// Checks the credentials and starts a new session. Throws InvalidCredentialsError for an
+// unknown email and a wrong password alike. Returns the raw session token for the cookie.
+export async function logIn({ email, password }: Credentials): Promise<{ user: AuthUser; token: string }> {
+  // No account can have a longer password, and this caps the argon2 work an attacker can ask for.
+  if (passwordLength(password) > PASSWORD_MAX_LENGTH) throw new InvalidCredentialsError();
+
+  const found = await findUserByEmail(email);
+  if (!found) {
+    await verifyPassword(await getDummyHash(), password);
+    throw new InvalidCredentialsError();
+  }
+  if (!(await verifyPassword(found.passwordHash, password))) {
+    throw new InvalidCredentialsError();
+  }
+
+  const user: AuthUser = { id: found.id, email: found.email };
+  const token = generateToken();
+  const now = new Date();
+  await sql.begin(async (tx) => {
+    // Opportunistic cleanup, so dead sessions don't pile up without a cron job.
+    await deleteDeadSessions(user.id, now, tx);
+    await insertSession(user.id, hashToken(token), new Date(now.getTime() + SESSION_TTL_MS), tx);
+  });
+  return { user, token };
+}
+
+// Revokes the session behind this token, if there is one. Safe to call repeatedly.
+export async function logOut(token: string): Promise<void> {
+  await revokeSession(hashToken(token), new Date());
 }
 
 // Resolves a session token to its user, or null if it's unknown, expired or revoked.

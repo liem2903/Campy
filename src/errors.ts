@@ -6,3 +6,11 @@ export class EmailTakenError extends Error {
     this.name = "EmailTakenError";
   }
 }
+
+// Deliberately vague: never reveal whether the email or the password was wrong.
+export class InvalidCredentialsError extends Error {
+  constructor() {
+    super("Invalid email or password");
+    this.name = "InvalidCredentialsError";
+  }
+}

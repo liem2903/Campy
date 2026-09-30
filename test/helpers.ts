@@ -18,7 +18,7 @@ export function uniqueEmail(): string {
 export function testApp(overrides: AppOptions = {}) {
   return createApp({
     secureCookies: false,
-    rateLimits: { signupPerHour: 1000 },
+    rateLimits: { signupPerHour: 1000, loginPerIpEmail: 1000, loginPerIp: 1000 },
     ...overrides,
   });
 }
