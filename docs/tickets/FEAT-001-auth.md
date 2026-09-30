@@ -51,36 +51,36 @@ change password, breached-password check.
 session cookie, and they land in the workspace.
 
 ### Foundation
-- [ ] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
+- [x] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
   the CLAUDE.md rule "never edit an applied migration": it has only been applied to local DBs and
   **has not been pushed to the hosted project**. Anyone with a local DB must run `npm run db:reset`
   afterwards.
   - Rename `refresh_tokens` → `sessions` (and `refresh_tokens_user_id_idx` → `sessions_user_id_idx`)
   - Add `last_used_at timestamptz not null default now()`
-- [ ] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
-- [ ] `npm run db:start` + `npm run db:reset`
-- [ ] Add `postgres` dependency and create `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
-- [ ] Add `TRUST_PROXY` to `.env.example`, add `--env-file-if-exists=.env` to the `dev` script, and
+- [x] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
+- [x] `npm run db:start` + `npm run db:reset`
+- [x] Add `postgres` dependency and create `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
+- [x] Add `TRUST_PROXY` to `.env.example`, add `--env-file-if-exists=.env` to the `dev` script, and
   set `engines.node` to `>=22.9`
-- [ ] Split `src/index.ts` → `src/app.ts` (`createApp(options)`) + `src/index.ts` (`listen` only).
+- [x] Split `src/index.ts` → `src/app.ts` (`createApp(options)`) + `src/index.ts` (`listen` only).
   Options: `secureCookies`, rate-limit overrides
-- [ ] Unknown `/api/*` routes return 404 JSON instead of the SPA fallback
-- [ ] Jest + ts-jest + Supertest setup, `test/` folder with its own tsconfig, `npm test` script
+- [x] Unknown `/api/*` routes return 404 JSON instead of the SPA fallback
+- [x] Jest + ts-jest + Supertest setup, `test/` folder with its own tsconfig, `npm test` script
 
 ### Feature
-- [ ] `src/auth/password.ts`: argon2id hash/verify
-- [ ] `src/auth/sessions.ts`: create a session (random token, store hash, set cookie)
-- [ ] `POST /api/auth/signup`: validate the email and password policy, 409 on a taken email,
+- [x] `src/auth/password.ts`: argon2id hash/verify
+- [x] `src/auth/sessions.ts`: create a session (random token, store hash, set cookie)
+- [x] `POST /api/auth/signup`: validate the email and password policy, 409 on a taken email,
   creates the user and logs them in; signup limiter 5/hour per IP
-- [ ] Client: `/signup` page (email + password), link from `LoginPage`, redirect to `/` on success
+- [x] Client: `/signup` page (email + password), link from `LoginPage`, redirect to `/` on success
 
 ### Acceptance tests
-- [ ] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`
-- [ ] `users` row stores an argon2 hash, never the raw password
-- [ ] Duplicate email (including a different case) → 409
-- [ ] Invalid email or 7-char password → 400
-- [ ] Non-JSON body → 415
-- [ ] 6th signup in an hour from one IP → 429
+- [x] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`
+- [x] `users` row stores an argon2 hash, never the raw password
+- [x] Duplicate email (including a different case) → 409
+- [x] Invalid email or 7-char password → 400
+- [x] Non-JSON body → 415
+- [x] 6th signup in an hour from one IP → 429
 
 **Demo:** `npm run dev:all` → sign up → workspace; the `sid` cookie is visible in devtools.
 

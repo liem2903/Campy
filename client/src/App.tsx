@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
+import SignupPage from './pages/SignupPage.tsx'
 import WorkspaceHome from './pages/WorkspaceHome.tsx'
 
 function Workspace() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="notes/:noteId" element={<NotePage />} />
       </Route>
       <Route path="login" element={<LoginPage />} />
+      <Route path="signup" element={<SignupPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

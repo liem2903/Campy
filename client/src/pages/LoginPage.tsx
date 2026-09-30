@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -36,6 +36,9 @@ function LoginPage() {
         </label>
         <button type="submit" className="primary">Log in</button>
       </form>
+      <p className="muted auth-switch">
+        New to Campi? <Link to="/signup">Create an account</Link>
+      </p>
     </main>
   )
 }

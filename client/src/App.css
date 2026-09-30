@@ -198,6 +198,26 @@
   box-shadow: 0 0 0 2px var(--accent);
 }
 
+.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.auth-switch {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.auth-switch a {
+  color: var(--accent);
+}
+
 @media (max-width: 640px) {
   .sidebar {
     width: 180px;

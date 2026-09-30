@@ -11,12 +11,13 @@ export type User = {
   updated_at: Date;
 };
 
-export type RefreshToken = {
+export type Session = {
   id: string;
   user_id: string;
   token_hash: string;
   expires_at: Date;
   revoked_at: Date | null;
+  last_used_at: Date;
   created_at: Date;
 };
 

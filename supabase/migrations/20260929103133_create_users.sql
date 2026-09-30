@@ -11,18 +11,19 @@ create trigger users_set_updated_at
   for each row execute function set_updated_at();
 
 -- One row per login session/device. Only a hash of the token is stored.
-create table refresh_tokens (
-  id         uuid primary key default gen_random_uuid(),
-  user_id    uuid not null references users (id) on delete cascade,
-  token_hash text not null unique,
-  expires_at timestamptz not null,
-  revoked_at timestamptz,
-  created_at timestamptz not null default now()
+create table sessions (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references users (id) on delete cascade,
+  token_hash   text not null unique, -- sha256 of the cookie token
+  expires_at   timestamptz not null,
+  revoked_at   timestamptz,
+  last_used_at timestamptz not null default now(),
+  created_at   timestamptz not null default now()
 );
 
-create index refresh_tokens_user_id_idx on refresh_tokens (user_id);
+create index sessions_user_id_idx on sessions (user_id);
 
 -- RLS with no policies: blocks Supabase's public REST API (anon key).
 -- Express connects as the postgres role, which bypasses RLS.
 alter table users enable row level security;
-alter table refresh_tokens enable row level security;
+alter table sessions enable row level security;
