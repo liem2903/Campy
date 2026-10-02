@@ -32,11 +32,15 @@ change password, breached-password check.
 | Proxy | `app.set('trust proxy', TRUST_PROXY)`: off locally, `1` on Railway |
 | DB client | `postgres` (postgres.js) tagged-template queries |
 | Env | `--env-file-if-exists=.env` in `dev`/`test` scripts (needs Node ≥ 22.9; set `engines.node` in `package.json`). Fail fast if `DATABASE_URL` is missing. On Railway, use the Supabase **session pooler** URL (IPv4). |
-| Tests | Jest + ts-jest (ESM preset, `NODE_OPTIONS=--experimental-vm-modules`, `moduleNameMapper` stripping `.js`) + Supertest, in top-level `test/`. They run against local Supabase and use unique `test-<uuid>@example.com` users that are deleted afterwards. |
+| Tests | Vitest + Supertest, in top-level `test/`. They run against local Supabase and use unique `test-<uuid>@example.com` users that are deleted afterwards. |
+| Structure | Layered back end: `src/routes/` → `src/controllers/` (+ `src/middleware/`) → `src/services/` → `src/repositories/`, each calling only the one below. Domain errors live in `src/errors.ts`. |
+| Workflow | Tests first, then top-down: page → `client/src/api.ts` (axios) → route → controller → service → repository/DB. Each checkpoint is ≤50 lines (tests exempt) and is committed. Each layer stubs the next one (real signature, `throw new Error('Not implemented')`) so every commit builds. Setup work arrives with the layer that first needs it. |
+| Error responses | `{ error: "<specific, human-readable message>" }`; the client shows `error` as-is. |
 | Enumeration | Login always says "Invalid email or password". Signup returns 409 for a taken email (accepted until email verification exists). |
 | Ownership | `requireAuth` sets `req.user`. All note/block queries are scoped by `user_id`, and another user's note returns 404. |
 
 ### Definition of done (every ticket)
+- [ ] Built with the Workflow above: tests first, then top-down checkpoints, each one explained and committed
 - [ ] Acceptance tests written and passing (`npm test`)
 - [ ] `npm run build` passes (strict TS, no `any`)
 - [ ] Demo path works in `npm run dev:all`
@@ -50,7 +54,56 @@ change password, breached-password check.
 **Slice:** A new user fills in `/signup`. The account is created, they're logged in with a
 session cookie, and they land in the workspace.
 
-### Foundation
+Built as checkpoints in this order. Each one stops for an explanation and pushback, then gets
+committed.
+
+### Checkpoint 0: Tests (written first, failing)
+- [ ] Install Vitest + Supertest, add `vitest.config.ts`, an `npm test` script and `test/helpers.ts`
+  (creates the app with `secureCookies: false`, deletes test users afterwards)
+- [ ] `test/signup.test.ts` with the acceptance tests below
+
+### Checkpoint 1: Page
+- [ ] `client/src/pages/SignupPage.tsx` (email + password), a `/signup` route in
+  `client/src/App.tsx`, a link from `LoginPage`
+- [ ] Shows the server's `error` message; on success redirects to `/` (the workspace)
+- [ ] Stub `signUp()` in `client/src/api.ts`
+
+### Checkpoint 2: Client API
+- [ ] Install axios; `client/src/api.ts` holds the axios instance and a real
+  `signUp(email, password)` → `POST /api/auth/signup`
+
+### Checkpoint 3: Route layer (+ app setup)
+- [ ] Split `src/index.ts` → `src/app.ts` (`createApp({ secureCookies, limits })`) + `src/index.ts`
+  (`listen` only)
+- [ ] In `createApp()`: `express.json()`, the 415 JSON-only check for mutating `/api` requests
+  (`src/middleware/requireJson.ts`), `trust proxy` from `TRUST_PROXY`, unknown `/api/*` → 404 JSON
+  instead of the SPA fallback
+- [ ] `src/routes/auth.routes.ts`: `POST /api/auth/signup` with the signup limiter (5/hour per IP,
+  message "Too many attempts, please try again later.")
+- [ ] Stub the controller
+
+### Checkpoint 4: Controller
+- [ ] `src/controllers/auth.controller.ts`: validate the input, call the service, map errors to status
+  codes, set the `sid` cookie (`Secure` from `secureCookies`), respond `201 { id, email }`
+- [ ] Email check is simple: trim, `something@something.something`, ≤254 chars. Case-insensitivity
+  comes from the `citext` column.
+- [ ] Messages:
+  - 400 "That email isn't valid"
+  - 400 "Password must be 8–128 characters"
+  - 409 "An account with this email already exists"
+- [ ] `src/errors.ts` with the domain errors. Stub the service.
+
+### Checkpoint 5: Service
+- [ ] `src/services/auth.service.ts` `signUp`:
+  - check the email is free (→ email-taken error)
+  - hash the password with argon2id
+  - create the user
+  - create a session: a random 32-byte token, store only its SHA-256 hash, 30-day expiry
+- [ ] Two signups for the same email at the same instant: the loser gets a generic 500. This is
+  accepted, since it's rare and a retry gets the normal 409.
+- [ ] Stub the repositories
+
+### Checkpoint 6: Repository + DB
 - [ ] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
   the CLAUDE.md rule "never edit an applied migration": it has only been applied to local DBs and
   **has not been pushed to the hosted project**. Anyone with a local DB must run `npm run db:reset`
@@ -59,20 +112,10 @@ session cookie, and they land in the workspace.
   - Add `last_used_at timestamptz not null default now()`
 - [ ] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
 - [ ] `npm run db:start` + `npm run db:reset`
-- [ ] Add `postgres` dependency and create `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
-- [ ] Add `TRUST_PROXY` to `.env.example`, add `--env-file-if-exists=.env` to the `dev` script, and
-  set `engines.node` to `>=22.9`
-- [ ] Split `src/index.ts` → `src/app.ts` (`createApp(options)`) + `src/index.ts` (`listen` only).
-  Options: `secureCookies`, rate-limit overrides
-- [ ] Unknown `/api/*` routes return 404 JSON instead of the SPA fallback
-- [ ] Jest + ts-jest + Supertest setup, `test/` folder with its own tsconfig, `npm test` script
-
-### Feature
-- [ ] `src/auth/password.ts`: argon2id hash/verify
-- [ ] `src/auth/sessions.ts`: create a session (random token, store hash, set cookie)
-- [ ] `POST /api/auth/signup`: validate the email and password policy, 409 on a taken email,
-  creates the user and logs them in; signup limiter 5/hour per IP
-- [ ] Client: `/signup` page (email + password), link from `LoginPage`, redirect to `/` on success
+- [ ] Add the `postgres` dependency and `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
+- [ ] Add `TRUST_PROXY` to `.env.example` and `--env-file-if-exists=.env` to the `dev`/`test`
+  scripts, and set `engines.node` to `>=22.9`
+- [ ] `src/repositories/users.repository.ts` and `src/repositories/sessions.repository.ts`
 
 ### Acceptance tests
 - [ ] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`
@@ -92,7 +135,8 @@ session cookie, and they land in the workspace.
 sends you to `/login`, and notes are scoped to their owner.
 
 ### Tasks
-- [ ] `src/auth/requireAuth.ts`: hash the cookie, look up an unexpired and unrevoked session,
+- [ ] `src/middleware/requireAuth.ts` (session lookup via the auth service and the sessions
+  repository): hash the cookie, look up an unexpired and unrevoked session,
   set `req.user`, sliding bump at most daily (updates `expires_at` and `last_used_at`)
 - [ ] `GET /api/auth/me` → `{ id, email }` or 401
 - [ ] Apply `requireAuth` + `user_id` scoping to any existing notes/blocks routes (blocks scoped
