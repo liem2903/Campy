@@ -1,3 +1,21 @@
+/* Tailwind without its preflight reset, so pages still styled by App.css keep their look.
+   Add `@import "tailwindcss/preflight.css" layer(base);` once they've all moved over. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Tailwind colours read the variables below, so classes like text-muted follow the theme. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-accent: var(--accent);
+  --color-brand: var(--brand);
+}
+
 :root {
   font-family: system-ui, sans-serif;
   color-scheme: light dark;
