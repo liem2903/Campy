@@ -19,7 +19,8 @@
     "db:push": "supabase db push"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
