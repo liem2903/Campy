@@ -4,7 +4,6 @@ import * as authService from "../services/auth.service.js";
 
 export type AuthControllerOptions = { secureCookies: boolean };
 
-const thirtyDays = 30 * 24 * 60 * 60 * 1000;
 // Deliberately loose: something@something.something, no spaces.
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,7 +24,7 @@ export function authController({ secureCookies }: AuthControllerOptions) {
       try {
         const { user, token } = await authService.signUp(trimmed, password);
         res.cookie("sid", token, {
-          httpOnly: true, secure: secureCookies, sameSite: "lax", path: "/", maxAge: thirtyDays,
+          httpOnly: true, secure: secureCookies, sameSite: "lax", path: "/", maxAge: authService.sessionTtlMs,
         });
         res.status(201).json(user);
       } catch (err) {

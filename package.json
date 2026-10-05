@@ -4,8 +4,11 @@
   "description": "Note taking app that has local memory.",
   "type": "module",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=22.9"
+  },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "dev:client": "npm --prefix client run dev",
     "dev:all": "concurrently -n server,client \"npm run dev\" \"npm run dev:client\"",
     "build": "tsc && npm run build:client",
@@ -19,8 +22,10 @@
     "db:push": "supabase db push"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "express": "^4.21.2",
-    "express-rate-limit": "^8.7.0"
+    "express-rate-limit": "^8.7.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
