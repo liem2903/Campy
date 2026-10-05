@@ -104,18 +104,18 @@ committed.
 - [ ] Stub the repositories
 
 ### Checkpoint 6: Repository + DB
-- [ ] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
+- [x] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
   the CLAUDE.md rule "never edit an applied migration": it has only been applied to local DBs and
   **has not been pushed to the hosted project**. Anyone with a local DB must run `npm run db:reset`
   afterwards.
   - Rename `refresh_tokens` → `sessions` (and `refresh_tokens_user_id_idx` → `sessions_user_id_idx`)
   - Add `last_used_at timestamptz not null default now()`
-- [ ] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
-- [ ] `npm run db:start` + `npm run db:reset`
-- [ ] Add the `postgres` dependency and `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
-- [ ] Add `TRUST_PROXY` to `.env.example` and `--env-file-if-exists=.env` to the `dev`/`test`
+- [x] Update `src/db/types.ts`: `RefreshToken` → `Session` (add `last_used_at`)
+- [x] `npm run db:start` + `npm run db:reset`
+- [x] Add the `postgres` dependency and `src/db/client.ts` (reads `DATABASE_URL`, fails fast)
+- [x] Add `TRUST_PROXY` to `.env.example` and `--env-file-if-exists=.env` to the `dev`/`test`
   scripts, and set `engines.node` to `>=22.9`
-- [ ] `src/repositories/users.repository.ts` and `src/repositories/sessions.repository.ts`
+- [x] `src/repositories/users.repository.ts` and `src/repositories/sessions.repository.ts`
 
 ### Acceptance tests
 - [ ] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`

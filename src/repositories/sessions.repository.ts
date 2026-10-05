@@ -1,7 +1,10 @@
 import { sql, type Db } from "../db/client.js";
 
 export async function create(
-  _userId: string, _tokenHash: string, _expiresAt: Date, _db: Db = sql,
+  userId: string, tokenHash: string, expiresAt: Date, db: Db = sql,
 ): Promise<void> {
-  throw new Error("Not implemented");
+  await db`
+    insert into sessions (user_id, token_hash, expires_at)
+    values (${userId}, ${tokenHash}, ${expiresAt})
+  `;
 }
