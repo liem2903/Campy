@@ -1,5 +1,7 @@
-import { Outlet, Route, Routes } from 'react-router'
+import type { ReactNode } from 'react'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import './App.css'
+import { useAuth } from './auth.ts'
 import Sidebar from './components/Sidebar.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
@@ -18,10 +20,26 @@ function Workspace() {
   )
 }
 
+// Logged-in pages only. Renders nothing until the first /me check answers, so there's no login flash.
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  const location = useLocation()
+  if (user === undefined) return null
+  // Remember where they were headed, so login can send them back.
+  if (user === null) return <Navigate to="/login" replace state={{ from: location }} />
+  return children
+}
+
 function App() {
   return (
     <Routes>
-      <Route element={<Workspace />}>
+      <Route
+        element={
+          <RequireAuth>
+            <Workspace />
+          </RequireAuth>
+        }
+      >
         <Route index element={<WorkspaceHome />} />
         <Route path="notes/:noteId" element={<NotePage />} />
       </Route>

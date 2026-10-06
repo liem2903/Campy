@@ -16,3 +16,8 @@ export async function signUp(email: string, password: string): Promise<User> {
   const { data } = await api.post<User>('/auth/signup', { email, password })
   return data
 }
+
+// Who's logged in, from the session cookie. Rejects with a 401 when nobody is.
+export async function getMe(): Promise<User> {
+  throw new Error('Not implemented')
+}

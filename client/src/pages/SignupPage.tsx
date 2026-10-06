@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { signUp } from '../api.ts'
+import { useAuth } from '../auth.ts'
 
 // No preflight reset yet, so inputs and buttons clear their browser border and font themselves.
 const inputClass =
@@ -8,6 +9,7 @@ const inputClass =
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,7 +20,7 @@ function SignupPage() {
     setError('')
     setSubmitting(true)
     try {
-      await signUp(email, password)
+      setUser(await signUp(email, password))
       navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
