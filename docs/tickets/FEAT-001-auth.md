@@ -40,12 +40,12 @@ change password, breached-password check.
 | Ownership | `requireAuth` sets `req.user`. All note/block queries are scoped by `user_id`, and another user's note returns 404. |
 
 ### Definition of done (every ticket)
-- [ ] Built with the Workflow above: tests first, then top-down checkpoints, each one explained and committed
-- [ ] Acceptance tests written and passing (`npm test`)
-- [ ] `npm run build` passes (strict TS, no `any`)
+- [x] Built with the Workflow above: tests first, then top-down checkpoints, each one explained and committed
+- [x] Acceptance tests written and passing (`npm test`)
+- [x] `npm run build` passes (strict TS, no `any`)
 - [ ] Demo path works in `npm run dev:all`
-- [ ] Feature described by the developer, `backend-reviewer` sub-agent run, findings addressed
-- [ ] Committed on `feature/auth`
+- [x] Feature described by the developer, `backend-reviewer` sub-agent run, findings addressed
+- [x] Committed on `feature/auth`
 
 ---
 
@@ -58,50 +58,50 @@ Built as checkpoints in this order. Each one stops for an explanation and pushba
 committed.
 
 ### Checkpoint 0: Tests (written first, failing)
-- [ ] Install Vitest + Supertest, add `vitest.config.ts`, an `npm test` script and `test/helpers.ts`
+- [x] Install Vitest + Supertest, add `vitest.config.ts`, an `npm test` script and `test/helpers.ts`
   (creates the app with `secureCookies: false`, deletes test users afterwards)
-- [ ] `test/signup.test.ts` with the acceptance tests below
+- [x] `test/signup.test.ts` with the acceptance tests below
 
 ### Checkpoint 1: Page
-- [ ] `client/src/pages/SignupPage.tsx` (email + password), a `/signup` route in
+- [x] `client/src/pages/SignupPage.tsx` (email + password), a `/signup` route in
   `client/src/App.tsx`, a link from `LoginPage`
-- [ ] Shows the server's `error` message; on success redirects to `/` (the workspace)
-- [ ] Stub `signUp()` in `client/src/api.ts`
+- [x] Shows the server's `error` message; on success redirects to `/` (the workspace)
+- [x] Stub `signUp()` in `client/src/api.ts`
 
 ### Checkpoint 2: Client API
-- [ ] Install axios; `client/src/api.ts` holds the axios instance and a real
+- [x] Install axios; `client/src/api.ts` holds the axios instance and a real
   `signUp(email, password)` → `POST /api/auth/signup`
 
 ### Checkpoint 3: Route layer (+ app setup)
-- [ ] Split `src/index.ts` → `src/app.ts` (`createApp({ secureCookies, limits })`) + `src/index.ts`
+- [x] Split `src/index.ts` → `src/app.ts` (`createApp({ secureCookies, limits })`) + `src/index.ts`
   (`listen` only)
-- [ ] In `createApp()`: `express.json()`, the 415 JSON-only check for mutating `/api` requests
+- [x] In `createApp()`: `express.json()`, the 415 JSON-only check for mutating `/api` requests
   (`src/middleware/requireJson.ts`), `trust proxy` from `TRUST_PROXY`, unknown `/api/*` → 404 JSON
   instead of the SPA fallback
-- [ ] `src/routes/auth.routes.ts`: `POST /api/auth/signup` with the signup limiter (5/hour per IP,
+- [x] `src/routes/auth.routes.ts`: `POST /api/auth/signup` with the signup limiter (5/hour per IP,
   message "Too many attempts, please try again later.")
-- [ ] Stub the controller
+- [x] Stub the controller
 
 ### Checkpoint 4: Controller
-- [ ] `src/controllers/auth.controller.ts`: validate the input, call the service, map errors to status
+- [x] `src/controllers/auth.controller.ts`: validate the input, call the service, map errors to status
   codes, set the `sid` cookie (`Secure` from `secureCookies`), respond `201 { id, email }`
-- [ ] Email check is simple: trim, `something@something.something`, ≤254 chars. Case-insensitivity
+- [x] Email check is simple: trim, `something@something.something`, ≤254 chars. Case-insensitivity
   comes from the `citext` column.
-- [ ] Messages:
+- [x] Messages:
   - 400 "That email isn't valid"
   - 400 "Password must be 8–128 characters"
   - 409 "An account with this email already exists"
-- [ ] `src/errors.ts` with the domain errors. Stub the service.
+- [x] `src/errors.ts` with the domain errors. Stub the service.
 
 ### Checkpoint 5: Service
-- [ ] `src/services/auth.service.ts` `signUp`:
+- [x] `src/services/auth.service.ts` `signUp`:
   - check the email is free (→ email-taken error)
   - hash the password with argon2id
   - create the user
   - create a session: a random 32-byte token, store only its SHA-256 hash, 30-day expiry
-- [ ] Two signups for the same email at the same instant: the loser gets a generic 500. This is
+- [x] Two signups for the same email at the same instant: the loser gets a generic 500. This is
   accepted, since it's rare and a retry gets the normal 409.
-- [ ] Stub the repositories
+- [x] Stub the repositories
 
 ### Checkpoint 6: Repository + DB
 - [x] Edit `supabase/migrations/20260929103133_create_users.sql`. This is a deliberate exception to
@@ -118,12 +118,12 @@ committed.
 - [x] `src/repositories/users.repository.ts` and `src/repositories/sessions.repository.ts`
 
 ### Acceptance tests
-- [ ] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`
-- [ ] `users` row stores an argon2 hash, never the raw password
-- [ ] Duplicate email (including a different case) → 409
-- [ ] Invalid email or 7-char password → 400
-- [ ] Non-JSON body → 415
-- [ ] 6th signup in an hour from one IP → 429
+- [x] Valid signup → 201 + `Set-Cookie` with `HttpOnly`, `Secure`, `SameSite=Lax`
+- [x] `users` row stores an argon2 hash, never the raw password
+- [x] Duplicate email (including a different case) → 409
+- [x] Invalid email or 7-char password → 400
+- [x] Non-JSON body → 415
+- [x] 6th signup in an hour from one IP → 429
 
 **Demo:** `npm run dev:all` → sign up → workspace; the `sid` cookie is visible in devtools.
 
