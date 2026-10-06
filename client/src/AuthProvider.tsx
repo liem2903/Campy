@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { getMe, type User } from './api.ts'
+import { getMe, onUnauthorized, type User } from './api.ts'
 import { AuthContext } from './auth.ts'
 
 // Asks the server who's logged in once, on load.
@@ -13,6 +13,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
       () => setUser((prev) => (prev === undefined ? null : prev)),
     )
   }, [])
+
+  // A protected call got a 401: drop the user so RequireAuth sends them to /login.
+  useEffect(() => onUnauthorized(() => setUser(null)), [])
 
   const value = useMemo(() => ({ user, setUser }), [user])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
