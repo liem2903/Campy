@@ -7,6 +7,8 @@ import * as sessionsRepository from "../repositories/sessions.repository.js";
 import * as usersRepository from "../repositories/users.repository.js";
 
 export const sessionTtlMs = 30 * 24 * 60 * 60 * 1000;
+// A session used within this window isn't bumped: at most one DB write per day per session.
+const bumpAfterMs = 24 * 60 * 60 * 1000;
 
 export type SignUpResult = { user: Pick<User, "id" | "email">; token: string };
 
@@ -32,8 +34,15 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
 export type AuthResult = { user: Pick<User, "id" | "email">; bumped: boolean };
 
 // Looks up an active session by token; bumps it if last used over a day ago.
-export async function authenticate(_token: string): Promise<AuthResult | null> {
-  throw new Error("Not implemented");
+export async function authenticate(token: string): Promise<AuthResult | null> {
+  const session = await sessionsRepository.findActiveByTokenHash(hashToken(token));
+  if (!session) return null;
+
+  const user = { id: session.user_id, email: session.email };
+  if (Date.now() - session.last_used_at.getTime() < bumpAfterMs) return { user, bumped: false };
+
+  await sessionsRepository.bump(session.id, new Date(Date.now() + sessionTtlMs));
+  return { user, bumped: true };
 }
 
 // Only this hash is stored; the raw token lives only in the cookie.
