@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { EmailTakenError } from "../errors.js";
+import { setSessionCookie } from "../middleware/sessionCookie.js";
 import * as authService from "../services/auth.service.js";
 
 export type AuthControllerOptions = { secureCookies: boolean };
@@ -23,9 +24,7 @@ export function authController({ secureCookies }: AuthControllerOptions) {
 
       try {
         const { user, token } = await authService.signUp(trimmed, password);
-        res.cookie("sid", token, {
-          httpOnly: true, secure: secureCookies, sameSite: "lax", path: "/", maxAge: authService.sessionTtlMs,
-        });
+        setSessionCookie(res, token, secureCookies);
         res.status(201).json(user);
       } catch (err) {
         if (err instanceof EmailTakenError) {
@@ -36,8 +35,8 @@ export function authController({ secureCookies }: AuthControllerOptions) {
       }
     },
 
-    me(_req: Request, _res: Response): void {
-      throw new Error("Not implemented");
+    me(req: Request, res: Response): void {
+      res.json(req.user); // requireSession guarantees it's set
     },
   };
 }

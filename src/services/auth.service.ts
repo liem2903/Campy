@@ -29,6 +29,13 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
   return { user, token };
 }
 
+export type AuthResult = { user: Pick<User, "id" | "email">; bumped: boolean };
+
+// Looks up an active session by token; bumps it if last used over a day ago.
+export async function authenticate(_token: string): Promise<AuthResult | null> {
+  throw new Error("Not implemented");
+}
+
 // Only this hash is stored; the raw token lives only in the cookie.
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
