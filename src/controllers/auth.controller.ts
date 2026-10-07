@@ -35,5 +35,9 @@ export function authController({ secureCookies }: AuthControllerOptions) {
         next(err); // unexpected → the JSON error handler in app.ts
       }
     },
+
+    me(_req: Request, _res: Response): void {
+      throw new Error("Not implemented");
+    },
   };
 }

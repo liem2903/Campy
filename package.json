@@ -23,11 +23,13 @@
   },
   "dependencies": {
     "argon2": "^0.45.1",
+    "cookie-parser": "^1.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.7.0",
     "postgres": "^3.4.9"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.21",
     "@types/node": "^22.13.1",
     "@types/supertest": "^7.2.1",

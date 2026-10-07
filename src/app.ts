@@ -1,3 +1,4 @@
+import cookieParser from "cookie-parser";
 import express, { type NextFunction, type Request, type Response } from "express";
 import path from "node:path";
 import { requireJson } from "./middleware/requireJson.js";
@@ -24,7 +25,7 @@ export function createApp(options: AppOptions = {}) {
     res.json({ status: "ok" });
   });
 
-  app.use("/api", requireJson, express.json());
+  app.use("/api", requireJson, express.json(), cookieParser());
   app.use("/api/auth", authRoutes(options));
   // Unknown API paths get JSON, not the SPA's index.html.
   app.use("/api", (_req, res) => {
