@@ -35,6 +35,10 @@ export function authController({ secureCookies }: AuthControllerOptions) {
       }
     },
 
+    async logIn(_req: Request, _res: Response, _next: NextFunction): Promise<void> {
+      throw new Error("Not implemented");
+    },
+
     me(req: Request, res: Response): void {
       res.json(req.user); // requireSession guarantees it's set
     },

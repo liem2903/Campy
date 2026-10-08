@@ -6,7 +6,7 @@ import { authRoutes } from "./routes/auth.routes.js";
 
 export type AppOptions = {
   secureCookies?: boolean;
-  limits?: { signup?: number };
+  limits?: { signup?: number; loginEmail?: number; loginIp?: number };
 };
 
 const clientDist = path.resolve("client/dist");
