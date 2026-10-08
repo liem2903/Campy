@@ -37,7 +37,7 @@ change password, breached-password check.
 | Workflow | Tests first, then top-down: page → `client/src/api.ts` (axios) → route → controller → service → repository/DB. Each checkpoint is ≤50 lines (tests exempt) and is committed. Each layer stubs the next one (real signature, `throw new Error('Not implemented')`) so every commit builds. Setup work arrives with the layer that first needs it. |
 | Error responses | `{ error: "<specific, human-readable message>" }`; the client shows `error` as-is. |
 | Enumeration | Login always says "Invalid email or password". Signup returns 409 for a taken email (accepted until email verification exists). |
-| Ownership | `requireAuth` sets `req.user`. All note/block queries are scoped by `user_id`, and another user's note returns 404. |
+| Ownership | `requireSession` sets `req.user`. All note/block queries are scoped by `user_id`, and another user's note returns 404. |
 
 ### Definition of done (every ticket)
 - [x] Built with the Workflow above: tests first, then top-down checkpoints, each one explained and committed
@@ -135,28 +135,29 @@ committed.
 sends you to `/login`, and notes are scoped to their owner.
 
 ### Tasks
-- [ ] `src/middleware/requireAuth.ts` (session lookup via the auth service and the sessions
+- [x] `src/middleware/requireSession.ts` (session lookup via the auth service and the sessions
   repository): hash the cookie, look up an unexpired and unrevoked session,
   set `req.user`, sliding bump at most daily (updates `expires_at` and `last_used_at`)
-- [ ] `GET /api/auth/me` → `{ id, email }` or 401
-- [ ] Apply `requireAuth` + `user_id` scoping to any existing notes/blocks routes (blocks scoped
-  via a join to `notes`); another user's note → 404
-- [ ] Client: `client/src/AuthProvider.tsx` (calls `/api/auth/me` on load; state
+- [x] `GET /api/auth/me` → `{ id, email }` or 401
+- [ ] **Deferred until notes routes exist:** apply `requireSession` + `user_id` scoping to
+  notes/blocks routes (blocks scoped via a join to `notes`); another user's note → 404
+- [x] Client: `client/src/AuthProvider.tsx` (calls `/api/auth/me` on load; state
   `user | null | loading`)
-- [ ] Client: `RequireAuth` wrapper around the `Workspace` route in `client/src/App.tsx`; blank or
+- [x] Client: `RequireAuth` wrapper around the `Workspace` route in `client/src/App.tsx`; blank or
   loading state while pending (no login flash)
-- [ ] Client: a 401 from a protected API call → redirect to `/login`. **Excludes `/api/auth/*`**:
+- [x] Client: a 401 from a protected API call → redirect to `/login`. **Excludes `/api/auth/*`**:
   a wrong password (login 401) must show its error, and `AuthProvider`'s initial `/me` 401 must
   not bounce users off `/signup` or `/login`
 
 ### Acceptance tests
-- [ ] No cookie → 401
-- [ ] Garbage cookie → 401
-- [ ] Expired session → 401
-- [ ] Revoked session → 401
-- [ ] Valid session → 200 with the correct user
-- [ ] Sliding bump only writes when `last_used_at` is more than a day old
-- [ ] Cross-user note access → 404 (once notes routes exist)
+- [x] No cookie → 401
+- [x] Garbage cookie → 401
+- [x] Expired session → 401
+- [x] Revoked session → 401
+- [x] Valid session → 200 with the correct user
+- [x] Sliding bump only writes when `last_used_at` is more than a day old
+- [x] A dead session's cookie is cleared; `/me` responses are `Cache-Control: no-store`
+- [ ] **Deferred until notes routes exist:** cross-user note access → 404
 
 **Demo:** Sign up → reload stays in the workspace; delete the cookie → `/` redirects to `/login`.
 
