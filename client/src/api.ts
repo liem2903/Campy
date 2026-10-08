@@ -29,8 +29,9 @@ export async function signUp(email: string, password: string): Promise<User> {
 }
 
 // Checks the email and password and logs you in: the server sets the session cookie.
-export async function logIn(_email: string, _password: string): Promise<User> {
-  throw new Error('Not implemented')
+export async function logIn(email: string, password: string): Promise<User> {
+  const { data } = await api.post<User>('/auth/login', { email, password })
+  return data
 }
 
 // Who's logged in, from the session cookie. Rejects with a 401 when nobody is.
