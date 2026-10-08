@@ -32,6 +32,11 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Order: write the acceptance tests first, then go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
 - Each checkpoint stubs the next layer (real signature, `throw new Error('Not implemented')`) so every commit builds.
 - After each checkpoint, stop: explain what the code does and the decisions in it, and wait for the user's pushback before starting the next one.
+- Present each checkpoint plan in this order:
+  1. **What it achieves**, in plain words, including what's stubbed.
+  2. **Flow**: a small diagram of what calls what.
+  3. **Existing code it uses**: the pre-existing code the change calls or relies on (types, functions, components), shown inline with a line on what each piece does.
+  4. **The code**: `diff` blocks (green `+` lines) in call order, each with "Called by / Calls" notes, then a short "Decisions" list explaining each non-obvious choice.
 - Commit after every checkpoint.
 
 ## Sub-agents
