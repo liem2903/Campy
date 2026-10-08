@@ -94,7 +94,7 @@
   color: var(--text);
 }
 
-.login-link,
+.current-user,
 .theme-toggle {
   color: var(--muted);
 }

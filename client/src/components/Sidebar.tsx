@@ -1,4 +1,5 @@
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
+import { useAuth } from '../auth.ts'
 import { useNotes } from '../notes.ts'
 import { useTheme } from '../theme.ts'
 
@@ -7,6 +8,7 @@ function Sidebar() {
   const { noteId } = useParams()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
+  const { user } = useAuth()
 
   function handleNew() {
     navigate(`/notes/${createNote()}`)
@@ -45,9 +47,8 @@ function Sidebar() {
       <button type="button" className="sidebar-item theme-toggle" onClick={toggleTheme}>
         {theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}
       </button>
-      <Link to="/login" className="sidebar-item login-link">
-        Log in
-      </Link>
+      {/* Only rendered inside RequireAuth, so user is set; the ?. just satisfies the type. */}
+      <div className="sidebar-item current-user">{user?.email}</div>
     </aside>
   )
 }
