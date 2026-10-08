@@ -18,12 +18,24 @@ export async function create(
 
 // Not revoked and not expired; null otherwise.
 export async function findActiveByTokenHash(
-  _tokenHash: string, _db: Db = sql,
+  tokenHash: string, db: Db = sql,
 ): Promise<ActiveSession | null> {
-  throw new Error("Not implemented");
+  const [session] = await db<ActiveSession[]>`
+    select s.id, s.last_used_at, s.user_id, u.email
+    from sessions s
+    join users u on u.id = s.user_id
+    where s.token_hash = ${tokenHash}
+      and s.revoked_at is null
+      and s.expires_at > now()
+  `;
+  return session ?? null;
 }
 
 // Slides the session forward and marks it as just used.
-export async function bump(_id: string, _expiresAt: Date, _db: Db = sql): Promise<void> {
-  throw new Error("Not implemented");
+export async function bump(id: string, expiresAt: Date, db: Db = sql): Promise<void> {
+  await db`
+    update sessions
+    set expires_at = ${expiresAt}, last_used_at = now()
+    where id = ${id}
+  `;
 }
