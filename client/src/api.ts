@@ -28,6 +28,11 @@ export async function signUp(email: string, password: string): Promise<User> {
   return data
 }
 
+// Checks the email and password and logs you in: the server sets the session cookie.
+export async function logIn(_email: string, _password: string): Promise<User> {
+  throw new Error('Not implemented')
+}
+
 // Who's logged in, from the session cookie. Rejects with a 401 when nobody is.
 export async function getMe(): Promise<User> {
   const { data } = await api.get<User>('/auth/me')

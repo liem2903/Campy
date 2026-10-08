@@ -1,15 +1,32 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
+import { logIn } from '../api.ts'
+import { useAuth } from '../auth.ts'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { setUser } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  // No auth yet: submitting just goes to the home page.
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  // Where RequireAuth bounced them from, or the workspace home.
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/'
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    navigate('/')
+    setError('')
+    setSubmitting(true)
+    try {
+      setUser(await logIn(email, password))
+      // replace: Back shouldn't return to the login form.
+      navigate(from, { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -34,7 +51,14 @@ function LoginPage() {
             required
           />
         </label>
-        <button type="submit" className="primary">Log in</button>
+        {error && (
+          <p className="m-0 text-sm text-danger" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="primary" disabled={submitting}>
+          Log in
+        </button>
       </form>
       <p className="muted">
         No account yet? <Link to="/signup">Create one</Link>
