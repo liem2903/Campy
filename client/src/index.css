@@ -1,0 +1,60 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --text: #37352f;
+  --muted: #9b9a97;
+  --sidebar-bg: #f7f7f5;
+  --hover: rgba(55, 53, 47, 0.08);
+  --active: rgba(55, 53, 47, 0.12);
+  --accent: #2383e2;
+  --brand: #b08a62;
+  --danger: #d44c47;
+}
+
+/* Dark mode: follows the system unless the user picked a theme (data-theme on <html>). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #191919;
+    --text: #e6e6e4;
+    --muted: #7f7f7c;
+    --sidebar-bg: #202020;
+    --hover: rgba(255, 255, 255, 0.06);
+    --active: rgba(255, 255, 255, 0.1);
+    --brand: #d8bf9d;
+    --danger: #e5726d;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #191919;
+  --text: #e6e6e4;
+  --muted: #7f7f7c;
+  --sidebar-bg: #202020;
+  --hover: rgba(255, 255, 255, 0.06);
+  --active: rgba(255, 255, 255, 0.1);
+  --brand: #d8bf9d;
+  --danger: #e5726d;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+}

@@ -1,0 +1,238 @@
+.workspace {
+  display: flex;
+  height: 100%;
+}
+
+/* Sidebar */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+  padding: 12px 8px;
+  box-sizing: border-box;
+  background: var(--sidebar-bg);
+  overflow-y: auto;
+}
+
+.brand {
+  padding: 6px 10px 16px;
+  color: var(--brand);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.sidebar-item {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.sidebar-item:hover {
+  background: var(--hover);
+}
+
+.new-page {
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.page-list {
+  flex: 1;
+}
+
+.page-row {
+  position: relative;
+}
+
+.page-link {
+  padding-right: 28px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.page-link.active {
+  background: var(--active);
+  font-weight: 500;
+}
+
+.delete-page {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  padding: 0 6px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.page-row:hover .delete-page {
+  visibility: visible;
+}
+
+.delete-page:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.logout-button,
+.theme-toggle {
+  color: var(--muted);
+}
+
+.account-email {
+  margin: 8px 10px 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Page */
+
+.page {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.page-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 80px 48px 30vh;
+}
+
+.note-title,
+.note-body {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+}
+
+.note-title {
+  margin-bottom: 16px;
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.note-body {
+  min-height: 50vh;
+  font-size: 16px;
+  line-height: 1.6;
+  resize: none;
+  overflow: hidden;
+}
+
+.note-title::placeholder,
+.note-body::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.empty-state h1 {
+  font-size: 40px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.primary {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Login */
+
+.login {
+  max-width: 320px;
+  margin: 15vh auto 0;
+  padding: 0 16px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stack label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stack input {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--hover);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.stack input:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.auth-switch {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.auth-switch a {
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    width: 180px;
+  }
+
+  .page-content {
+    padding: 48px 16px 30vh;
+  }
+}
