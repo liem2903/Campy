@@ -33,6 +33,20 @@ describe("GET /api/auth/me", () => {
     const res = await me(makeApp());
     expect(res.status).toBe(401);
     expect(res.body).toEqual(notLoggedIn);
+    expect(res.get("Set-Cookie")).toBeUndefined();
+  });
+
+  it("clears the cookie when the session is dead", async () => {
+    const res = await me(makeApp(), "sid=garbage").expect(401);
+    const cookie = res.get("Set-Cookie")?.find((c) => c.startsWith("sid="));
+    expect(cookie).toMatch(/Expires=Thu, 01 Jan 1970/);
+  });
+
+  it("marks the response as not cacheable", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const res = await me(app, user.cookie).expect(200);
+    expect(res.get("Cache-Control")).toBe("no-store");
   });
 
   it("rejects a garbage cookie", async () => {
@@ -94,6 +108,10 @@ describe("GET /api/auth/me", () => {
     const after = await sessionOf(user.id);
     expect(after.last_used_at.getTime()).toBeGreaterThan(before.last_used_at.getTime());
     expect(after.expires_at.getTime()).toBeGreaterThan(before.expires_at.getTime());
-    expect(res.get("Set-Cookie")?.some((c) => c.startsWith("sid="))).toBe(true);
+    const cookie = res.get("Set-Cookie")?.find((c) => c.startsWith("sid="));
+    expect(cookie).toMatch(/HttpOnly/);
+    expect(cookie).toMatch(/SameSite=Lax/);
+    expect(cookie).toMatch(/Path=\//);
+    expect(cookie).toMatch(/Max-Age=2592000/); // 30 days
   });
 });

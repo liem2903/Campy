@@ -2,9 +2,10 @@ import { sql, type Db } from "../db/client.js";
 import type { Session, User } from "../db/types.js";
 
 // A live session plus the bits of its user that requireSession needs.
-export type ActiveSession = Pick<Session, "id" | "last_used_at"> & {
-  user_id: string;
+// stale: last used longer ago than staleAfterMs, by the DB's clock.
+export type ActiveSession = Pick<Session, "id" | "user_id"> & {
   email: User["email"];
+  stale: boolean;
 };
 
 export async function create(
@@ -18,10 +19,11 @@ export async function create(
 
 // Not revoked and not expired; null otherwise.
 export async function findActiveByTokenHash(
-  tokenHash: string, db: Db = sql,
+  tokenHash: string, staleAfterMs: number, db: Db = sql,
 ): Promise<ActiveSession | null> {
   const [session] = await db<ActiveSession[]>`
-    select s.id, s.last_used_at, s.user_id, u.email
+    select s.id, s.user_id, u.email,
+           s.last_used_at < now() - make_interval(secs => ${staleAfterMs / 1000}) as stale
     from sessions s
     join users u on u.id = s.user_id
     where s.token_hash = ${tokenHash}
@@ -31,11 +33,15 @@ export async function findActiveByTokenHash(
   return session ?? null;
 }
 
-// Slides the session forward and marks it as just used.
-export async function bump(id: string, expiresAt: Date, db: Db = sql): Promise<void> {
-  await db`
+// Slides the session forward if it's still stale; false if another request got there first.
+export async function bump(
+  id: string, ttlMs: number, staleAfterMs: number, db: Db = sql,
+): Promise<boolean> {
+  const rows = await db`
     update sessions
-    set expires_at = ${expiresAt}, last_used_at = now()
+    set expires_at = now() + make_interval(secs => ${ttlMs / 1000}), last_used_at = now()
     where id = ${id}
+      and last_used_at < now() - make_interval(secs => ${staleAfterMs / 1000})
   `;
+  return rows.count === 1;
 }

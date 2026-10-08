@@ -35,14 +35,15 @@ export type AuthResult = { user: Pick<User, "id" | "email">; bumped: boolean };
 
 // Looks up an active session by token; bumps it if last used over a day ago.
 export async function authenticate(token: string): Promise<AuthResult | null> {
-  const session = await sessionsRepository.findActiveByTokenHash(hashToken(token));
+  const session = await sessionsRepository.findActiveByTokenHash(hashToken(token), bumpAfterMs);
   if (!session) return null;
 
   const user = { id: session.user_id, email: session.email };
-  if (Date.now() - session.last_used_at.getTime() < bumpAfterMs) return { user, bumped: false };
+  if (!session.stale) return { user, bumped: false };
 
-  await sessionsRepository.bump(session.id, new Date(Date.now() + sessionTtlMs));
-  return { user, bumped: true };
+  // bump re-checks staleness, so of two parallel requests only one writes.
+  const bumped = await sessionsRepository.bump(session.id, sessionTtlMs, bumpAfterMs);
+  return { user, bumped };
 }
 
 // Only this hash is stored; the raw token lives only in the cookie.
