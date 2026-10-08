@@ -32,12 +32,16 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Order: write the acceptance tests first, then go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
 - Each checkpoint stubs the next layer (real signature, `throw new Error('Not implemented')`) so every commit builds.
 - After each checkpoint, stop: explain what the code does and the decisions in it, and wait for the user's pushback before starting the next one.
+- Tag every checkpoint with its blast radius, i.e. how much existing code it can break. When unsure, pick the higher tag.
+  - 🟢: new code in one place that nothing existing calls yet (a new file, a stub, a test). No existing signatures or behavior change. A mistake can't spread.
+  - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
+  - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build and tests before committing.
 - Present each checkpoint plan in this order:
-  1. **What it achieves**, in plain words, including what's stubbed.
+  1. **What it achieves**, in plain words, including what's stubbed. Start with the blast-radius tag and one line on why it gets that tag.
   2. **Flow**: a small diagram of what calls what.
   3. **Existing code it uses**: the pre-existing code the change calls or relies on (types, functions, components), shown inline with a line on what each piece does.
   4. **The code**: `diff` blocks (green `+` lines) in call order, each with "Called by / Calls" notes, then a short "Decisions" list explaining each non-obvious choice.
-- Commit after every checkpoint.
+- Commit after every checkpoint. Put the tag in the message, e.g. `Feat 1 Ticket 3: Checkpoint 4 🟡 - controller`.
 
 ## Sub-agents
 - After back-end changes, use the `backend-reviewer` sub-agent (`.claude/agents/backend-reviewer.md`) to review them before committing.
