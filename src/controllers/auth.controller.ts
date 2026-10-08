@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { EmailTakenError } from "../errors.js";
+import { EmailTakenError, InvalidCredentialsError } from "../errors.js";
 import { setSessionCookie } from "../middleware/sessionCookie.js";
 import * as authService from "../services/auth.service.js";
 
@@ -35,8 +35,30 @@ export function authController({ secureCookies }: AuthControllerOptions) {
       }
     },
 
-    async logIn(_req: Request, _res: Response, _next: NextFunction): Promise<void> {
-      throw new Error("Not implemented");
+    async logIn(req: Request, res: Response, next: NextFunction): Promise<void> {
+      const { email, password } = req.body as { email?: unknown; password?: unknown };
+      const trimmed = typeof email === "string" ? email.trim() : "";
+      if (!trimmed || typeof password !== "string" || !password) {
+        res.status(400).json({ error: "Email and password are required" });
+        return;
+      }
+      // Signup caps passwords at 128, so a longer one can't match: skip the argon2 work.
+      if (password.length > 128) {
+        res.status(401).json({ error: new InvalidCredentialsError().message });
+        return;
+      }
+
+      try {
+        const { user, token } = await authService.logIn(trimmed, password);
+        setSessionCookie(res, token, secureCookies);
+        res.json(user);
+      } catch (err) {
+        if (err instanceof InvalidCredentialsError) {
+          res.status(401).json({ error: err.message });
+          return;
+        }
+        next(err); // unexpected → the JSON error handler in app.ts
+      }
     },
 
     me(req: Request, res: Response): void {

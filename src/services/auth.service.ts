@@ -50,3 +50,9 @@ export async function authenticate(token: string): Promise<AuthResult | null> {
 function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
+
+// Checks the password and creates a session. Throws InvalidCredentialsError for a
+// wrong password or unknown email. Also deletes the user's dead sessions.
+export async function logIn(_email: string, _password: string): Promise<SignUpResult> {
+  throw new Error("Not implemented");
+}

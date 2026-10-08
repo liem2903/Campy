@@ -4,3 +4,10 @@ export class EmailTakenError extends Error {
     super("An account with this email already exists");
   }
 }
+
+// Wrong password and unknown email share this, so a response never reveals which.
+export class InvalidCredentialsError extends Error {
+  constructor() {
+    super("Invalid email or password");
+  }
+}
