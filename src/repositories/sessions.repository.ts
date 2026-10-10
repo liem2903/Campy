@@ -47,6 +47,10 @@ export async function bump(
 }
 
 // Deletes the user's expired or revoked sessions; they can never authenticate again.
-export async function deleteDeadForUser(_userId: string, _db: Db = sql): Promise<void> {
-  throw new Error("Not implemented");
+export async function deleteDeadForUser(userId: string, db: Db = sql): Promise<void> {
+  await db`
+    delete from sessions
+    where user_id = ${userId}
+      and (revoked_at is not null or expires_at <= now())
+  `;
 }
