@@ -32,6 +32,7 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Order: write the acceptance tests first, then go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
 - Each checkpoint stubs the next layer (real signature, `throw new Error('Not implemented')`) so every commit builds.
 - After each checkpoint, stop: explain what the code does and the decisions in it, and wait for the user's pushback before starting the next one.
+- Before every commit, quiz the user on the checkpoint: one question per message, wait for the answer, correct misunderstandings, then ask the next. Commit only once they understand it. This applies to every checkpoint, including test-only ones, and a request to "commit" doesn't skip it.
 - Tag every checkpoint with its blast radius, i.e. how much existing code it can break. When unsure, pick the higher tag.
   - 🟢: new code in one place that nothing existing calls yet (a new file, a stub, a test). No existing signatures or behavior change. A mistake can't spread.
   - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
