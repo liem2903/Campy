@@ -15,8 +15,9 @@ export function signupLimiter(limit = 5) {
   });
 }
 
-// 20 login attempts per 15 minutes per IP, whatever the email: stops one IP
-// from trying many accounts.
+// 20 failed logins per 15 minutes per IP, whatever the email: stops one IP
+// from trying many accounts. Successful logins don't count, so users sharing an
+// IP (campus Wi-Fi) don't lock each other out.
 export function loginIpLimiter(limit = 20) {
   return rateLimit({
     windowMs: fifteenMinutes,
@@ -24,6 +25,7 @@ export function loginIpLimiter(limit = 20) {
     message,
     standardHeaders: "draft-8",
     legacyHeaders: false,
+    skipSuccessfulRequests: true,
   });
 }
 

@@ -109,4 +109,25 @@ describe("POST /api/auth/login", () => {
     expect(res.status).toBe(429);
     expect(res.body).toEqual({ error: "Too many attempts, please try again later." });
   });
+
+  it("doesn't count successful logins against the per-IP limit", async () => {
+    // Real limits: no overrides. One IP, like a shared campus network.
+    const app = makeApp({ limits: {} });
+    const user = await signedUp(app);
+    for (let i = 0; i < 21; i++) {
+      await logIn(app, { email: user.email, password }).expect(200);
+    }
+  });
+
+  it("rate-limits the 21st failed login from one IP across many emails", async () => {
+    // Real limits: no overrides. A new email each time dodges the per-email limiter.
+    const app = makeApp({ limits: {} });
+    for (let i = 0; i < 20; i++) {
+      await logIn(app, { email: testEmail(), password }).expect(401);
+    }
+
+    const res = await logIn(app, { email: testEmail(), password });
+    expect(res.status).toBe(429);
+    expect(res.body).toEqual({ error: "Too many attempts, please try again later." });
+  });
 });
