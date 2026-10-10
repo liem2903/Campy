@@ -42,5 +42,5 @@ export async function getMe(): Promise<User> {
 
 // Ends the session on the server, which also clears the cookie.
 export async function logOut(): Promise<void> {
-  throw new Error('Not implemented')
+  await api.post('/auth/logout', {})
 }
