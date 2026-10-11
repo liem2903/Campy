@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { EmailTakenError, InvalidCredentialsError } from "../errors.js";
-import { setSessionCookie } from "../middleware/sessionCookie.js";
+import { clearSessionCookie, setSessionCookie } from "../middleware/sessionCookie.js";
 import * as authService from "../services/auth.service.js";
 
 export type AuthControllerOptions = { secureCookies: boolean };
@@ -65,8 +65,16 @@ export function authController({ secureCookies }: AuthControllerOptions) {
       res.json(req.user); // requireSession guarantees it's set
     },
 
-    async logOut(_req: Request, _res: Response, _next: NextFunction): Promise<void> {
-      throw new Error("Not implemented");
+    // 204 with or without a live session. A DB failure is a 500 and keeps the cookie.
+    async logOut(req: Request, res: Response, next: NextFunction): Promise<void> {
+      try {
+        const token: unknown = req.cookies?.sid;
+        if (typeof token === "string") await authService.logOut(token);
+        clearSessionCookie(res, secureCookies);
+        res.status(204).end();
+      } catch (err) {
+        next(err); // unexpected → the JSON error handler in app.ts
+      }
     },
   };
 }

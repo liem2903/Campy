@@ -68,3 +68,8 @@ export async function logIn(email: string, password: string): Promise<SignUpResu
   const token = await createSession(user.id);
   return { user: { id: user.id, email: user.email }, token };
 }
+
+// Revokes the session with this token, if it's still live. A no-op otherwise.
+export async function logOut(_token: string): Promise<void> {
+  throw new Error("Not implemented");
+}
