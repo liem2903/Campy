@@ -17,5 +17,6 @@ export function authRoutes(options: AppOptions): Router {
     auth.logIn,
   );
   router.get("/me", requireSession({ secureCookies }), auth.me);
+  router.post("/logout", auth.logOut);
   return router;
 }
