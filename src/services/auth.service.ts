@@ -70,6 +70,6 @@ export async function logIn(email: string, password: string): Promise<SignUpResu
 }
 
 // Revokes the session with this token, if it's still live. A no-op otherwise.
-export async function logOut(_token: string): Promise<void> {
-  throw new Error("Not implemented");
+export async function logOut(token: string): Promise<void> {
+  await sessionsRepository.revokeByTokenHash(hashToken(token));
 }

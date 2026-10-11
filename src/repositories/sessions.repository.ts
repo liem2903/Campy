@@ -54,3 +54,8 @@ export async function deleteDeadForUser(userId: string, db: Db = sql): Promise<v
       and (revoked_at is not null or expires_at <= now())
   `;
 }
+
+// Sets revoked_at on the unrevoked session with this hash; a no-op if none matches.
+export async function revokeByTokenHash(_tokenHash: string, _db: Db = sql): Promise<void> {
+  throw new Error("Not implemented");
+}
