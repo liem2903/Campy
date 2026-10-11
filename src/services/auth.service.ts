@@ -69,7 +69,7 @@ export async function logIn(email: string, password: string): Promise<SignUpResu
   return { user: { id: user.id, email: user.email }, token };
 }
 
-// Revokes the session with this token, if it's still live. A no-op otherwise.
+// Revokes the session with this token, if it isn't already revoked. A no-op otherwise.
 export async function logOut(token: string): Promise<void> {
   await sessionsRepository.revokeByTokenHash(hashToken(token));
 }
