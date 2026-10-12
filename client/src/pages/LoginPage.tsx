@@ -4,6 +4,7 @@ import { logIn } from '../api.ts'
 import { useAuth } from '../auth.ts'
 import BrainMark from '../components/BrainMark.tsx'
 import NoteShowcase from '../components/NoteShowcase.tsx'
+import { BIOLOGY_NOTE } from '../sampleNotes.ts'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -89,7 +90,7 @@ function LoginPage() {
         <p className="auth-foot">Write it down. Then prove you know it.</p>
       </main>
 
-      <NoteShowcase />
+      <NoteShowcase note={BIOLOGY_NOTE} />
     </div>
   )
 }

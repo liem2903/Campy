@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react'
-
-// A sample note that types itself out beside the login form, showing what Campi is for.
-const TITLE = 'Cellular respiration'
-const LINES = [
-  'Glycolysis splits glucose into two pyruvate, net 2 ATP.',
-  'The Krebs cycle runs in the [[mitochondria]], twice per glucose.',
-  'Most ATP comes from the [[electron transport chain]].',
-]
-const TOTAL = LINES.reduce((sum, line) => sum + line.length, 0)
+import type { SampleNote } from '../sampleNotes.ts'
 
 // Graph-view nodes (x, y in a 100×100 box) and the edges between them.
 const NODES = [
@@ -32,27 +24,26 @@ function withLinks(text: string) {
   )
 }
 
-function NoteShowcase() {
+function NoteShowcase({ note }: { note: SampleNote }) {
+  const total = note.lines.join('').length
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const [typed, setTyped] = useState(reduceMotion ? TOTAL : 0)
+  const [typed, setTyped] = useState(reduceMotion ? total : 0)
 
   useEffect(() => {
-    if (typed >= TOTAL) return
+    if (typed >= total) return
     // Uneven delays read as a person typing; the first one waits for the card to settle in.
     const delay = typed === 0 ? 1100 : 28 + Math.random() * 45
     const timer = setTimeout(() => setTyped(typed + 1), delay)
     return () => clearTimeout(timer)
-  }, [typed])
+  }, [typed, total])
 
-  let remaining = typed
-  const lines = LINES.map((line) => {
-    const shown = line.slice(0, Math.max(0, remaining))
-    remaining -= line.length
-    return shown
-  })
+  // Each line shows whatever part of the shared `typed` count falls past its start.
+  const lines = note.lines.map((line, i) =>
+    line.slice(0, Math.max(0, typed - note.lines.slice(0, i).join('').length)),
+  )
   // The caret sits on the line being typed, then rests at the end of the last one.
-  const unfinished = lines.findIndex((line, i) => line.length < LINES[i].length)
-  const activeLine = unfinished === -1 ? LINES.length - 1 : unfinished
+  const unfinished = lines.findIndex((line, i) => line.length < note.lines[i].length)
+  const activeLine = unfinished === -1 ? note.lines.length - 1 : unfinished
 
   return (
     <aside className="showcase" aria-hidden="true">
@@ -66,8 +57,8 @@ function NoteShowcase() {
       </svg>
 
       <div className="note-card">
-        <div className="note-card-crumbs">Biology / Unit 3</div>
-        <h2>{TITLE}</h2>
+        <div className="note-card-crumbs">{note.crumbs}</div>
+        <h2>{note.title}</h2>
         <ul>
           {lines.map((line, i) =>
             line || i === activeLine ? (
@@ -78,7 +69,7 @@ function NoteShowcase() {
             ) : null,
           )}
         </ul>
-        <div className={`study-chip${typed >= TOTAL ? ' shown' : ''}`}>
+        <div className={`study-chip${typed >= total ? ' shown' : ''}`}>
           <span className="study-chip-dot" />3 flashcards ready · Quiz me
         </div>
       </div>
