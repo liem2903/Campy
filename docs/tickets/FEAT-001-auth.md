@@ -196,8 +196,10 @@ sends you to `/login`, and notes are scoped to their owner.
   idempotent (204 even without a session)
 - [x] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
   navigates to `/login`
-- [ ] After merge: create the hosted Supabase project (developer) → `supabase link` →
-  `npm run db:push`. **The migration is frozen from here; later changes need new migrations.**
+- [x] After merge: create the hosted Supabase project (`campi`, ref `yeaehjqkkblndqqnpgri`,
+  ap-southeast-2) → `supabase link`
+- [ ] `npm run db:push`: **deferred to the first deploy**, so FEAT-002 can still adjust the schema.
+  **The migrations are frozen from then on; later changes need new migrations.**
 
 ### Acceptance tests
 - [x] After logout, the old cookie → 401 on `/api/auth/me`
