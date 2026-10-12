@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { logIn } from '../api.ts'
 import { useAuth } from '../auth.ts'
+import BrainMark from '../components/BrainMark.tsx'
+import NoteShowcase from '../components/NoteShowcase.tsx'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -30,40 +32,65 @@ function LoginPage() {
   }
 
   return (
-    <main className="login">
-      <h1>Log in</h1>
-      <form className="stack" onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        {error && (
-          <p className="m-0 text-sm text-danger" role="alert">
-            {error}
+    <div className="auth">
+      <main className="auth-panel">
+        <Link to="/login" className="auth-brand">
+          <BrainMark />
+          Campi
+        </Link>
+
+        <div className="auth-body">
+          <h1 className="auth-title">
+            Welcome <em>back.</em>
+          </h1>
+          <p className="auth-lede">Your notes are right where you left them.</p>
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label className="field">
+              <span>Email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="you@school.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </label>
+            {error && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button type="submit" className="auth-submit" disabled={submitting}>
+              {submitting ? 'Opening your notes…' : 'Continue'}
+              <span className="auth-submit-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            New to Campi? <Link to="/signup">Create an account</Link>
           </p>
-        )}
-        <button type="submit" className="primary" disabled={submitting}>
-          Log in
-        </button>
-      </form>
-      <p className="muted">
-        No account yet? <Link to="/signup">Create one</Link>
-      </p>
-    </main>
+        </div>
+
+        <p className="auth-foot">Write it down. Then prove you know it.</p>
+      </main>
+
+      <NoteShowcase />
+    </div>
   )
 }
 

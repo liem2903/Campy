@@ -2,10 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { signUp } from '../api.ts'
 import { useAuth } from '../auth.ts'
-
-// No preflight reset yet, so inputs and buttons clear their browser border and font themselves.
-const inputClass =
-  'rounded-md border-0 bg-hover px-2.5 py-2 text-text [font:inherit] outline-none focus:ring-2 focus:ring-accent'
+import BrainMark from '../components/BrainMark.tsx'
+import NoteShowcase from '../components/NoteShowcase.tsx'
 
 function SignupPage() {
   const navigate = useNavigate()
@@ -29,48 +27,67 @@ function SignupPage() {
   }
 
   return (
-    <main className="mx-auto mt-[15vh] max-w-xs px-4">
-      <h1>Sign up</h1>
-      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-        <label className="flex flex-col gap-1 text-sm text-muted">
-          Email
-          <input
-            className={inputClass}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm text-muted">
-          Password
-          <input
-            className={inputClass}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            minLength={8}
-            maxLength={128}
-            required
-          />
-        </label>
-        {error && (
-          <p className="m-0 text-sm text-danger" role="alert">
-            {error}
+    <div className="auth">
+      <main className="auth-panel">
+        <Link to="/login" className="auth-brand">
+          <BrainMark />
+          Campi
+        </Link>
+
+        <div className="auth-body">
+          <h1 className="auth-title">
+            Start a <em>notebook.</em>
+          </h1>
+          <p className="auth-lede">Write notes, then get quizzed on them.</p>
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <label className="field">
+              <span>Email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="you@school.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                maxLength={128}
+                required
+              />
+            </label>
+            {error && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button type="submit" className="auth-submit" disabled={submitting}>
+              {submitting ? 'Setting things up…' : 'Create account'}
+              <span className="auth-submit-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            Already have an account? <Link to="/login">Log in</Link>
           </p>
-        )}
-        <button
-          type="submit"
-          className="cursor-pointer rounded-md border-0 bg-accent px-3.5 py-2 text-white [font:inherit] disabled:opacity-60"
-          disabled={submitting}
-        >
-          Sign up
-        </button>
-      </form>
-      <p className="text-muted">
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </main>
+        </div>
+
+        <p className="auth-foot">Write it down. Then prove you know it.</p>
+      </main>
+
+      <NoteShowcase />
+    </div>
   )
 }
 
