@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import request from "supertest";
 import { afterAll } from "vitest";
 import { createApp, type AppOptions } from "../src/app.js";
 import { sql } from "../src/db/client.js";
@@ -20,6 +21,17 @@ export function testEmail(): string {
   const email = `test-${randomUUID()}@example.com`;
   createdEmails.push(email);
   return email;
+}
+
+// Signs up a fresh user and returns them with their "sid=..." cookie.
+export async function signedUp(app: ReturnType<typeof makeApp>) {
+  const email = testEmail();
+  const res = await request(app)
+    .post("/api/auth/signup")
+    .send({ email, password: "correct horse" })
+    .expect(201);
+  const cookie = res.get("Set-Cookie")!.find((c) => c.startsWith("sid="))!.split(";")[0];
+  return { id: res.body.id as string, email, cookie };
 }
 
 afterAll(async () => {

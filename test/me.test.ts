@@ -1,20 +1,9 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { sql } from "../src/db/client.js";
-import { makeApp, testEmail } from "./helpers.js";
+import { makeApp, signedUp } from "./helpers.js";
 
 const notLoggedIn = { error: "You're not logged in" };
-
-// Signs up a fresh user and returns them with their "sid=..." cookie.
-async function signedUp(app: ReturnType<typeof makeApp>) {
-  const email = testEmail();
-  const res = await request(app)
-    .post("/api/auth/signup")
-    .send({ email, password: "correct horse" })
-    .expect(201);
-  const cookie = res.get("Set-Cookie")!.find((c) => c.startsWith("sid="))!.split(";")[0];
-  return { id: res.body.id as string, email, cookie };
-}
 
 function me(app: ReturnType<typeof makeApp>, cookie?: string) {
   const req = request(app).get("/api/auth/me");

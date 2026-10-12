@@ -1,20 +1,9 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { sql } from "../src/db/client.js";
-import { makeApp, testEmail } from "./helpers.js";
+import { makeApp, signedUp } from "./helpers.js";
 
 type App = ReturnType<typeof makeApp>;
-
-// A fresh user and their "sid=..." cookie, ready to send back.
-async function signedUp(app: App) {
-  const email = testEmail();
-  const res = await request(app)
-    .post("/api/auth/signup")
-    .send({ email, password: "correct horse" })
-    .expect(201);
-  const cookie = res.get("Set-Cookie")!.find((c) => c.startsWith("sid="))!.split(";")[0];
-  return { id: res.body.id as string, email, cookie };
-}
 
 // Sends {} as JSON, like the client will, so the 415 check passes.
 function logOut(app: App, cookie?: string) {
