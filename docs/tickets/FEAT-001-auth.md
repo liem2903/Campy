@@ -168,20 +168,20 @@ sends you to `/login`, and notes are scoped to their owner.
 **Slice:** An existing user logs in from `/login` and lands in the workspace.
 
 ### Tasks
-- [ ] `POST /api/auth/login`:
+- [x] `POST /api/auth/login`:
   - Always responds "Invalid email or password" on failure
   - Runs a dummy argon2 verify when the email doesn't exist (timing parity)
   - Deletes that user's expired or revoked sessions opportunistically
   - Limiters: 5 per 15 min per IP+email, 20 per 15 min per IP
-- [ ] Client: wire `LoginPage` to the API, show the error message, redirect to `/` (or the
+- [x] Client: wire `LoginPage` to the API, show the error message, redirect to `/` (or the
   originally requested page)
 
 ### Acceptance tests
-- [ ] Correct credentials → 200 + cookie that works on `/api/auth/me`
-- [ ] Wrong password and unknown email → both 401 with an identical body
-- [ ] Email matched case-insensitively
-- [ ] 6th bad attempt for one email within 15 min → 429
-- [ ] Expired and revoked sessions for that user are deleted on login
+- [x] Correct credentials → 200 + cookie that works on `/api/auth/me`
+- [x] Wrong password and unknown email → both 401 with an identical body
+- [x] Email matched case-insensitively
+- [x] 6th bad attempt for one email within 15 min → 429
+- [x] Expired and revoked sessions for that user are deleted on login
 
 **Demo:** Log in with the Ticket 1 account; a wrong password shows the error.
 
@@ -192,18 +192,18 @@ sends you to `/login`, and notes are scoped to their owner.
 **Slice:** Clicking logout ends the session on the server and returns you to `/login`.
 
 ### Tasks
-- [ ] `POST /api/auth/logout`: set `revoked_at` on the current session, clear the cookie,
+- [x] `POST /api/auth/logout`: set `revoked_at` on the current session, clear the cookie,
   idempotent (204 even without a session)
-- [ ] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
+- [x] Client: logout button in `Sidebar`; sends `{}` as JSON, clears the `AuthProvider` user and
   navigates to `/login`
 - [ ] After merge: create the hosted Supabase project (developer) → `supabase link` →
   `npm run db:push`. **The migration is frozen from here; later changes need new migrations.**
 
 ### Acceptance tests
-- [ ] After logout, the old cookie → 401 on `/api/auth/me`
-- [ ] Logout response clears the `sid` cookie
-- [ ] Logout with no cookie → 204
-- [ ] Logout without a JSON `Content-Type` → 415
+- [x] After logout, the old cookie → 401 on `/api/auth/me`
+- [x] Logout response clears the `sid` cookie
+- [x] Logout with no cookie → 204
+- [x] Logout without a JSON `Content-Type` → 415
 
 **Demo:** Log in → log out → reload or back button stays on `/login`.
 
@@ -211,5 +211,5 @@ sends you to `/login`, and notes are scoped to their owner.
 
 ## Overall verification (after Ticket 4)
 - [ ] Full flow in `npm run dev:all`: sign up → reload → log out → log in → 6 bad logins → 429
-- [ ] `npm run build` and `npm test` pass
+- [x] `npm run build` and `npm test` pass
 - [ ] `curl localhost:3000/api/auth/me` without a cookie → 401
