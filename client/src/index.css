@@ -29,6 +29,9 @@
   --accent: #2383e2;
   --brand: #b08a62;
   --danger: #e03e3e;
+  --serif: 'Newsreader', Georgia, serif;
+  --line: color-mix(in srgb, var(--text) 14%, transparent);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Dark mode: follows the system unless the user picked a theme (data-theme on <html>). */

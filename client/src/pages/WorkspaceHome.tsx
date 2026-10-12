@@ -12,14 +12,19 @@ function WorkspaceHome() {
 
   return (
     <div className="page-content empty-state">
-      <h1>Welcome to Campi</h1>
-      <p className="muted">You don't have any pages yet.</p>
+      <h1 className="auth-title">
+        A blank <em>page.</em>
+      </h1>
+      <p className="auth-lede">Write a note, then turn it into flashcards and quizzes.</p>
       <button
         type="button"
-        className="primary"
+        className="auth-submit"
         onClick={() => navigate(`/notes/${createNote()}`)}
       >
         Create your first page
+        <span className="auth-submit-arrow" aria-hidden="true">
+          →
+        </span>
       </button>
     </div>
   )

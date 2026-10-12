@@ -8,27 +8,63 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 240px;
+  width: 248px;
   flex-shrink: 0;
-  padding: 12px 8px;
+  padding: 22px 12px 14px;
   box-sizing: border-box;
+  border-right: 1px solid var(--line);
   background: var(--sidebar-bg);
   overflow-y: auto;
 }
 
-.brand {
-  padding: 6px 10px 16px;
-  color: var(--brand);
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  text-decoration: none;
+.sidebar-brand {
+  margin: 0 0 22px 8px;
+}
+
+.new-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 20px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), opacity 0.2s;
+}
+
+.new-page:hover { opacity: 0.88; }
+.new-page:active { transform: scale(0.985); }
+.new-page:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.new-page-plus {
+  font-size: 17px;
+  line-height: 1;
+  transition: transform 0.25s var(--ease);
+}
+
+.new-page:hover .new-page-plus {
+  transform: rotate(90deg);
+}
+
+.sidebar-label {
+  margin: 0 10px 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sidebar-item {
   display: block;
   width: 100%;
-  padding: 5px 10px;
+  padding: 6px 10px;
   border: none;
   border-radius: 6px;
   background: none;
@@ -39,15 +75,11 @@
   text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
+  transition: background 0.15s;
 }
 
 .sidebar-item:hover {
   background: var(--hover);
-}
-
-.new-page {
-  color: var(--muted);
-  margin-bottom: 8px;
 }
 
 .page-list {
@@ -59,15 +91,34 @@
 }
 
 .page-link {
+  position: relative;
+  padding-left: 22px;
   padding-right: 28px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* A small dot before each page; the open one turns brand-coloured. */
+.page-link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line);
+  transform: translateY(-50%);
+}
+
 .page-link.active {
   background: var(--active);
   font-weight: 500;
+}
+
+.page-link.active::before {
+  background: var(--brand);
 }
 
 .delete-page {
@@ -94,16 +145,63 @@
   color: var(--text);
 }
 
-.current-user,
-.theme-toggle {
-  color: var(--muted);
+.sidebar-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
-/* Page */
+.current-user {
+  padding: 0 10px 6px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.sidebar-actions .sidebar-item {
+  width: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sidebar-actions .sidebar-item:hover {
+  color: var(--text);
+}
+
+/* Page: plain while writing; the dotted canvas only behind the empty and not-found states */
 
 .page {
   flex: 1;
   overflow-y: auto;
+}
+
+.page:has(.empty-state) {
+  background:
+    radial-gradient(circle, var(--line) 1px, transparent 1.2px) 0 0 / 22px 22px,
+    var(--sidebar-bg);
+}
+
+.paper {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 48px 30vh;
+  animation: settle-flat 0.7s var(--ease) both;
+}
+
+.paper-crumbs {
+  margin: 0 0 36px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .page-content {
@@ -125,15 +223,17 @@
 }
 
 .note-title {
-  margin-bottom: 16px;
-  font-size: 40px;
-  font-weight: 700;
+  margin-bottom: 18px;
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 
 .note-body {
   min-height: 50vh;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
   resize: none;
   overflow: hidden;
 }
@@ -144,22 +244,22 @@
   opacity: 0.6;
 }
 
-.empty-state h1 {
-  font-size: 40px;
+/* Empty and not-found states reuse the auth headline, lede and button */
+
+.empty-state {
+  max-width: 440px;
+  padding-top: 22vh;
 }
 
-.muted {
-  color: var(--muted);
+.empty-state > * {
+  animation: rise 0.7s var(--ease) both;
 }
+.empty-state > :nth-child(2) { animation-delay: 0.06s; }
+.empty-state > :nth-child(3) { animation-delay: 0.14s; }
 
-.primary {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
+.empty-state .auth-submit {
+  display: inline-flex;
+  text-decoration: none;
 }
 
 /* Not-found page (shares the old narrow centred layout) */
@@ -173,9 +273,6 @@
 /* Auth: form on the left, a self-writing note on the right */
 
 .auth {
-  --serif: 'Newsreader', Georgia, serif;
-  --line: color-mix(in srgb, var(--text) 14%, transparent);
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   min-height: 100%;
@@ -200,7 +297,7 @@
   text-decoration: none;
 }
 
-.auth-brand-mark {
+.brand-mark {
   width: 24px;
   height: 24px;
   color: var(--brand);
@@ -482,6 +579,10 @@
   from { opacity: 0; transform: translateY(24px) rotate(1deg); }
 }
 
+@keyframes settle-flat {
+  from { opacity: 0; transform: translateY(16px); }
+}
+
 @keyframes drift {
   50% { transform: translate(0.8px, -1.2px); }
 }
@@ -501,7 +602,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .auth *,
-  .auth *::before {
+  .auth *::before,
+  .workspace * {
     animation: none !important;
     transition: none !important;
   }
@@ -521,5 +623,13 @@
 
   .page-content {
     padding: 48px 16px 30vh;
+  }
+
+  .paper {
+    padding: 40px 16px 30vh;
+  }
+
+  .note-title {
+    font-size: 34px;
   }
 }

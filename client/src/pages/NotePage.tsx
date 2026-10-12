@@ -18,19 +18,25 @@ function NotePage() {
 
   if (!note) {
     return (
-      <div className="page-content">
-        <h1>This page doesn't exist</h1>
-        <p>
-          <Link to="/">Go home</Link>
-        </p>
+      <div className="page-content empty-state">
+        <h1 className="auth-title">
+          Nothing <em>here.</em>
+        </h1>
+        <p className="auth-lede">This page doesn't exist, or it was deleted.</p>
+        <Link to="/" className="auth-submit">
+          Back to your notes
+          <span className="auth-submit-arrow" aria-hidden="true">
+            →
+          </span>
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="page-content">
+    <article key={note.id} className="paper">
+      <p className="paper-crumbs">Notes / {note.title || 'Untitled'}</p>
       <input
-        key={note.id}
         className="note-title"
         value={note.title}
         onChange={(e) => updateNote(note.id, { title: e.target.value })}
@@ -44,7 +50,7 @@ function NotePage() {
         onChange={(e) => updateNote(note.id, { body: e.target.value })}
         placeholder="Start writing..."
       />
-    </div>
+    </article>
   )
 }
 
