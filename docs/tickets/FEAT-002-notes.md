@@ -57,7 +57,9 @@ limiting the notes endpoints, migrating existing localStorage notes, soft delete
 The page opens immediately, without waiting for the server.
 
 **Interim behavior:** the sidebar list, the note page and editing still use localStorage. The new
-note is added there as well as on the server.
+note is added there as well as on the server. The create retry loop stops when the note is deleted
+locally, but not on logout: the localStorage list survives logout, so the note still "exists". This
+closes in Ticket 2, when each user's list comes from the server.
 
 ### Checkpoint 0 🟢: Tests (written first, failing)
 - [ ] Move the `signedUp(app)` helper from `test/me.test.ts` into `test/helpers.ts` so every
@@ -67,13 +69,13 @@ note is added there as well as on the server.
 ### Checkpoint 1 🟡: Page
 - [ ] `NotesProvider.createNote()` keeps returning the new `crypto.randomUUID()` synchronously,
   so `Sidebar` and `WorkspaceHome` navigate at once. It adds the note locally, then calls
-  `createNote(id)` in `api.ts`.
+  `createNoteOnServer(id)` in `api.ts`.
 - [ ] A failed create retries every 3s until it succeeds. On a 409, generate a new id, swap it
   into local state, `navigate(..., { replace: true })` to the new URL, and retry.
-- [ ] Stub `createNote()` in `client/src/api.ts`
+- [ ] Stub `createNoteOnServer()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
-- [ ] `createNote(id)` → `POST /api/notes { id }` → `NoteDetail`
+- [ ] `createNoteOnServer(id)` → `POST /api/notes { id }` → `'created' | 'taken'` (409 → `'taken'`)
 
 ### Checkpoint 3 🔴: Route layer
 🔴 because it changes shared app wiring: `src/app.ts` mounts a new router behind `requireSession`.

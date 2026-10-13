@@ -44,3 +44,8 @@ export async function getMe(): Promise<User> {
 export async function logOut(): Promise<void> {
   await api.post('/auth/logout', {})
 }
+
+// Creates the note on the server under the client's id. 'taken' = 409 Conflict (another user has it).
+export async function createNoteOnServer(_id: string): Promise<'created' | 'taken'> {
+  throw new Error('Not implemented')
+}
