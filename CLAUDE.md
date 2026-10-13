@@ -32,11 +32,13 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Order: write the acceptance tests first, then go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
 - Each checkpoint stubs the next layer (real signature, `throw new Error('Not implemented')`) so every commit builds.
 - After each checkpoint, stop: explain what the code does and the decisions in it, and wait for the user's pushback before starting the next one.
-- Before every commit, quiz the user on the checkpoint: one question per message, wait for the answer, correct misunderstandings, then ask the next. Commit only once they understand it. This applies to every checkpoint, including test-only ones, and a request to "commit" doesn't skip it.
+- Before every commit, quiz the user on the checkpoint: one question per message, wait for the answer, correct misunderstandings, then ask the next. Commit only once they understand it. This applies to every checkpoint, including test-only ones, and a request to "commit" doesn't skip it. The questions come from the `checkpoint-quizzer` sub-agent (see Sub-agents).
+- Always write an HTTP status code with its name, e.g. "401 Unauthorized", "404 Not Found", "409 Conflict", "415 Unsupported Media Type". Never a bare number.
 - Tag every checkpoint with its blast radius, i.e. how much existing code it can break. When unsure, pick the higher tag.
   - 🟢: new code in one place that nothing existing calls yet (a new file, a stub, a test). No existing signatures or behavior change. A mistake can't spread.
   - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
   - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build and tests before committing.
+- Design before reveal (so the user gets to design it themselves first): describe what the checkpoint needs to do, without code. Then ask the user how they would build it (design, tests, edge cases) and wait for their attempt. Only then reveal all of the checkpoint's code at once, in the plan format below, pointing out where it matches or differs from their approach and why. Still get their OK before writing files.
 - Present each checkpoint plan in this order:
   1. **What it achieves**, in plain words, including what's stubbed. Start with the blast-radius tag and one line on why it gets that tag.
   2. **Flow**: a small diagram of what calls what.
@@ -48,3 +50,4 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - After back-end changes, use the `backend-reviewer` sub-agent (`.claude/agents/backend-reviewer.md`) to review them before committing.
 - Before invoking it, ask the user to describe the feature they built (unless they already have) and include that description in the agent prompt.
 - Show the agent's findings table to the user as-is.
+- Before quizzing on a checkpoint, run the `checkpoint-quizzer` sub-agent (`.claude/agents/checkpoint-quizzer.md`). Pass it the checkpoint description (what it achieves + its decisions); it reads the git diff itself. Ask its questions one per message, and grade the answers against its answer key.
