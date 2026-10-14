@@ -46,6 +46,10 @@ export async function logOut(): Promise<void> {
 }
 
 // Creates the note on the server under the client's id. 'taken' = 409 Conflict (another user has it).
-export async function createNoteOnServer(_id: string): Promise<'created' | 'taken'> {
-  throw new Error('Not implemented')
+export async function createNoteOnServer(id: string): Promise<'created' | 'taken'> {
+  // 409 counts as a normal response, so it skips the interceptor and keeps its status.
+  const { status } = await api.post('/notes', { id }, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 409,
+  })
+  return status === 409 ? 'taken' : 'created'
 }
