@@ -65,6 +65,22 @@ describe("POST /api/notes", () => {
     expect(blocks).toHaveLength(1);
   });
 
+  it("handles two simultaneous creates of one id by the same user", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const id = randomUUID();
+
+    const [a, b] = await Promise.all([
+      createNote(app, { id }, user.cookie),
+      createNote(app, { id }, user.cookie),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 201]);
+    expect(a.body).toEqual(b.body);
+    const { notes, blocks } = await rowsFor(id);
+    expect(notes).toHaveLength(1);
+    expect(blocks).toHaveLength(1);
+  });
+
   it("rejects an id another user already owns with 409", async () => {
     const app = makeApp();
     const owner = await signedUp(app);
@@ -83,6 +99,7 @@ describe("POST /api/notes", () => {
     ["missing", {}],
     ["not a string", { id: 123 }],
     ["not a UUID", { id: "not-a-uuid" }],
+    ["uppercase", { id: randomUUID().toUpperCase() }],
   ])("rejects an id that is %s with 400", async (_, body) => {
     const app = makeApp();
     const user = await signedUp(app);

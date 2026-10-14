@@ -101,7 +101,10 @@ closes in Ticket 2, when each user's list comes from the server.
 
 ### Checkpoint 6 🟢: Repositories
 - [ ] `src/repositories/notes.repository.ts`: `insertNote(userId, id, db)` using
-  `on conflict (id) do nothing returning *`, and `findNoteOwner(id, db)`
+  `on conflict (id) do nothing returning *`, and `findNoteWithBody(userId, id, db)` (brought forward
+  from Ticket 3: a retry must return the whole note, and null after a conflict = another user's id)
+  Filter on `user_id`, left join the top-level `text` block and `coalesce(properties->>'text', '')`
+  so an owned note is never null (null would turn the user's own retry into 409).
 - [ ] `src/repositories/blocks.repository.ts`: `insertBlock(noteId, block, db)`
 
 ### Acceptance tests
