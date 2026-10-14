@@ -11,3 +11,17 @@ export class InvalidCredentialsError extends Error {
     super("Invalid email or password");
   }
 }
+
+// Another user's note already has this id (the client generated a clashing id).
+export class NoteIdTakenError extends Error {
+  constructor() {
+    super("That note id is already taken");
+  }
+}
+
+// A missing note and another user's note share this, so a response never reveals which.
+export class NoteNotFoundError extends Error {
+  constructor() {
+    super("Note not found");
+  }
+}
