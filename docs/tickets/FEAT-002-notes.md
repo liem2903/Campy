@@ -62,59 +62,59 @@ locally, but not on logout: the localStorage list survives logout, so the note s
 closes in Ticket 2, when each user's list comes from the server.
 
 ### Checkpoint 0 🟢: Tests (written first, failing)
-- [ ] Move the `signedUp(app)` helper from `test/me.test.ts` into `test/helpers.ts` so every
+- [x] Move the `signedUp(app)` helper from `test/me.test.ts` into `test/helpers.ts` so every
   notes test can get a logged-in cookie
-- [ ] `test/notes-create.test.ts` with the acceptance tests below
+- [x] `test/notes-create.test.ts` with the acceptance tests below
 
 ### Checkpoint 1 🟡: Page
-- [ ] `NotesProvider.createNote()` keeps returning the new `crypto.randomUUID()` synchronously,
+- [x] `NotesProvider.createNote()` keeps returning the new `crypto.randomUUID()` synchronously,
   so `Sidebar` and `WorkspaceHome` navigate at once. It adds the note locally, then calls
   `createNoteOnServer(id)` in `api.ts`.
-- [ ] A failed create retries every 3s until it succeeds. On a 409, generate a new id, swap it
+- [x] A failed create retries every 3s until it succeeds. On a 409, generate a new id, swap it
   into local state, `navigate(..., { replace: true })` to the new URL, and retry.
-- [ ] Stub `createNoteOnServer()` in `client/src/api.ts`
+- [x] Stub `createNoteOnServer()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
-- [ ] `createNoteOnServer(id)` → `POST /api/notes { id }` → `'created' | 'taken'` (409 → `'taken'`)
+- [x] `createNoteOnServer(id)` → `POST /api/notes { id }` → `'created' | 'taken'` (409 → `'taken'`)
 
 ### Checkpoint 3 🔴: Route layer
 🔴 because it changes shared app wiring: `src/app.ts` mounts a new router behind `requireSession`.
-- [ ] `src/routes/notes.routes.ts`: `notesRoutes(options)` puts `requireSession({ secureCookies })`
+- [x] `src/routes/notes.routes.ts`: `notesRoutes(options)` puts `requireSession({ secureCookies })`
   on the whole router, plus `POST /` → `notes.create`
-- [ ] `src/app.ts`: `app.use("/api/notes", notesRoutes(options))`, mounted before the `/api` 404
-- [ ] Stub `src/controllers/notes.controller.ts`
+- [x] `src/app.ts`: `app.use("/api/notes", notesRoutes(options))`, mounted before the `/api` 404
+- [x] Stub `src/controllers/notes.controller.ts`
 
 ### Checkpoint 4 🔴: Controller (+ domain errors)
 🔴 because it edits `src/errors.ts`.
-- [ ] `notes.create`: `id` must be a UUID string (400 "Invalid note id"), then call the service
-- [ ] `201 { id, title, body, updatedAt }` when the note is created, or `200` with the same shape
+- [x] `notes.create`: `id` must be a UUID string (400 "Invalid note id"), then call the service
+- [x] `201 { id, title, body, updatedAt }` when the note is created, or `200` with the same shape
   when this user already owns that id (an idempotent retry)
-- [ ] `NoteIdTakenError` → 409 "That note id is already taken"
-- [ ] Add `NoteNotFoundError` and `NoteIdTakenError` to `src/errors.ts`. Stub the service.
+- [x] `NoteIdTakenError` → 409 "That note id is already taken"
+- [x] Add `NoteNotFoundError` and `NoteIdTakenError` to `src/errors.ts`. Stub the service.
 
 ### Checkpoint 5 🟢: Service
-- [ ] `src/services/notes.service.ts` `createNote(userId, id)`, in one `sql.begin`:
+- [x] `src/services/notes.service.ts` `createNote(userId, id)`, in one `sql.begin`:
   - insert the note. If the id already exists: owned by this user → return it (`created: false`),
     owned by someone else → `NoteIdTakenError`
   - insert its empty `text` block (`position 'a0'`, `properties { text: '' }`)
-- [ ] Stub the repositories
+- [x] Stub the repositories
 
 ### Checkpoint 6 🟢: Repositories
-- [ ] `src/repositories/notes.repository.ts`: `insertNote(userId, id, db)` using
+- [x] `src/repositories/notes.repository.ts`: `insertNote(userId, id, db)` using
   `on conflict (id) do nothing returning *`, and `findNoteWithBody(userId, id, db)` (brought forward
   from Ticket 3: a retry must return the whole note, and null after a conflict = another user's id)
   Filter on `user_id`, left join the top-level `text` block and `coalesce(properties->>'text', '')`
   so an owned note is never null (null would turn the user's own retry into 409).
-- [ ] `src/repositories/blocks.repository.ts`: `insertBlock(noteId, block, db)`
+- [x] `src/repositories/blocks.repository.ts`: `insertBlock(noteId, block, db)`
 
 ### Acceptance tests
-- [ ] No cookie → 401
-- [ ] Valid `{ id }` → 201 with `{ id, title: '', body: '', updatedAt }`
-- [ ] Creates exactly one `notes` row owned by the user and one top-level `text` block with `text: ''`
-- [ ] Same user posts the same id again → 200 with the same note, still one note and one block
-- [ ] Another user posts that id → 409, and the original note is unchanged
-- [ ] Missing or non-UUID `id` → 400
-- [ ] Non-JSON body → 415
+- [x] No cookie → 401
+- [x] Valid `{ id }` → 201 with `{ id, title: '', body: '', updatedAt }`
+- [x] Creates exactly one `notes` row owned by the user and one top-level `text` block with `text: ''`
+- [x] Same user posts the same id again → 200 with the same note, still one note and one block
+- [x] Another user posts that id → 409, and the original note is unchanged
+- [x] Missing or non-UUID `id` → 400
+- [x] Non-JSON body → 415
 
 **Demo:** Log in → "+ New page" → the page opens → a `notes` row appears in Supabase Studio
 (`localhost:54323`) for that user.
