@@ -3,6 +3,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import path from "node:path";
 import { requireJson } from "./middleware/requireJson.js";
 import { authRoutes } from "./routes/auth.routes.js";
+import { notesRoutes } from "./routes/notes.routes.js";
 
 export type AppOptions = {
   secureCookies?: boolean;
@@ -27,6 +28,7 @@ export function createApp(options: AppOptions = {}) {
 
   app.use("/api", requireJson, express.json(), cookieParser());
   app.use("/api/auth", authRoutes(options));
+  app.use("/api/notes", notesRoutes(options));
   // Unknown API paths get JSON, not the SPA's index.html.
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });
