@@ -72,7 +72,9 @@ function SignupPage() {
               </p>
             )}
             <button type="submit" className="auth-submit" disabled={submitting}>
-              {submitting ? 'Setting things up…' : 'Create account'}
+              <span key={String(submitting)} className="auth-submit-label">
+                {submitting ? 'Setting things up…' : 'Create account'}
+              </span>
               <span className="auth-submit-arrow" aria-hidden="true">
                 →
               </span>

@@ -75,7 +75,9 @@ function LoginPage() {
               </p>
             )}
             <button type="submit" className="auth-submit" disabled={submitting}>
-              {submitting ? 'Opening your notes…' : 'Continue'}
+              <span key={String(submitting)} className="auth-submit-label">
+                {submitting ? 'Opening your notes…' : 'Continue'}
+              </span>
               <span className="auth-submit-arrow" aria-hidden="true">
                 →
               </span>

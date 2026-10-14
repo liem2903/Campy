@@ -38,18 +38,19 @@
   transition: transform 0.15s var(--ease), opacity 0.2s;
 }
 
-.new-page:hover { opacity: 0.88; }
-.new-page:active { transform: scale(0.985); }
+.new-page:active { transform: scale(0.97); }
 .new-page:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
 .new-page-plus {
   font-size: 17px;
   line-height: 1;
-  transition: transform 0.25s var(--ease);
+  transition: transform 0.2s ease;
 }
 
-.new-page:hover .new-page-plus {
-  transform: rotate(90deg);
+/* Hover effects only where there's a real pointer; on touch a tap would leave them stuck on. */
+@media (hover: hover) and (pointer: fine) {
+  .new-page:hover { opacity: 0.88; }
+  .new-page:hover .new-page-plus { transform: rotate(90deg); }
 }
 
 .sidebar-label {
@@ -88,6 +89,12 @@
 
 .page-row {
   position: relative;
+  transition: opacity 0.15s ease;
+}
+
+/* A new note's row fades in, so the eye finds it. */
+@starting-style {
+  .page-row { opacity: 0; }
 }
 
 .page-link {
@@ -133,16 +140,54 @@
   color: var(--muted);
   font-size: 16px;
   cursor: pointer;
-  visibility: hidden;
+  opacity: 0;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: opacity 0.12s ease, transform 0.12s var(--ease), color 0.15s ease;
 }
 
-.page-row:hover .delete-page {
-  visibility: visible;
+/* Opacity, not visibility, so it can fade and still be reached with Tab. */
+.page-row:hover .delete-page,
+.page-row:focus-within .delete-page {
+  opacity: 1;
+}
+
+/* No hover on touch screens, so there it's always shown. */
+@media (hover: none) {
+  .delete-page { opacity: 1; }
 }
 
 .delete-page:hover {
   background: var(--hover);
   color: var(--text);
+}
+
+.delete-page:active {
+  transform: translateY(-50%) scale(0.97);
+}
+
+.delete-page:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+/* Hold to delete: a red fill sweeps left to right while held, and snaps back on release. */
+.delete-page-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.2s var(--ease);
+}
+
+.delete-page[data-holding] {
+  color: var(--danger);
+}
+
+.delete-page[data-holding] .delete-page-fill {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--hold-ms) linear;
 }
 
 .sidebar-foot {
@@ -169,6 +214,11 @@
   width: auto;
   color: var(--muted);
   font-size: 13px;
+  transition: background 0.15s, color 0.15s, transform 0.12s var(--ease);
+}
+
+.sidebar-actions .sidebar-item:active {
+  transform: scale(0.97);
 }
 
 .sidebar-actions .sidebar-item:hover {
@@ -192,7 +242,6 @@
   max-width: 720px;
   margin: 0 auto;
   padding: 64px 48px 30vh;
-  animation: settle-flat 0.7s var(--ease) both;
 }
 
 .paper-crumbs {
@@ -252,7 +301,7 @@
 }
 
 .empty-state > * {
-  animation: rise 0.7s var(--ease) both;
+  animation: rise 0.45s var(--ease) both;
 }
 .empty-state > :nth-child(2) { animation-delay: 0.06s; }
 .empty-state > :nth-child(3) { animation-delay: 0.14s; }
@@ -262,12 +311,10 @@
   text-decoration: none;
 }
 
-/* Not-found page (shares the old narrow centred layout) */
+/* Not-found page: outside the workspace, so it fills the screen itself */
 
-.login {
-  max-width: 320px;
-  margin: 15vh auto 0;
-  padding: 0 16px;
+.not-found {
+  height: 100%;
 }
 
 /* Auth: form on the left, a self-writing note on the right */
@@ -313,7 +360,7 @@
 /* Everything in the form column eases up in sequence on load */
 .auth-body > *,
 .auth-form > * {
-  animation: rise 0.7s var(--ease) both;
+  animation: rise 0.45s var(--ease) both;
 }
 .auth-lede { animation-delay: 0.06s; }
 .auth-form > :nth-child(1) { animation-delay: 0.14s; }
@@ -411,17 +458,22 @@
   transition: transform 0.15s var(--ease), opacity 0.2s;
 }
 
-.auth-submit:hover { opacity: 0.88; }
-.auth-submit:active { transform: scale(0.985); }
+.auth-submit:active { transform: scale(0.97); }
 .auth-submit:disabled { opacity: 0.55; cursor: progress; }
 .auth-submit:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-.auth-submit-arrow {
-  transition: transform 0.25s var(--ease);
+/* Keyed on the label text, so it plays only when "Continue" swaps to "Opening your notes…". */
+.auth-submit-label {
+  animation: unblur 0.2s ease both;
 }
 
-.auth-submit:hover .auth-submit-arrow {
-  transform: translateX(3px);
+.auth-submit-arrow {
+  transition: transform 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .auth-submit:hover:not(:disabled) { opacity: 0.88; }
+  .auth-submit:hover .auth-submit-arrow { transform: translateX(3px); }
 }
 
 .auth-switch {
@@ -579,8 +631,8 @@
   from { opacity: 0; transform: translateY(24px) rotate(1deg); }
 }
 
-@keyframes settle-flat {
-  from { opacity: 0; transform: translateY(16px); }
+@keyframes unblur {
+  from { opacity: 0.7; filter: blur(2px); }
 }
 
 @keyframes drift {
@@ -600,13 +652,28 @@
   75% { transform: translateX(3px); }
 }
 
+/* Reduced motion: drop movement, keep the fades (they still show what changed). */
 @media (prefers-reduced-motion: reduce) {
-  .auth *,
-  .auth *::before,
-  .workspace * {
-    animation: none !important;
-    transition: none !important;
+  @keyframes rise {
+    from { opacity: 0; }
   }
+  @keyframes settle {
+    from { opacity: 0; }
+  }
+  .graph circle,
+  .caret,
+  .study-chip-dot,
+  .auth-error {
+    animation: none;
+  }
+  .new-page:hover .new-page-plus,
+  .auth-submit:hover .auth-submit-arrow,
+  .new-page:active,
+  .auth-submit:active,
+  .sidebar-actions .sidebar-item:active {
+    transform: none;
+  }
+  .delete-page:active { transform: translateY(-50%); }
   .study-chip { opacity: 1; transform: none; }
 }
 

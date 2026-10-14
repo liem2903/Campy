@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import { logOut } from '../api.ts'
 import { useAuth } from '../auth.ts'
@@ -5,12 +6,20 @@ import { useNotes } from '../notes.ts'
 import { useTheme } from '../theme.ts'
 import BrainMark from './BrainMark.tsx'
 
+// How long × must be held before a note is deleted; the CSS fill reads it too.
+const HOLD_MS = 1200
+
 function Sidebar() {
   const { notes, createNote, deleteNote } = useNotes()
   const { noteId } = useParams()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
   const { user, setUser } = useAuth()
+  const [holdingId, setHoldingId] = useState<string | null>(null)
+  const holdTimer = useRef<number | undefined>(undefined)
+
+  // Don't let a pending delete fire after the sidebar is gone.
+  useEffect(() => () => clearTimeout(holdTimer.current), [])
 
   function handleNew() {
     navigate(`/notes/${createNote()}`)
@@ -19,6 +28,20 @@ function Sidebar() {
   function handleDelete(id: string) {
     deleteNote(id)
     if (id === noteId) navigate('/')
+  }
+
+  function startHold(id: string) {
+    clearTimeout(holdTimer.current)
+    setHoldingId(id)
+    holdTimer.current = window.setTimeout(() => {
+      setHoldingId(null)
+      handleDelete(id)
+    }, HOLD_MS)
+  }
+
+  function cancelHold() {
+    clearTimeout(holdTimer.current)
+    setHoldingId(null)
   }
 
   // Only forget the user once the server has ended the session; on failure they stay logged in.
@@ -50,10 +73,21 @@ function Sidebar() {
             <button
               type="button"
               className="delete-page"
-              aria-label={`Delete ${note.title || 'Untitled'}`}
-              onClick={() => handleDelete(note.id)}
+              aria-label={`Hold to delete ${note.title || 'Untitled'}`}
+              title="Hold to delete"
+              data-holding={holdingId === note.id || undefined}
+              style={{ '--hold-ms': `${HOLD_MS}ms` } as CSSProperties}
+              onPointerDown={() => startHold(note.id)}
+              onPointerUp={cancelHold}
+              onPointerLeave={cancelHold}
+              onPointerCancel={cancelHold}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold(note.id)
+              }}
+              onKeyUp={cancelHold}
+              onBlur={cancelHold}
             >
-              ×
+              <span className="delete-page-fill" aria-hidden="true" />×
             </button>
           </div>
         ))}
