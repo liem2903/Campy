@@ -9,6 +9,7 @@ export function notesRoutes(options: AppOptions): Router {
 
   // Every notes route is the logged-in user's data.
   router.use(requireSession({ secureCookies }));
+  router.get("/", notes.list);
   router.post("/", notes.create);
   return router;
 }

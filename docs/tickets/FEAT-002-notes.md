@@ -151,7 +151,7 @@ and `NotePage`.
 - [x] `listNotes()` → `GET /api/notes` → `NoteSummary[]`
 
 ### Checkpoint 3 🟡: Route
-- [ ] `GET /` → `notes.list` in `notes.routes.ts`. Stub the controller method.
+- [x] `GET /` → `notes.list` in `notes.routes.ts`. Stub the controller method.
 
 ### Checkpoint 4 🟡: Controller
 - [ ] `notes.list` → `200 [{ id, title, updatedAt }]`. Stub the service.
