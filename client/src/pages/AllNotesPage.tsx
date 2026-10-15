@@ -4,9 +4,11 @@ import { useNotes } from '../notes.ts'
 const dateFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' })
 
 function AllNotesPage() {
-  const { notes, createNote } = useNotes()
+  const { notes, loading, createNote } = useNotes()
   const navigate = useNavigate()
 
+  // Blank until the list arrives, so the empty state doesn't flash.
+  if (loading) return null
   if (notes.length === 0) {
     return (
       <div className="page-content empty-state">
@@ -28,8 +30,6 @@ function AllNotesPage() {
     )
   }
 
-  const sorted = [...notes].sort((a, b) => b.updatedAt - a.updatedAt)
-
   return (
     <div className="page-content library">
       <h1 className="auth-title">
@@ -39,11 +39,10 @@ function AllNotesPage() {
         {notes.length} {notes.length === 1 ? 'page' : 'pages'}, most recently edited first.
       </p>
       <div className="library-grid">
-        {sorted.map((note) => (
+        {notes.map((note) => (
           <Link key={note.id} to={`/notes/${note.id}`} className="library-card">
             <span className="library-card-title">{note.title || 'Untitled'}</span>
-            <span className="library-card-body">{note.body || 'Empty page'}</span>
-            <span className="library-card-date">{dateFormat.format(note.updatedAt)}</span>
+            <span className="library-card-date">{dateFormat.format(new Date(note.updatedAt))}</span>
           </Link>
         ))}
       </div>

@@ -1,35 +1,75 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { createNoteOnServer } from './api.ts'
-import { NotesContext, type Note } from './notes.ts'
+import { createNoteOnServer, listNotes } from './api.ts'
+import { useAuth } from './auth.ts'
+import { NotesContext, type NoteDetail, type NoteSummary } from './notes.ts'
 
-// Browser-only storage until the notes API exists.
+// Note bodies by id, browser-only until autosave (Ticket 4).
 const STORAGE_KEY = 'campi.notes'
 const RETRY_MS = 3000
+// Failed loads before the sidebar says so.
+const FAILS_BEFORE_MESSAGE = 3
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function loadNotes(): Note[] {
+function loadBodies(): Record<string, string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
+    if (!raw) return {}
     const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as Note[]) : []
+    // The old format was an array of notes; start fresh rather than misread it.
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, string>)
+      : {}
   } catch {
-    return []
+    return {}
   }
 }
 
 function NotesProvider({ children }: { children: ReactNode }) {
-  const [notes, setNotes] = useState<Note[]>(loadNotes)
+  const [notes, setNotes] = useState<NoteSummary[]>([])
+  const [bodies, setBodies] = useState<Record<string, string>>(loadBodies)
+  const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const userId = useAuth().user?.id
+
+  // Load this user's list whenever the user changes. The cleanup marks the run stale, so a
+  // late answer for the previous user is dropped, and clears the list so nobody sees theirs.
+  useEffect(() => {
+    if (!userId) return
+    let stale = false
+    void (async () => {
+      for (let fails = 0; ; ) {
+        try {
+          const list = await listNotes()
+          if (stale) return
+          setNotes(list)
+          setLoading(false)
+          setLoadFailed(false)
+          return
+        } catch {
+          if (stale) return
+          if (++fails >= FAILS_BEFORE_MESSAGE) setLoadFailed(true)
+          await wait(RETRY_MS)
+          if (stale) return
+        }
+      }
+    })()
+    return () => {
+      stale = true
+      setNotes([])
+      setLoading(true)
+      setLoadFailed(false)
+    }
+  }, [userId])
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bodies))
     } catch {
       // Storage unavailable (private mode, quota): keep working in memory.
     }
-  }, [notes])
+  }, [bodies])
 
   // Lets a long-running loop see the current notes; its own `notes` would be a stale snapshot.
   const notesRef = useRef(notes)
@@ -68,29 +108,34 @@ function NotesProvider({ children }: { children: ReactNode }) {
 
   const createNote = useCallback(() => {
     const id = crypto.randomUUID()
-    setNotes((prev) => [...prev, { id, title: '', body: '', updatedAt: Date.now() }])
+    // Newest first, matching the server's order.
+    setNotes((prev) => [{ id, title: '', updatedAt: new Date().toISOString() }, ...prev])
     void syncCreate(id)
     return id
   }, [syncCreate])
 
   const updateNote = useCallback(
-    (id: string, patch: Partial<Pick<Note, 'title' | 'body'>>) => {
+    (id: string, patch: Partial<Pick<NoteDetail, 'title' | 'body'>>) => {
+      const { title, body } = patch
+      const updatedAt = new Date().toISOString()
       setNotes((prev) =>
         prev.map((note) =>
-          note.id === id ? { ...note, ...patch, updatedAt: Date.now() } : note,
+          note.id === id ? { ...note, ...(title !== undefined && { title }), updatedAt } : note,
         ),
       )
+      if (body !== undefined) setBodies((prev) => ({ ...prev, [id]: body }))
     },
     [],
   )
 
   const deleteNote = useCallback((id: string) => {
     setNotes((prev) => prev.filter((note) => note.id !== id))
+    setBodies(({ [id]: _removed, ...rest }) => rest)
   }, [])
 
   const value = useMemo(
-    () => ({ notes, createNote, updateNote, deleteNote }),
-    [notes, createNote, updateNote, deleteNote],
+    () => ({ notes, bodies, loading, loadFailed, createNote, updateNote, deleteNote }),
+    [notes, bodies, loading, loadFailed, createNote, updateNote, deleteNote],
   )
 
   return <NotesContext.Provider value={value}>{children}</NotesContext.Provider>

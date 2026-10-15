@@ -1,17 +1,20 @@
 import { createContext, useContext } from 'react'
 
-export type Note = {
-  id: string
-  title: string
-  body: string
-  updatedAt: number
-}
+// One row of GET /api/notes. updatedAt is an ISO string.
+export type NoteSummary = { id: string; title: string; updatedAt: string }
+// One note from GET /api/notes/:id (Ticket 3).
+export type NoteDetail = NoteSummary & { body: string }
 
 export type NotesContextValue = {
-  // In creation order, as shown in the sidebar.
-  notes: Note[]
+  // Most recently edited first, as the server returns them.
+  notes: NoteSummary[]
+  // Bodies by note id, kept in localStorage until autosave (Ticket 4).
+  bodies: Record<string, string>
+  loading: boolean
+  // Set after a few failed loads; retries keep going.
+  loadFailed: boolean
   createNote: () => string
-  updateNote: (id: string, patch: Partial<Pick<Note, 'title' | 'body'>>) => void
+  updateNote: (id: string, patch: Partial<Pick<NoteDetail, 'title' | 'body'>>) => void
   deleteNote: (id: string) => void
 }
 

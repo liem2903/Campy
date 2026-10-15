@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { NoteSummary } from './notes.ts'
 
 export type User = { id: string; email: string }
 
@@ -52,4 +53,9 @@ export async function createNoteOnServer(id: string): Promise<'created' | 'taken
     validateStatus: (s) => (s >= 200 && s < 300) || s === 409,
   })
   return status === 409 ? 'taken' : 'created'
+}
+
+// This user's notes, most recently edited first.
+export async function listNotes(): Promise<NoteSummary[]> {
+  throw new Error('Not implemented')
 }

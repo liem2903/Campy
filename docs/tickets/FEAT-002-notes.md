@@ -126,23 +126,26 @@ closes in Ticket 2, when each user's list comes from the server.
 **Slice:** The sidebar shows the logged-in user's notes from the server, most recently edited first,
 and survives a change of browser.
 
-**Interim behavior:** each note's body and title edits still go to localStorage until Ticket 4.
+**Interim behavior:** each note's body still goes to localStorage until Ticket 4. Title edits only
+change the in-memory list, so a reload shows the server's title until Ticket 4.
 Logging in as a different user no longer shows the previous user's notes.
 
 ### Checkpoint 0 🟢: Tests
-- [ ] `test/notes-list.test.ts` with the acceptance tests below
+- [x] `test/notes-list.test.ts` with the acceptance tests below
 
 ### Checkpoint 1 🔴: Page + client types
 🔴 because it changes the client `Note` type used by `NotesProvider`, `Sidebar`, `WorkspaceHome`
 and `NotePage`.
-- [ ] `client/src/notes.ts`: `NoteSummary { id, title, updatedAt }` and `NoteDetail` (+ `body`)
-- [ ] `NotesProvider` loads the list from `listNotes()` on mount and keeps `loading` until it has it.
-  `WorkspaceHome` waits for that before choosing "latest note" or the empty state.
-- [ ] Sidebar order: most recently edited first, as the server returns it
-- [ ] Sidebar shows only the 8 most recent (`notes.slice(0, 8)`) plus an "All notes →" link; the
+- [x] `client/src/notes.ts`: `NoteSummary { id, title, updatedAt }` and `NoteDetail` (+ `body`)
+- [x] `NotesProvider` loads the list from `listNotes()` whenever the logged-in user changes (not on
+  mount: it sits outside `RequireAuth`) and keeps `loading` until it has it. A stale flag drops a late
+  answer for a previous user. Failed loads retry every 3s, with a message after 3 failures.
+  `HomePage`, `AllNotesPage` and `NotePage` wait for it before showing empty or "doesn't exist" states.
+- [x] Sidebar order: most recently edited first, as the server returns it
+- [x] Sidebar shows only the 8 most recent (`notes.slice(0, 8)`) plus an "All notes →" link; the
   All Notes page shows the full list. Both read the one list `NotesProvider` loaded (no `?limit`;
   pagination later if lists get large).
-- [ ] Stub `listNotes()` in `client/src/api.ts`
+- [x] Stub `listNotes()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
 - [ ] `listNotes()` → `GET /api/notes` → `NoteSummary[]`

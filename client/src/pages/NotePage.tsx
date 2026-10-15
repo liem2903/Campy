@@ -4,8 +4,9 @@ import { useNotes } from '../notes.ts'
 
 function NotePage() {
   const { noteId } = useParams()
-  const { notes, updateNote } = useNotes()
+  const { notes, bodies, loading, updateNote } = useNotes()
   const note = notes.find((n) => n.id === noteId)
+  const body = (noteId && bodies[noteId]) ?? ''
   const bodyRef = useRef<HTMLTextAreaElement>(null)
 
   // Grow the body with its content so the page scrolls, not the textarea.
@@ -14,8 +15,10 @@ function NotePage() {
     if (!el) return
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
-  }, [note?.body])
+  }, [body])
 
+  // On a reload, wait for the list rather than flash "doesn't exist".
+  if (loading) return null
   if (!note) {
     return (
       <div className="page-content empty-state">
@@ -46,7 +49,7 @@ function NotePage() {
       <textarea
         ref={bodyRef}
         className="note-body"
-        value={note.body}
+        value={body}
         onChange={(e) => updateNote(note.id, { body: e.target.value })}
         placeholder="Start writing..."
       />

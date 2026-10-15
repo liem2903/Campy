@@ -38,7 +38,9 @@
   transition: transform 0.15s var(--ease), opacity 0.2s;
 }
 
-.new-page:active { transform: scale(0.97); }
+.new-page:not(:disabled):active { transform: scale(0.97); }
+/* Disabled while the list loads: looks inert, so a click that does nothing isn't a surprise. */
+.new-page:disabled { opacity: 0.5; cursor: default; }
 .new-page:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
 .new-page-plus {
@@ -49,8 +51,8 @@
 
 /* Hover effects only where there's a real pointer; on touch a tap would leave them stuck on. */
 @media (hover: hover) and (pointer: fine) {
-  .new-page:hover { opacity: 0.88; }
-  .new-page:hover .new-page-plus { transform: rotate(90deg); }
+  .new-page:not(:disabled):hover { opacity: 0.88; }
+  .new-page:not(:disabled):hover .new-page-plus { transform: rotate(90deg); }
 }
 
 .sidebar-label {
@@ -469,7 +471,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: 160px;
+  height: 112px;
   padding: 18px 20px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -490,15 +492,6 @@
   text-overflow: ellipsis;
 }
 
-.library-card-body {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.5;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
 
 .library-card-date {
   margin-top: auto;
@@ -858,6 +851,40 @@
   50% { transform: translate(0.8px, -1.2px); }
 }
 
+/* Placeholder lines while the list loads. They fade in late, so a fast load never flashes them. */
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--hover) 25%, var(--active) 50%, var(--hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite, appear 0.2s ease-out 0.3s backwards;
+}
+.page-skeleton { margin: 11px 28px 11px 22px; }
+.page-skeleton:nth-child(2) { margin-right: 60px; }
+.home-card-skeleton { margin: 7px 0; }
+.home-card-skeleton:nth-child(2) { width: 70%; }
+
+.sidebar-status {
+  margin: 4px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  transition: opacity 0.2s ease-out;
+}
+@starting-style {
+  .sidebar-status { opacity: 0; }
+}
+.sidebar-more { color: var(--muted); font-size: 13px; }
+
+@keyframes appear {
+  from { opacity: 0; }
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
 @keyframes blink {
   50% { opacity: 0; }
 }
@@ -882,7 +909,8 @@
   .graph circle,
   .caret,
   .study-chip-dot,
-  .auth-error {
+  .auth-error,
+  .skeleton {
     animation: none;
   }
   .new-page:hover .new-page-plus,

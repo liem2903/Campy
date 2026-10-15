@@ -9,10 +9,11 @@ function greeting(hour: number): string {
 }
 
 function HomePage() {
-  const { notes } = useNotes()
+  const { notes, loading } = useNotes()
   // Worked out once per visit, so it doesn't flip mid-render.
   const [hello] = useState(() => greeting(new Date().getHours()))
-  const recent = [...notes].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3)
+  // Already newest first.
+  const recent = notes.slice(0, 3)
 
   return (
     <div className="page-content home">
@@ -35,7 +36,13 @@ function HomePage() {
         <Link to="/notes" className="home-card">
           <span className="home-card-kicker">Library</span>
           <span className="home-card-title">All notes</span>
-          {recent.length > 0 ? (
+          {loading ? (
+            <span aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <span key={i} className="skeleton home-card-skeleton" />
+              ))}
+            </span>
+          ) : recent.length > 0 ? (
             <ul className="home-card-recent">
               {recent.map((note) => (
                 <li key={note.id}>{note.title || 'Untitled'}</li>
@@ -45,7 +52,8 @@ function HomePage() {
             <span className="home-card-text">Nothing here yet. Write your first page.</span>
           )}
           <span className="home-card-go">
-            {notes.length} {notes.length === 1 ? 'note' : 'notes'} <span aria-hidden="true">→</span>
+            {loading ? 'Open ' : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'} `}
+            <span aria-hidden="true">→</span>
           </span>
         </Link>
       </div>

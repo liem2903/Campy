@@ -8,9 +8,11 @@ import BrainMark from './BrainMark.tsx'
 
 // How long × must be held before a note is deleted; the CSS fill reads it too.
 const HOLD_MS = 1200
+// The sidebar shows the most recent few; All Notes has the rest.
+const SIDEBAR_LIMIT = 8
 
 function Sidebar() {
-  const { notes, createNote, deleteNote } = useNotes()
+  const { notes, loading, loadFailed, createNote, deleteNote } = useNotes()
   const { noteId } = useParams()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
@@ -57,7 +59,8 @@ function Sidebar() {
         <BrainMark />
         Campi
       </Link>
-      <button type="button" className="new-page" onClick={handleNew}>
+      {/* The list arriving would replace a note created before it. */}
+      <button type="button" className="new-page" onClick={handleNew} disabled={loading}>
         New page
         <span className="new-page-plus" aria-hidden="true">
           +
@@ -75,8 +78,10 @@ function Sidebar() {
         </NavLink>
       </nav>
       <p className="sidebar-label">Notes</p>
-      <nav className="page-list">
-        {notes.map((note) => (
+      <nav className="page-list" aria-busy={loading}>
+        {loading && [0, 1, 2].map((i) => <span key={i} className="skeleton page-skeleton" aria-hidden="true" />)}
+        {loadFailed && <p className="sidebar-status">Couldn't load your notes. Retrying…</p>}
+        {notes.slice(0, SIDEBAR_LIMIT).map((note) => (
           <div key={note.id} className="page-row">
             <NavLink to={`/notes/${note.id}`} className="sidebar-item page-link">
               {note.title || 'Untitled'}
@@ -102,6 +107,11 @@ function Sidebar() {
             </button>
           </div>
         ))}
+        {notes.length > SIDEBAR_LIMIT && (
+          <Link to="/notes" className="sidebar-item sidebar-more">
+            All notes →
+          </Link>
+        )}
       </nav>
       <div className="sidebar-foot">
         {/* Only rendered inside RequireAuth, so user is set; the ?. just satisfies the type. */}
