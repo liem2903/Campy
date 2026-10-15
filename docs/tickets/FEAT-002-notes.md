@@ -139,6 +139,9 @@ and `NotePage`.
 - [ ] `NotesProvider` loads the list from `listNotes()` on mount and keeps `loading` until it has it.
   `WorkspaceHome` waits for that before choosing "latest note" or the empty state.
 - [ ] Sidebar order: most recently edited first, as the server returns it
+- [ ] Sidebar shows only the 8 most recent (`notes.slice(0, 8)`) plus an "All notes →" link; the
+  All Notes page shows the full list. Both read the one list `NotesProvider` loaded (no `?limit`;
+  pagination later if lists get large).
 - [ ] Stub `listNotes()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
