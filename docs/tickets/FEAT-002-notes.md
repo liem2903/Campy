@@ -157,7 +157,7 @@ and `NotePage`.
 - [x] `notes.list` → `200 [{ id, title, updatedAt }]`. Stub the service.
 
 ### Checkpoint 5 🟡: Service
-- [ ] `listNotes(userId)` → `notes.repository.listNotes(userId)`. Stub the repository function.
+- [x] `listNotes(userId)` → `notes.repository.listNotes(userId)`. Stub the repository function.
 
 ### Checkpoint 6 🟡: Repository
 - [ ] `listNotes(userId, db)`: this user's notes ordered by `updated_at desc`

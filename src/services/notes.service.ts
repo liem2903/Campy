@@ -26,6 +26,6 @@ export async function createNote(userId: string, id: string): Promise<CreateNote
 }
 
 // This user's notes, most recently edited first.
-export async function listNotes(_userId: string): Promise<Note[]> {
-  throw new Error("Not implemented");
+export async function listNotes(userId: string): Promise<Note[]> {
+  return notesRepository.listNotes(userId);
 }

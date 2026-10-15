@@ -27,3 +27,8 @@ export async function findNoteWithBody(
   `;
   return note ?? null;
 }
+
+// This user's notes, most recently edited first.
+export async function listNotes(_userId: string, _db: Db = sql): Promise<Note[]> {
+  throw new Error("Not implemented");
+}
