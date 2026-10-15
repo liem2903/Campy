@@ -160,7 +160,7 @@ and `NotePage`.
 - [x] `listNotes(userId)` → `notes.repository.listNotes(userId)`. Stub the repository function.
 
 ### Checkpoint 6 🟡: Repository
-- [ ] `listNotes(userId, db)`: this user's notes ordered by `updated_at desc`
+- [x] `listNotes(userId, db)`: this user's notes ordered by `updated_at desc`
   (served by `notes_user_id_updated_at_idx`)
 
 ### Acceptance tests
