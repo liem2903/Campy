@@ -3,11 +3,13 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import './App.css'
 import { useAuth } from './auth.ts'
 import Sidebar from './components/Sidebar.tsx'
+import AllNotesPage from './pages/AllNotesPage.tsx'
+import HomePage from './pages/HomePage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
+import QuizPage from './pages/QuizPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
-import WorkspaceHome from './pages/WorkspaceHome.tsx'
 
 function Workspace() {
   return (
@@ -40,7 +42,9 @@ function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<WorkspaceHome />} />
+        <Route index element={<HomePage />} />
+        <Route path="notes" element={<AllNotesPage />} />
+        <Route path="quiz" element={<QuizPage />} />
         <Route path="notes/:noteId" element={<NotePage />} />
       </Route>
       <Route path="login" element={<LoginPage />} />

@@ -311,6 +311,225 @@
   text-decoration: none;
 }
 
+/* Home: two big choices on the dotted canvas */
+
+.page:has(.home),
+.page:has(.library) {
+  background:
+    radial-gradient(circle, var(--line) 1px, transparent 1.2px) 0 0 / 22px 22px,
+    var(--sidebar-bg);
+}
+
+.home {
+  max-width: 760px;
+  padding-top: 16vh;
+}
+
+.home > *,
+.library > * {
+  animation: rise 0.3s var(--ease) both;
+}
+.home > :nth-child(2),
+.library > :nth-child(2) { animation-delay: 0.04s; }
+.home > :nth-child(3),
+.library > :nth-child(3) { animation-delay: 0.08s; }
+.home > :nth-child(4) { animation-delay: 0.12s; }
+
+.home-eyebrow {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-family: var(--serif);
+  font-size: 16px;
+  font-style: italic;
+}
+
+.home-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 18px;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 220px;
+  padding: 24px 26px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  text-decoration: none;
+  box-sizing: border-box;
+  position: relative;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 6%, transparent);
+  transition: transform 0.25s var(--ease);
+}
+
+/* The hover shadow lives on its own layer, so only its opacity animates (no repaints). */
+.home-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--text) 30%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+
+.home-card:active { transform: scale(0.98); }
+.home-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+/* The quiz card is the main action, so it's inverted. */
+.home-card-quiz {
+  border-color: transparent;
+  background: var(--text);
+  color: var(--bg);
+}
+
+.home-card-kicker {
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-card-title {
+  font-family: var(--serif);
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.home-card-text {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.home-card-quiz .home-card-text {
+  color: color-mix(in srgb, var(--bg) 65%, transparent);
+}
+
+.home-card-recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.home-card-recent li {
+  overflow: hidden;
+  padding: 3px 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.home-card-recent li::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--brand);
+}
+
+.home-card-go {
+  margin-top: auto;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.home-card-go span {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-card:hover { transform: translateY(-3px); }
+  /* Keep the lift while pressing, so the card only shrinks instead of also dropping. */
+  .home-card:hover:active { transform: translateY(-3px) scale(0.98); }
+  .home-card:hover::after { opacity: 1; }
+  .home-card:hover .home-card-go span { transform: translateX(3px); }
+}
+
+/* All notes: a grid of note cards */
+
+.library {
+  max-width: 880px;
+  padding-top: 72px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 14px;
+}
+
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 160px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: transform 0.2s var(--ease), border-color 0.2s;
+}
+
+.library-card:active { transform: scale(0.98); }
+.library-card:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.library-card-title {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 19px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.library-card-body {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.library-card-date {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .library-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--brand) 60%, transparent);
+  }
+  .library-card:hover:active { transform: translateY(-2px) scale(0.98); }
+}
+
+@media (max-width: 640px) {
+  .home,
+  .library { padding: 48px 16px 20vh; }
+}
+
+/* Sidebar shortcuts: Home / Quiz / All notes */
+
+.sidebar-nav {
+  margin: 0 0 18px;
+}
+
+.sidebar-nav .sidebar-item.active {
+  background: var(--active);
+  font-weight: 500;
+}
+
 /* Not-found page: outside the workspace, so it fills the screen itself */
 
 .not-found {
@@ -670,7 +889,14 @@
   .auth-submit:hover .auth-submit-arrow,
   .new-page:active,
   .auth-submit:active,
-  .sidebar-actions .sidebar-item:active {
+  .sidebar-actions .sidebar-item:active,
+  .home-card:hover,
+  .home-card:active,
+  .home-card:hover:active,
+  .home-card:hover .home-card-go span,
+  .library-card:hover,
+  .library-card:active,
+  .library-card:hover:active {
     transform: none;
   }
   .delete-page:active { transform: translateY(-50%); }

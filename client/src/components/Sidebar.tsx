@@ -63,6 +63,17 @@ function Sidebar() {
           +
         </span>
       </button>
+      <nav className="sidebar-nav">
+        <NavLink to="/" end className="sidebar-item">
+          Home
+        </NavLink>
+        <NavLink to="/quiz" className="sidebar-item">
+          Quiz
+        </NavLink>
+        <NavLink to="/notes" end className="sidebar-item">
+          All notes
+        </NavLink>
+      </nav>
       <p className="sidebar-label">Notes</p>
       <nav className="page-list">
         {notes.map((note) => (
