@@ -154,7 +154,7 @@ and `NotePage`.
 - [x] `GET /` → `notes.list` in `notes.routes.ts`. Stub the controller method.
 
 ### Checkpoint 4 🟡: Controller
-- [ ] `notes.list` → `200 [{ id, title, updatedAt }]`. Stub the service.
+- [x] `notes.list` → `200 [{ id, title, updatedAt }]`. Stub the service.
 
 ### Checkpoint 5 🟡: Service
 - [ ] `listNotes(userId)` → `notes.repository.listNotes(userId)`. Stub the repository function.

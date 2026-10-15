@@ -1,14 +1,19 @@
 import type { NextFunction, Request, Response } from "express";
 import { NoteIdTakenError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
-import type { NoteWithBody } from "../services/notes.service.js";
+import type { Note, NoteWithBody } from "../services/notes.service.js";
 
 // Lowercase only, so the id we send back always equals the one the client sent.
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // GET /api/notes: this user's notes, most recently edited first.
-export function list(_req: Request, _res: Response, _next: NextFunction): void {
-  throw new Error("Not implemented");
+export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const notes = await notesService.listNotes(req.user!.id); // requireSession set it
+    res.json(notes.map(toSummaryJson));
+  } catch (err) {
+    next(err);
+  }
 }
 
 // POST /api/notes { id }: 201 when created, 200 when this user already owns the id (a retry).
@@ -33,5 +38,10 @@ export async function create(req: Request, res: Response, next: NextFunction): P
 
 // DB row → API shape: camelCase, and updatedAt as an ISO string.
 function toJson(note: NoteWithBody) {
-  return { id: note.id, title: note.title, body: note.body, updatedAt: note.updated_at.toISOString() };
+  return { ...toSummaryJson(note), body: note.body };
+}
+
+// List items leave out body: the sidebar only needs id, title and updatedAt.
+function toSummaryJson(note: Note) {
+  return { id: note.id, title: note.title, updatedAt: note.updated_at.toISOString() };
 }

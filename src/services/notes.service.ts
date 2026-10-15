@@ -1,10 +1,11 @@
 import { sql } from "../db/client.js";
+import type { Note } from "../db/types.js";
 import { NoteIdTakenError } from "../errors.js";
 import * as blocksRepository from "../repositories/blocks.repository.js";
 import * as notesRepository from "../repositories/notes.repository.js";
 import type { NoteWithBody } from "../repositories/notes.repository.js";
 
-export type { NoteWithBody };
+export type { Note, NoteWithBody };
 export type CreateNoteResult = { note: NoteWithBody; created: boolean };
 
 // Creates the note and its empty text block. created: false = this user already owns the id.
@@ -22,4 +23,9 @@ export async function createNote(userId: string, id: string): Promise<CreateNote
     await blocksRepository.insertBlock(id, { type: "text", position: "a0", properties: { text: "" } }, tx);
     return { note: { ...note, body: "" }, created: true };
   });
+}
+
+// This user's notes, most recently edited first.
+export async function listNotes(_userId: string): Promise<Note[]> {
+  throw new Error("Not implemented");
 }
