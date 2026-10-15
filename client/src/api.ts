@@ -57,5 +57,6 @@ export async function createNoteOnServer(id: string): Promise<'created' | 'taken
 
 // This user's notes, most recently edited first.
 export async function listNotes(): Promise<NoteSummary[]> {
-  throw new Error('Not implemented')
+  const { data } = await api.get<NoteSummary[]>('/notes')
+  return data
 }

@@ -148,7 +148,7 @@ and `NotePage`.
 - [x] Stub `listNotes()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
-- [ ] `listNotes()` → `GET /api/notes` → `NoteSummary[]`
+- [x] `listNotes()` → `GET /api/notes` → `NoteSummary[]`
 
 ### Checkpoint 3 🟡: Route
 - [ ] `GET /` → `notes.list` in `notes.routes.ts`. Stub the controller method.
