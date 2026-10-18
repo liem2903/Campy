@@ -16,6 +16,12 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
+// GET /api/notes/:id: this user's note with its body. A missing note, another user's note and
+// a malformed id all get the same 404, so a response never reveals which.
+export function get(_req: Request, _res: Response, _next: NextFunction): void {
+  throw new Error("Not implemented");
+}
+
 // POST /api/notes { id }: 201 when created, 200 when this user already owns the id (a retry).
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   const { id } = req.body as { id?: unknown };

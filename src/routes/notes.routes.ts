@@ -11,5 +11,6 @@ export function notesRoutes(options: AppOptions): Router {
   router.use(requireSession({ secureCookies }));
   router.get("/", notes.list);
   router.post("/", notes.create);
+  router.get("/:id", notes.get);
   return router;
 }
