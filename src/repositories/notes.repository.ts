@@ -15,7 +15,8 @@ export async function insertNote(userId: string, id: string, db: Db = sql): Prom
 }
 
 // This user's note with its body; null only when this user has no note with that id.
-// The body defaults to '' if the note has no top-level text block, so an owned note is never null.
+// The body is the first top-level text block by position, or '' if there is none, so an owned
+// note is never null.
 export async function findNoteWithBody(
   userId: string, id: string, db: Db = sql,
 ): Promise<NoteWithBody | null> {
@@ -24,6 +25,8 @@ export async function findNoteWithBody(
     from notes n
     left join blocks b on b.note_id = n.id and b.parent_id is null and b.type = 'text'
     where n.id = ${id} and n.user_id = ${userId}
+    order by b.position
+    limit 1
   `;
   return note ?? null;
 }
