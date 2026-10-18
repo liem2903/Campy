@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { NoteSummary } from './notes.ts'
+import type { NoteDetail, NoteSummary } from './notes.ts'
 
 export type User = { id: string; email: string }
 
@@ -59,4 +59,9 @@ export async function createNoteOnServer(id: string): Promise<'created' | 'taken
 export async function listNotes(): Promise<NoteSummary[]> {
   const { data } = await api.get<NoteSummary[]>('/notes')
   return data
+}
+
+// One of this user's notes with its body. null = 404 Not Found (missing, or another user's).
+export async function getNoteFromServer(_id: string): Promise<NoteDetail | null> {
+  throw new Error('Not implemented')
 }

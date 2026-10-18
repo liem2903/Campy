@@ -1,12 +1,34 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
+import { getNoteFromServer } from '../api.ts'
 import { useNotes } from '../notes.ts'
 
 function NotePage() {
-  const { noteId } = useParams()
-  const { notes, bodies, loading, updateNote } = useNotes()
-  const note = notes.find((n) => n.id === noteId)
-  const body = (noteId && bodies[noteId]) ?? ''
+  const { noteId: noteIdFromUrl } = useParams()
+  const { notes: noteList, bodies: localBodies, loading, updateNote } = useNotes()
+  const listEntry = noteList.find((n) => n.id === noteIdFromUrl)
+
+  // The server's body, tagged with its note id: while the next note loads, the old one's
+  // body doesn't match noteIdFromUrl, so it never shows on the wrong page.
+  const [serverReply, setServerReply] = useState<{ id: string; body: string }>()
+  useEffect(() => {
+    if (!noteIdFromUrl) return
+    // Set by the cleanup when noteIdFromUrl changes, so a late answer can't overwrite a newer one.
+    let stale = false
+    void getNoteFromServer(noteIdFromUrl).then(
+      // null = 404 Not Found. For a note in our list, its create hasn't reached the server yet.
+      (noteDetailOrNull) =>
+        !stale && setServerReply({ id: noteIdFromUrl, body: noteDetailOrNull?.body ?? '' }),
+      () => {}, // Other failures stay blank until autosave adds retries (Ticket 4).
+    )
+    return () => {
+      stale = true
+    }
+  }, [noteIdFromUrl])
+
+  // Until autosave (Ticket 4), a local copy wins over the server's. undefined = still loading.
+  const serverBody = serverReply && serverReply.id === noteIdFromUrl ? serverReply.body : undefined
+  const shownBody = (noteIdFromUrl && localBodies[noteIdFromUrl]) ?? serverBody
   const bodyRef = useRef<HTMLTextAreaElement>(null)
 
   // Grow the body with its content so the page scrolls, not the textarea.
@@ -15,11 +37,12 @@ function NotePage() {
     if (!el) return
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
-  }, [body])
+  }, [shownBody])
 
   // On a reload, wait for the list rather than flash "doesn't exist".
   if (loading) return null
-  if (!note) {
+  // The list holds only this user's notes, so another user's id lands here too.
+  if (!listEntry) {
     return (
       <div className="page-content empty-state">
         <h1 className="auth-title">
@@ -35,22 +58,23 @@ function NotePage() {
       </div>
     )
   }
+  if (shownBody === undefined) return null
 
   return (
-    <article key={note.id} className="paper">
-      <p className="paper-crumbs">Notes / {note.title || 'Untitled'}</p>
+    <article key={listEntry.id} className="paper">
+      <p className="paper-crumbs">Notes / {listEntry.title || 'Untitled'}</p>
       <input
         className="note-title"
-        value={note.title}
-        onChange={(e) => updateNote(note.id, { title: e.target.value })}
+        value={listEntry.title}
+        onChange={(e) => updateNote(listEntry.id, { title: e.target.value })}
         placeholder="Untitled"
-        autoFocus={note.title === ''}
+        autoFocus={listEntry.title === ''}
       />
       <textarea
         ref={bodyRef}
         className="note-body"
-        value={body}
-        onChange={(e) => updateNote(note.id, { body: e.target.value })}
+        value={shownBody}
+        onChange={(e) => updateNote(listEntry.id, { body: e.target.value })}
         placeholder="Start writing..."
       />
     </article>
