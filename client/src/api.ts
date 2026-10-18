@@ -62,6 +62,10 @@ export async function listNotes(): Promise<NoteSummary[]> {
 }
 
 // One of this user's notes with its body. null = 404 Not Found (missing, or another user's).
-export async function getNoteFromServer(_id: string): Promise<NoteDetail | null> {
-  throw new Error('Not implemented')
+export async function getNoteFromServer(id: string): Promise<NoteDetail | null> {
+  // 404 counts as a normal response, so it skips the interceptor and keeps its status.
+  const { data, status } = await api.get<NoteDetail>(`/notes/${id}`, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  })
+  return status === 404 ? null : data
 }
