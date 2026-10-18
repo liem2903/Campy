@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { NoteIdTakenError } from "../errors.js";
+import { NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
 import type { Note, NoteWithBody } from "../services/notes.service.js";
 
@@ -18,8 +18,19 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
 
 // GET /api/notes/:id: this user's note with its body. A missing note, another user's note and
 // a malformed id all get the same 404, so a response never reveals which.
-export function get(_req: Request, _res: Response, _next: NextFunction): void {
-  throw new Error("Not implemented");
+export async function get(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    // A non-UUID would make Postgres throw (a 500), so it never reaches the service.
+    if (!uuidPattern.test(req.params.id)) throw new NoteNotFoundError();
+    const note = await notesService.getNote(req.user!.id, req.params.id); // requireSession set it
+    res.json(toJson(note));
+  } catch (err) {
+    if (err instanceof NoteNotFoundError) {
+      res.status(404).json({ error: err.message });
+      return;
+    }
+    next(err);
+  }
 }
 
 // POST /api/notes { id }: 201 when created, 200 when this user already owns the id (a retry).

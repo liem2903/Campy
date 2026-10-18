@@ -25,6 +25,11 @@ export async function createNote(userId: string, id: string): Promise<CreateNote
   });
 }
 
+// This user's note with its body. Throws NoteNotFoundError when it's missing or another user's.
+export async function getNote(_userId: string, _id: string): Promise<NoteWithBody> {
+  throw new Error("Not implemented");
+}
+
 // This user's notes, most recently edited first.
 export async function listNotes(userId: string): Promise<Note[]> {
   return notesRepository.listNotes(userId);
