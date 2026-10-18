@@ -1,6 +1,6 @@
 import { sql } from "../db/client.js";
 import type { Note } from "../db/types.js";
-import { NoteIdTakenError } from "../errors.js";
+import { NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as blocksRepository from "../repositories/blocks.repository.js";
 import * as notesRepository from "../repositories/notes.repository.js";
 import type { NoteWithBody } from "../repositories/notes.repository.js";
@@ -26,8 +26,10 @@ export async function createNote(userId: string, id: string): Promise<CreateNote
 }
 
 // This user's note with its body. Throws NoteNotFoundError when it's missing or another user's.
-export async function getNote(_userId: string, _id: string): Promise<NoteWithBody> {
-  throw new Error("Not implemented");
+export async function getNote(userId: string, id: string): Promise<NoteWithBody> {
+  const note = await notesRepository.findNoteWithBody(userId, id);
+  if (!note) throw new NoteNotFoundError();
+  return note;
 }
 
 // This user's notes, most recently edited first.
