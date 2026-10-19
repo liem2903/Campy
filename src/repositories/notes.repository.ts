@@ -40,9 +40,15 @@ export async function listNotes(userId: string, db: Db = sql): Promise<Note[]> {
   `;
 }
 
-// Sets this user's note title; returns the new updated_at, or null when this user has no such note.
+// Sets this user's note title; returns the new updated_at (the trigger bumps it), or null when
+// this user has no note with that id.
 export async function updateTitle(
-  _userId: string, _id: string, _title: string, _db: Db = sql,
+  userId: string, id: string, title: string, db: Db = sql,
 ): Promise<Date | null> {
-  throw new Error("Not implemented");
+  const [note] = await db<Pick<Note, "updated_at">[]>`
+    update notes set title = ${title}
+    where id = ${id} and user_id = ${userId}
+    returning updated_at
+  `;
+  return note?.updated_at ?? null;
 }

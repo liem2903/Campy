@@ -11,7 +11,18 @@ export async function insertBlock(noteId: string, block: NewBlock, db: Db = sql)
   `;
 }
 
-// Sets the note's body text; returns how many rows changed.
-export async function updateBodyText(_noteId: string, _text: string, _db: Db = sql): Promise<number> {
-  throw new Error("Not implemented");
+// Sets the note's body: the text of its first top-level text block, the same block
+// findNoteWithBody reads. Returns how many rows changed (0 = the note has no such block).
+// The caller has already checked the note belongs to the user.
+export async function updateBodyText(noteId: string, text: string, db: Db = sql): Promise<number> {
+  const { count } = await db`
+    update blocks set properties = properties || jsonb_build_object('text', ${text}::text)
+    where id = (
+      select id from blocks
+      where note_id = ${noteId} and parent_id is null and type = 'text'
+      order by position
+      limit 1
+    )
+  `;
+  return count;
 }
