@@ -1,43 +1,42 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { getNoteFromServer } from '../api.ts'
-import { useNotes } from '../notes.ts'
+import NoteEditor from '../components/NoteEditor.tsx'
+import { useNotes, type NoteContent } from '../notes.ts'
+import { RETRY_MS, wait } from '../retry.ts'
 
 function NotePage() {
   const { noteId: noteIdFromUrl } = useParams()
-  const { notes: noteList, bodies: localBodies, loading, updateNote } = useNotes()
+  const { notes: noteList, loading } = useNotes()
   const listEntry = noteList.find((n) => n.id === noteIdFromUrl)
 
-  // The server's body, tagged with its note id: while the next note loads, the old one's
-  // body doesn't match noteIdFromUrl, so it never shows on the wrong page.
-  const [serverReply, setServerReply] = useState<{ id: string; body: string }>()
+  // The server's copy, tagged with its note id: while the next note loads, the old one's
+  // content doesn't match noteIdFromUrl, so it never shows on the wrong page.
+  const [serverReply, setServerReply] = useState<{ id: string; content: NoteContent }>()
   useEffect(() => {
     if (!noteIdFromUrl) return
     // Set by the cleanup when noteIdFromUrl changes, so a late answer can't overwrite a newer one.
     let stale = false
-    void getNoteFromServer(noteIdFromUrl).then(
-      // null = 404 Not Found. For a note in our list, its create hasn't reached the server yet.
-      (noteDetailOrNull) =>
-        !stale && setServerReply({ id: noteIdFromUrl, body: noteDetailOrNull?.body ?? '' }),
-      () => {}, // Other failures stay blank until autosave adds retries (Ticket 4).
-    )
+    void (async () => {
+      for (;;) {
+        try {
+          // null = 404 Not Found. For a note in our list, its create hasn't reached the server yet.
+          const noteDetailOrNull = await getNoteFromServer(noteIdFromUrl)
+          if (stale) return
+          const content = { title: noteDetailOrNull?.title ?? '', body: noteDetailOrNull?.body ?? '' }
+          setServerReply({ id: noteIdFromUrl, content })
+          return
+        } catch {
+          // Network error or 5xx: stay blank and try again.
+          await wait(RETRY_MS)
+          if (stale) return
+        }
+      }
+    })()
     return () => {
       stale = true
     }
   }, [noteIdFromUrl])
-
-  // Until autosave (Ticket 4), a local copy wins over the server's. undefined = still loading.
-  const serverBody = serverReply && serverReply.id === noteIdFromUrl ? serverReply.body : undefined
-  const shownBody = (noteIdFromUrl && localBodies[noteIdFromUrl]) ?? serverBody
-  const bodyRef = useRef<HTMLTextAreaElement>(null)
-
-  // Grow the body with its content so the page scrolls, not the textarea.
-  useLayoutEffect(() => {
-    const el = bodyRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [shownBody])
 
   // On a reload, wait for the list rather than flash "doesn't exist".
   if (loading) return null
@@ -58,27 +57,9 @@ function NotePage() {
       </div>
     )
   }
-  if (shownBody === undefined) return null
+  if (serverReply?.id !== listEntry.id) return null
 
-  return (
-    <article key={listEntry.id} className="paper">
-      <p className="paper-crumbs">Notes / {listEntry.title || 'Untitled'}</p>
-      <input
-        className="note-title"
-        value={listEntry.title}
-        onChange={(e) => updateNote(listEntry.id, { title: e.target.value })}
-        placeholder="Untitled"
-        autoFocus={listEntry.title === ''}
-      />
-      <textarea
-        ref={bodyRef}
-        className="note-body"
-        value={shownBody}
-        onChange={(e) => updateNote(listEntry.id, { body: e.target.value })}
-        placeholder="Start writing..."
-      />
-    </article>
-  )
+  return <NoteEditor key={listEntry.id} noteId={listEntry.id} serverContent={serverReply.content} />
 }
 
 export default NotePage

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { NoteDetail, NoteSummary } from './notes.ts'
+import type { NoteContent, NoteDetail, NoteSummary } from './notes.ts'
 
 export type User = { id: string; email: string }
 
@@ -68,4 +68,12 @@ export async function getNoteFromServer(id: string): Promise<NoteDetail | null> 
     validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
   })
   return status === 404 ? null : data
+}
+
+// A save the server refused. Retrying the same content won't help, so autosave stops and shows this.
+export type SaveRejection = { saved: false; message: string }
+export type SaveResult = { saved: true; updatedAt: string } | SaveRejection
+
+export async function saveNoteToServer(_id: string, _content: NoteContent): Promise<SaveResult> {
+  throw new Error('Not implemented')
 }

@@ -255,6 +255,16 @@
   text-overflow: ellipsis;
 }
 
+/* Floated so a long title is cut off before it, never the status itself */
+.save-status {
+  float: right;
+  margin-left: 12px;
+}
+
+.save-status[data-failed] {
+  color: var(--danger);
+}
+
 .page-content {
   max-width: 720px;
   margin: 0 auto;

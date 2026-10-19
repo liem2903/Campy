@@ -12,7 +12,7 @@ const HOLD_MS = 1200
 const SIDEBAR_LIMIT = 8
 
 function Sidebar() {
-  const { notes, loading, loadFailed, createNote, deleteNote } = useNotes()
+  const { notes, loading, loadFailed, createNote, deleteNote, flushAllSaves } = useNotes()
   const { noteId } = useParams()
   const navigate = useNavigate()
   const { theme, toggleTheme } = useTheme()
@@ -47,7 +47,9 @@ function Sidebar() {
   }
 
   // Only forget the user once the server has ended the session; on failure they stay logged in.
+  // Pending saves go first, while the session still works.
   async function handleLogOut() {
+    await flushAllSaves()
     await logOut()
     navigate('/login', { replace: true })
     setUser(null)
