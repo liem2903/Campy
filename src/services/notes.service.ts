@@ -7,6 +7,8 @@ import type { NoteWithBody } from "../repositories/notes.repository.js";
 
 export type { Note, NoteWithBody };
 export type CreateNoteResult = { note: NoteWithBody; created: boolean };
+// What the user edits: autosave sends both on every save.
+export type NoteContent = { title: string; body: string };
 
 // Creates the note and its empty text block. created: false = this user already owns the id.
 // Throws NoteIdTakenError when another user owns it.
@@ -30,6 +32,11 @@ export async function getNote(userId: string, id: string): Promise<NoteWithBody>
   const note = await notesRepository.findNoteWithBody(userId, id);
   if (!note) throw new NoteNotFoundError();
   return note;
+}
+
+// Replaces the note's title and body together and returns its new updated_at.
+export async function updateNote(_userId: string, _id: string, _content: NoteContent): Promise<Date> {
+  throw new Error("Not implemented");
 }
 
 // This user's notes, most recently edited first.
