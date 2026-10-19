@@ -74,6 +74,19 @@ export async function getNoteFromServer(id: string): Promise<NoteDetail | null> 
 export type SaveRejection = { saved: false; message: string }
 export type SaveResult = { saved: true; updatedAt: string } | SaveRejection
 
-export async function saveNoteToServer(_id: string, _content: NoteContent): Promise<SaveResult> {
-  throw new Error('Not implemented')
+const saveRejectionMessages: Record<number, string> = {
+  400: 'Title must be 200 characters or fewer',
+  404: 'This note was deleted',
+  413: 'This note is too large to save',
+}
+
+// Saves the note's whole title and body. Rejects on a network error, 5xx or 401 Unauthorized:
+// those are worth retrying (a 401 also logs the user out through the interceptor).
+export async function saveNoteToServer(id: string, content: NoteContent): Promise<SaveResult> {
+  // These statuses count as normal responses, so they skip the interceptor and keep their status.
+  const { data, status } = await api.put<{ updatedAt: string }>(`/notes/${id}`, content, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s in saveRejectionMessages,
+  })
+  const rejectionMessage = saveRejectionMessages[status]
+  return rejectionMessage ? { saved: false, message: rejectionMessage } : { saved: true, updatedAt: data.updatedAt }
 }
