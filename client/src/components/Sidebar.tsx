@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import { logOut } from '../api.ts'
 import { useAuth } from '../auth.ts'
 import { useNotes } from '../notes.ts'
+import { wait } from '../retry.ts'
 import { useTheme } from '../theme.ts'
 import BrainMark from './BrainMark.tsx'
 
@@ -10,6 +11,8 @@ import BrainMark from './BrainMark.tsx'
 const HOLD_MS = 1200
 // The sidebar shows the most recent few; All Notes has the rest.
 const SIDEBAR_LIMIT = 8
+// How long logout waits for pending saves before going ahead without them.
+const FLUSH_LIMIT_MS = 5000
 
 function Sidebar() {
   const { notes, loading, loadFailed, createNote, deleteNote, flushAllSaves } = useNotes()
@@ -47,9 +50,10 @@ function Sidebar() {
   }
 
   // Only forget the user once the server has ended the session; on failure they stay logged in.
-  // Pending saves go first, while the session still works.
+  // Pending saves go first, while the session still works. A save that never answers can't
+  // block logout: after FLUSH_LIMIT_MS we go anyway, and the draft keeps the unsaved text.
   async function handleLogOut() {
-    await flushAllSaves()
+    await Promise.race([flushAllSaves(), wait(FLUSH_LIMIT_MS)])
     await logOut()
     navigate('/login', { replace: true })
     setUser(null)

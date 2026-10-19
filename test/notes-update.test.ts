@@ -123,8 +123,31 @@ describe("PUT /api/notes/:id", () => {
 
     const res = await updateNote(app, id, { title: "", body: "x".repeat(101 * 1024) }, user.cookie);
     expect(res.status).toBe(413);
+    expect(res.body).toEqual({ error: "Invalid request" });
   });
 
+  // Postgres text can't hold \u0000; without stripping, every save of a pasted NUL would 500
+  // and the client would retry it forever.
+  it("saves text containing a NUL character, without the NUL", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const id = await createdNote(app, user.cookie);
+
+    await updateNote(app, id, { title: "Ti\u0000tle", body: "Bo\u0000dy" }, user.cookie).expect(200);
+    expect(await storedNote(id)).toEqual({ title: "Title", body: "Body" });
+  });
+
+  it("returns 500 and rolls back the title when the note has no body block", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const id = await createdNote(app, user.cookie);
+    await sql`delete from blocks where note_id = ${id}`;
+
+    const res = await updateNote(app, id, { title: "New", body: "B" }, user.cookie);
+    expect(res.status).toBe(500);
+    const [note] = await sql<{ title: string }[]>`select title from notes where id = ${id}`;
+    expect(note.title).toBe("");
+  });
 
   it("rejects a non-JSON body with 415", async () => {
     const app = makeApp();

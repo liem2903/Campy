@@ -49,7 +49,8 @@ function createAutosaver({ noteId, waitForCreate, onSaved, onStatusChange }: Aut
   }
 
   // Sends the unsaved content now. Resolves once it's saved or the attempt failed; it never
-  // rejects and doesn't wait for retries, so logout can await it without hanging.
+  // rejects and doesn't wait for retries. It does wait for a request in flight, which may never
+  // answer, so logout caps how long it waits.
   function saveNow(): Promise<void> {
     clearAllTimers()
     runningSave ??= sendUntilSaved().finally(() => {

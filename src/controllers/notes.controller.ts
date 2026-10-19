@@ -62,7 +62,10 @@ export async function update(req: Request, res: Response, next: NextFunction): P
     res.status(400).json({ error: "Title and body must be strings" });
     return;
   }
-  if (title.length > MAX_TITLE_LENGTH) {
+  // Postgres text can't store \u0000. Rejecting it would leave the user stuck on a character they
+  // can't see, so drop it.
+  const content = { title: withoutNul(title), body: withoutNul(body) };
+  if (content.title.length > MAX_TITLE_LENGTH) {
     res.status(400).json({ error: `Title must be ${MAX_TITLE_LENGTH} characters or fewer` });
     return;
   }
@@ -70,7 +73,7 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   try {
     // Same 404 as GET for a malformed id: it never reaches the service.
     if (!uuidPattern.test(req.params.id)) throw new NoteNotFoundError();
-    const updatedAt = await notesService.updateNote(req.user!.id, req.params.id, { title, body }); // requireSession set it
+    const updatedAt = await notesService.updateNote(req.user!.id, req.params.id, content); // requireSession set it
     res.json({ updatedAt: updatedAt.toISOString() });
   } catch (err) {
     if (err instanceof NoteNotFoundError) {
@@ -80,6 +83,8 @@ export async function update(req: Request, res: Response, next: NextFunction): P
     next(err); // includes a missing body block → 500 Internal Server Error, never a silent "Saved"
   }
 }
+
+const withoutNul = (text: string) => text.replaceAll("\u0000", "");
 
 // DB row → API shape: camelCase, and updatedAt as an ISO string.
 function toJson(note: NoteWithBody) {
