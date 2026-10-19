@@ -36,7 +36,7 @@ limiting the notes endpoints, migrating existing localStorage notes, soft delete
 | Domain errors | `NoteNotFoundError` (→ 404 "Note not found") and `NoteIdTakenError` (→ 409) in `src/errors.ts`. |
 | Conflicts | Last write wins. Concurrency is Sprint 3. |
 | Rate limiting | None on notes endpoints. |
-| Transition | Hybrid. Each ticket moves only its own piece of `NotesProvider` off localStorage, so every commit works end to end. Ticket 5 removes the last of the old `campi.notes` code. |
+| Transition | Hybrid. Each ticket moves only its own piece of `NotesProvider` off localStorage, so every commit works end to end. Ticket 4 removes the old `campi.notes` code (decided 2026-10-18). |
 | Client types | `client/src/notes.ts` splits into `NoteSummary` (list) and `NoteDetail` (page) as soon as the server list arrives (Ticket 2). |
 | Tests | Vitest + Supertest, `test/notes-*.test.ts`, reusing `test/helpers.ts`. Each test signs up its own users, and the `users` cascade cleans up their notes and blocks. |
 | Workflow | Same as FEAT-001 (see CLAUDE.md): tests first, then top-down checkpoints, each one explained, quizzed and committed. The blast-radius tags below are estimates; re-check each one when its plan is presented. |
@@ -225,34 +225,49 @@ URL → "This page doesn't exist".
 ## Ticket 4: Autosave
 
 **Slice:** Typing saves the title and body to the server automatically, with a visible save
-status. Nothing is lost on navigation, logout, a dropped connection or an expired session.
+status. Nothing is lost on navigation, logout, closing the tab, a dropped connection or an
+expired session.
+
+### Decisions (grilled 2026-10-18)
+
+| # | Area | Decision |
+|---|---|---|
+| 1 | Payload | Every save sends the whole `{ title, body }` (one `text` block per note for now; per-block saves come with the block editor) |
+| 2 | Method | `PUT /api/notes/:id` (both fields required = full replace), not PATCH |
+| 3 | Timing | Save 500ms after the last keystroke, and at least every 3s while typing nonstop (debounce + max wait) |
+| 4 | Where | `client/src/useAutosave.ts`, used by `NotePage`. `NotesProvider` only keeps a set of flush functions: each page's hook adds its flush on open, removes it on close; logout calls them all first |
+| 5 | Create first | `NotesProvider` keeps a promise per new note that resolves to its **final id** once the create succeeds (follows a 409 id swap). Saves await it and use that id |
+| 6 | Ordering | One save in flight at a time; edits made meanwhile go out as one save after it |
+| 7 | Retries | Retry every 3s only on network errors and 5xx. 400/413/404 stop with a specific message ("Title must be 200 characters or fewer", "This note is too large to save", "This note was deleted"). 401 → decision 8 |
+| 8 | Drafts | Every edit writes `campi.draft.<noteId>` to localStorage; a successful save deletes it. On open, `NotePage` restores a draft and saves it. Covers 401, closed tab, crash (replaces the `pagehide` idea) |
+| 9 | Sidebar | Title and order update instantly; a successful save replaces the local `updatedAt` with the server's |
+| 10 | Old storage | Remove the `bodies` / `campi.notes` code in this ticket, and `removeItem('campi.notes')` once |
+| 11 | Missing block | Body update matching 0 rows throws → transaction rolls back → 500 Internal Server Error ("Couldn't save"), never a silent "Saved" |
+| 12 | Leave prompt | `beforeunload` "Leave site?" only while a save is pending, in flight or failing |
 
 ### Checkpoint 0 🟢: Tests
 - [ ] `test/notes-update.test.ts` with the acceptance tests below
 
 ### Checkpoint 1 🟡: Page: debounced save + status
-- [ ] `client/src/useAutosave.ts`: holds the latest `{ title, body }` and saves 500ms after the
-  last keystroke. Status is "Saving…", "Saved" or "Couldn't save", shown on `NotePage`.
-- [ ] Saves for a note wait until its create (Ticket 1) has succeeded
-- [ ] Only one save is in flight at a time. Edits made during a save are sent after it.
+- [ ] `useAutosave`: debounce + max wait (3), one in flight (6), awaits the create promise (5).
+  Status "Saving…", "Saved" or "Couldn't save" on `NotePage`
 - [ ] Stub `updateNote()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟡: Page: retry, flush, leave guard
-- [ ] A failed save keeps the text in the editor and retries every 3s until it succeeds
-- [ ] Flush the pending save immediately on in-app navigation and before logout
-- [ ] A `beforeunload` "Leave site?" prompt while a save is pending or has failed
+- [ ] Retry policy (7)
+- [ ] Flush on in-app navigation; flush set in `NotesProvider`, called before logout (4)
+- [ ] `beforeunload` prompt (12)
 
-### Checkpoint 3 🟡: Page: 401 stash
-- [ ] Before the 401 redirect to `/login`, store the unsaved `{ title, body }` in localStorage
-  under `campi.draft.<noteId>`
-- [ ] After login, `NotePage` restores a draft for that note, saves it, then deletes the draft
-  (this replaces Ticket 3's interim local-copy overlay)
+### Checkpoint 3 🔴: Page: drafts + remove `campi.notes`
+🔴 because it changes `NotesProvider`'s context shape (drops `bodies`) used by `NotePage`.
+- [ ] Draft on every edit, deleted on save, restored on open (8)
+- [ ] Remove `bodies` / `campi.notes` (10). Sidebar takes the server's `updatedAt` (9)
 
 ### Checkpoint 4 🟢: Client API
-- [ ] `updateNote(id, { title, body })` → `PATCH /api/notes/:id` → `{ updatedAt }`
+- [ ] `updateNote(id, { title, body })` → `PUT /api/notes/:id` → `{ updatedAt }`
 
 ### Checkpoint 5 🟡: Route
-- [ ] `PATCH /:id` → `notes.update` in `notes.routes.ts`. Stub the controller method.
+- [ ] `PUT /:id` → `notes.update` in `notes.routes.ts`. Stub the controller method.
 
 ### Checkpoint 6 🟡: Controller
 - [ ] `notes.update`: both `title` and `body` are required strings. Title > 200 chars → 400
@@ -261,13 +276,13 @@ status. Nothing is lost on navigation, logout, a dropped connection or an expire
 
 ### Checkpoint 7 🟡: Service
 - [ ] `updateNote(userId, id, { title, body })` in one `sql.begin`: update the title (zero rows →
-  `NoteNotFoundError`), then the body block. Stub the repository functions.
+  `NoteNotFoundError`), then the body block (zero rows → throw, 11). Stub the repository functions.
 
 ### Checkpoint 8 🟡: Repositories
 - [ ] `notes.repository.updateTitle(userId, id, title, db)`: scoped by `user_id`, `returning
   updated_at`
 - [ ] `blocks.repository.updateBodyText(noteId, text, db)`: sets the top-level block's
-  `properties.text`. The `updated_at` triggers bump both rows.
+  `properties.text`, returns the row count. The `updated_at` triggers bump both rows.
 
 ### Acceptance tests
 - [ ] No cookie → 401
@@ -280,7 +295,7 @@ status. Nothing is lost on navigation, logout, a dropped connection or an expire
 
 **Demo:** Type → "Saved" → reload, and the text is still there. Stop the server mid-typing →
 "Couldn't save" → restart it → it saves on its own. Delete the `sid` cookie mid-typing → log in →
-the text is restored and saved.
+the text is restored and saved. Close the tab mid-typing → reopen the note → the text is back.
 
 ---
 
@@ -296,8 +311,7 @@ After this ticket, notes no longer touch localStorage.
 - [ ] The sidebar "×" opens a confirm dialog ("Delete "<title>"? This can't be undone."), then
   calls `deleteNote(id)` and navigates to `/` if it was the open note
 - [ ] Cancel a pending autosave for that note so it can't recreate the note or hit a 404
-- [ ] Remove the remaining `campi.notes` code from `NotesProvider`. Only `campi.draft.<id>`
-  (the Ticket 4 stash) stays.
+- [ ] (`campi.notes` is already gone since Ticket 4.) Delete the note's `campi.draft.<id>` too.
 - [ ] Stub `deleteNote()` in `client/src/api.ts`
 
 ### Checkpoint 2 🟢: Client API
