@@ -10,3 +10,8 @@ export async function insertBlock(noteId: string, block: NewBlock, db: Db = sql)
     values (${noteId}, ${block.position}, ${block.type}, ${db.json(block.properties)})
   `;
 }
+
+// Sets the note's body text; returns how many rows changed.
+export async function updateBodyText(_noteId: string, _text: string, _db: Db = sql): Promise<number> {
+  throw new Error("Not implemented");
+}

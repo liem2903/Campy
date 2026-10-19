@@ -39,3 +39,10 @@ export async function listNotes(userId: string, db: Db = sql): Promise<Note[]> {
     order by updated_at desc
   `;
 }
+
+// Sets this user's note title; returns the new updated_at, or null when this user has no such note.
+export async function updateTitle(
+  _userId: string, _id: string, _title: string, _db: Db = sql,
+): Promise<Date | null> {
+  throw new Error("Not implemented");
+}

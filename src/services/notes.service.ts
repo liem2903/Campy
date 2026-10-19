@@ -35,8 +35,20 @@ export async function getNote(userId: string, id: string): Promise<NoteWithBody>
 }
 
 // Replaces the note's title and body together and returns its new updated_at.
-export async function updateNote(_userId: string, _id: string, _content: NoteContent): Promise<Date> {
-  throw new Error("Not implemented");
+// Throws NoteNotFoundError when the note is missing or another user's.
+export async function updateNote(
+  userId: string, id: string, { title, body }: NoteContent,
+): Promise<Date> {
+  return sql.begin(async (tx) => {
+    // The title update is scoped by user_id, so it doubles as the ownership check.
+    const updatedAt = await notesRepository.updateTitle(userId, id, title, tx);
+    if (!updatedAt) throw new NoteNotFoundError();
+    const updatedBlockCount = await blocksRepository.updateBodyText(id, body, tx);
+    // Every note gets its text block on create, so 0 rows is a bug. Throwing rolls back the
+    // title too, and the client shows "Couldn't save" instead of a false "Saved".
+    if (updatedBlockCount === 0) throw new Error(`Note ${id} has no body block`);
+    return updatedAt;
+  });
 }
 
 // This user's notes, most recently edited first.
