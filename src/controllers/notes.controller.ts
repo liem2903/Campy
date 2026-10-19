@@ -53,6 +53,11 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+// PUT /api/notes/:id { title, body }: replaces both and returns the new updatedAt.
+export async function update(_req: Request, _res: Response, _next: NextFunction): Promise<void> {
+  throw new Error("Not implemented");
+}
+
 // DB row → API shape: camelCase, and updatedAt as an ISO string.
 function toJson(note: NoteWithBody) {
   return { ...toSummaryJson(note), body: note.body };
