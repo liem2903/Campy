@@ -73,8 +73,9 @@ export async function getNoteFromServer(id: string): Promise<NoteDetail | null> 
 // Deletes the note on the server. Rejects only on a network error or 5xx, the failures worth
 // retrying. Any 4xx resolves: 404 means it's already gone, and after a 401 (logged out) trying
 // again can't help.
-export async function deleteNoteOnServer(_id: string): Promise<void> {
-  throw new Error('Not implemented')
+export async function deleteNoteOnServer(id: string): Promise<void> {
+  // {} because the server only accepts JSON on requests that change data (415 otherwise).
+  await api.delete(`/notes/${id}`, { data: {}, validateStatus: (s) => s < 500 })
 }
 
 // A save the server refused. Retrying the same content won't help, so autosave stops and shows this.
