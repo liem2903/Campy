@@ -55,3 +55,9 @@ export async function updateNote(
 export async function listNotes(userId: string): Promise<Note[]> {
   return notesRepository.listNotes(userId);
 }
+
+// Deletes this user's note; its blocks go with it. Throws NoteNotFoundError when the note is
+// missing or another user's.
+export async function deleteNote(_userId: string, _id: string): Promise<void> {
+  throw new Error("Not implemented");
+}
