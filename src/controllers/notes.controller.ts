@@ -84,6 +84,11 @@ export async function update(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+// DELETE /api/notes/:id: deletes this user's note and its blocks. Same 404 rules as GET.
+export async function remove(_req: Request, _res: Response, _next: NextFunction): Promise<void> {
+  throw new Error("Not implemented");
+}
+
 const withoutNul = (text: string) => text.replaceAll("\u0000", "");
 
 // DB row → API shape: camelCase, and updatedAt as an ISO string.

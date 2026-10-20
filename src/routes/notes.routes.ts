@@ -13,5 +13,6 @@ export function notesRoutes(options: AppOptions): Router {
   router.post("/", notes.create);
   router.get("/:id", notes.get);
   router.put("/:id", notes.update);
+  router.delete("/:id", notes.remove);
   return router;
 }
