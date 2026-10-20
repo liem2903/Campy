@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { createNoteOnServer, listNotes } from './api.ts'
+import { createNoteOnServer, deleteNoteOnServer, listNotes } from './api.ts'
 import { useAuth } from './auth.ts'
-import { moveDraft } from './drafts.ts'
+import { moveDraft, removeDraft } from './drafts.ts'
 import { NotesContext, type NoteSummary } from './notes.ts'
 import { RETRY_MS, wait } from './retry.ts'
 
@@ -62,7 +62,7 @@ function NotesProvider({ children }: { children: ReactNode }) {
     notesRef.current = notes
   }, [notes])
 
-  // Note id → the id its create finally succeeded under (null = deleted first). Autosave awaits
+  // Note id → the id its create finally succeeded under (null = deleted). Autosave awaits
   // this before saving a new note. Entries stay after they resolve: a resolved promise still gives
   // the right answer, and there's one small entry per note created this session.
   const finalIdsRef = useRef(new Map<string, Promise<string | null>>())
@@ -127,9 +127,19 @@ function NotesProvider({ children }: { children: ReactNode }) {
     setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, updatedAt } : note)))
   }, [])
 
-  const deleteNote = useCallback((id: string) => {
-    setNotes((prev) => prev.filter((note) => note.id !== id))
-  }, [])
+  // Removes the note right away and deletes it on the server in the background.
+  const deleteNote = useCallback(
+    (id: string) => {
+      // Read before the next line replaces it: it resolves to the id the server has the note under.
+      const serverIdPromise = waitForCreate(id)
+      // From now on autosave gets null ("deleted") for this note, so it sends no more saves.
+      finalIdsRef.current.set(id, Promise.resolve(null))
+      setNotes((prev) => prev.filter((note) => note.id !== id))
+      removeDraft(id)
+      void syncDelete(serverIdPromise)
+    },
+    [waitForCreate],
+  )
 
   // The flush function of every open note page's autosave.
   const flushesRef = useRef(new Set<() => Promise<void>>())
@@ -163,6 +173,21 @@ function NotesProvider({ children }: { children: ReactNode }) {
   )
 
   return <NotesContext.Provider value={value}>{children}</NotesContext.Provider>
+}
+
+// Deletes the note on the server, retrying until it's gone. It waits for the note's create
+// first: a DELETE that beat the POST would get a 404, and then the POST would bring the note back.
+async function syncDelete(serverIdPromise: Promise<string | null>): Promise<void> {
+  const serverId = await serverIdPromise
+  if (serverId === null) return // its create never succeeded, so the server has nothing to delete
+  for (;;) {
+    try {
+      await deleteNoteOnServer(serverId)
+      return
+    } catch {
+      await wait(RETRY_MS)
+    }
+  }
 }
 
 export default NotesProvider

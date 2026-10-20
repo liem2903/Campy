@@ -30,6 +30,7 @@ function Sidebar() {
     navigate(`/notes/${createNote()}`)
   }
 
+  // deleteNote runs first so the open note's autosave is already stopped when it unmounts.
   function handleDelete(id: string) {
     deleteNote(id)
     if (id === noteId) navigate('/')

@@ -302,14 +302,15 @@ the text is restored and saved. Close the tab mid-typing → reopen the note →
 ## Ticket 5: Delete (+ remove localStorage)
 
 **Slice:** Deleting a note asks for confirmation, then removes it and its blocks from the server.
-After this ticket, notes no longer touch localStorage.
+After this ticket, the only note data in localStorage is drafts of unsaved edits (Ticket 4); a
+deleted note's draft goes with it.
 
 ### Checkpoint 0 🟢: Tests
 - [ ] `test/notes-delete.test.ts` with the acceptance tests below
 
 ### Checkpoint 1 🟡: Page
-- [ ] The sidebar "×" opens a confirm dialog ("Delete "<title>"? This can't be undone."), then
-  calls `deleteNote(id)` and navigates to `/` if it was the open note
+- [ ] Holding the sidebar "×" for 1.2s confirms (kept from the UI polish pass instead of a dialog),
+  then calls `deleteNote(id)` and navigates to `/` if it was the open note
 - [ ] Cancel a pending autosave for that note so it can't recreate the note or hit a 404
 - [ ] (`campi.notes` is already gone since Ticket 4.) Delete the note's `campi.draft.<id>` too.
 - [ ] Stub `deleteNote()` in `client/src/api.ts`
@@ -338,8 +339,8 @@ After this ticket, notes no longer touch localStorage.
 - [ ] Deleting twice → the second call is 404
 - [ ] Non-JSON `Content-Type` → 415 (the client sends `{}` like logout)
 
-**Demo:** Delete a note → confirm → it leaves the sidebar and stays gone after a reload.
-Cancel → nothing changes.
+**Demo:** Hold "×" on a note → it leaves the sidebar and stays gone after a reload.
+Let go early → nothing changes.
 
 ---
 

@@ -40,7 +40,7 @@ export function moveDraft(fromNoteId: string, toNoteId: string): void {
   removeDraft(fromNoteId)
 }
 
-function removeDraft(noteId: string): void {
+export function removeDraft(noteId: string): void {
   try {
     localStorage.removeItem(draftKey(noteId))
   } catch {

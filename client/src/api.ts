@@ -70,6 +70,13 @@ export async function getNoteFromServer(id: string): Promise<NoteDetail | null> 
   return status === 404 ? null : data
 }
 
+// Deletes the note on the server. Rejects only on a network error or 5xx, the failures worth
+// retrying. Any 4xx resolves: 404 means it's already gone, and after a 401 (logged out) trying
+// again can't help.
+export async function deleteNoteOnServer(_id: string): Promise<void> {
+  throw new Error('Not implemented')
+}
+
 // A save the server refused. Retrying the same content won't help, so autosave stops and shows this.
 export type SaveRejection = { saved: false; message: string }
 export type SaveResult = { saved: true; updatedAt: string } | SaveRejection

@@ -18,9 +18,11 @@ export type NotesContextValue = {
   moveEditedNoteToTop: (id: string, title: string) => void
   // Swaps the local updatedAt for the server's after a successful save.
   markNoteSaved: (id: string, updatedAt: string) => void
+  // Removes the note from the list, stops its autosave and deletes its draft at once; the server
+  // delete happens in the background.
   deleteNote: (id: string) => void
   // Resolves to the id the server stores the note under, once its create has succeeded (the id
-  // changes after a 409 Conflict). null = deleted before it reached the server.
+  // changes after a 409 Conflict). null = the note was deleted.
   waitForCreate: (id: string) => Promise<string | null>
   // Each open note page registers its autosave flush; the returned function unregisters it.
   registerFlush: (flush: () => Promise<void>) => () => void
