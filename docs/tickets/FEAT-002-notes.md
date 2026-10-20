@@ -345,7 +345,7 @@ Let go early → nothing changes.
 ---
 
 ## Overall verification (after Ticket 5)
-- [ ] `npm run build` and `npm test` pass (notes + auth tests)
-- [ ] Full flow in `npm run dev:all` (or the `run-campi` skill): sign up → new note → type →
+- [x] `npm run build` and `npm test` pass (notes + auth tests)
+- [x] Full flow in `npm run dev:all` (or the `run-campi` skill): sign up → new note → type →
   "Saved" → reload → still there → second user can't see it → delete with confirm
-- [ ] No `campi.notes` key in localStorage after using the app
+- [x] No `campi.notes` key in localStorage after using the app
