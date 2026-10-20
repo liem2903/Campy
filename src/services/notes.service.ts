@@ -58,6 +58,8 @@ export async function listNotes(userId: string): Promise<Note[]> {
 
 // Deletes this user's note; its blocks go with it. Throws NoteNotFoundError when the note is
 // missing or another user's.
-export async function deleteNote(_userId: string, _id: string): Promise<void> {
-  throw new Error("Not implemented");
+export async function deleteNote(userId: string, id: string): Promise<void> {
+  // One statement, and the cascade runs inside it, so no transaction is needed.
+  const deletedCount = await notesRepository.deleteNote(userId, id);
+  if (deletedCount === 0) throw new NoteNotFoundError();
 }

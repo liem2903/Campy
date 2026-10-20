@@ -52,3 +52,9 @@ export async function updateTitle(
   `;
   return note?.updated_at ?? null;
 }
+
+// Deletes this user's note; on delete cascade removes its blocks. Returns the number of notes
+// deleted: 1, or 0 when this user has no note with that id.
+export async function deleteNote(_userId: string, _id: string, _db: Db = sql): Promise<number> {
+  throw new Error("Not implemented");
+}
