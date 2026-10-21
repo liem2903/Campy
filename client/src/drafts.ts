@@ -1,4 +1,4 @@
-import type { NoteContent } from './notes.ts'
+import type { NoteBlock, NoteContent } from './notes.ts'
 
 // Unsaved edits per note, kept in localStorage until the server has them. They survive an
 // expired session, a closed tab or a crash, and NotePage restores them on open.
@@ -25,8 +25,11 @@ export function writeDraft(noteId: string, content: NoteContent): void {
 
 // Removes the draft only if it still holds `savedContent`. If a newer edit has overwritten it
 // (say, the note was reopened while this save was in flight), that edit isn't saved yet: keep it.
-export function removeDraftIfSaved(_noteId: string, _savedContent: NoteContent): void {
-  throw new Error('Not implemented')
+export function removeDraftIfSaved(noteId: string, savedContent: NoteContent): void {
+  const draft = readDraft(noteId)
+  const draftIsSavedContent =
+    draft?.title === savedContent.title && JSON.stringify(draft.blocks) === JSON.stringify(savedContent.blocks)
+  if (draftIsSavedContent) removeDraft(noteId)
 }
 
 // After a 409 Conflict the note gets a new id; its draft follows it.
@@ -45,6 +48,32 @@ export function removeDraft(noteId: string): void {
   }
 }
 
-function isNoteContent(_value: unknown): _value is NoteContent {
-  throw new Error('Not implemented')
+// An old { title, body } draft or a corrupted one fails here and is ignored, instead of crashing
+// the editor when it reads each block.
+function isNoteContent(value: unknown): value is NoteContent {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'title' in value &&
+    'blocks' in value &&
+    typeof value.title === 'string' &&
+    Array.isArray(value.blocks) &&
+    value.blocks.every(isNoteBlock)
+  )
+}
+
+function isNoteBlock(value: unknown): value is NoteBlock {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'type' in value &&
+    'properties' in value &&
+    typeof value.id === 'string' &&
+    value.type === 'text' &&
+    typeof value.properties === 'object' &&
+    value.properties !== null &&
+    'text' in value.properties &&
+    typeof value.properties.text === 'string'
+  )
 }

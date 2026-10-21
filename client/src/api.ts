@@ -83,7 +83,6 @@ export type SaveRejection = { saved: false; message: string }
 export type SaveResult = { saved: true; updatedAt: string } | SaveRejection
 
 const saveRejectionMessages: Record<number, string> = {
-  400: 'Title must be 200 characters or fewer',
   404: 'This note was deleted',
   413: 'This note is too large to save',
 }
@@ -92,9 +91,12 @@ const saveRejectionMessages: Record<number, string> = {
 // those are worth retrying (a 401 also logs the user out through the interceptor).
 export async function saveNoteToServer(id: string, content: NoteContent): Promise<SaveResult> {
   // These statuses count as normal responses, so they skip the interceptor and keep their status.
-  const { data, status } = await api.put<{ updatedAt: string }>(`/notes/${id}`, content, {
-    validateStatus: (s) => (s >= 200 && s < 300) || s in saveRejectionMessages,
+  const { data, status } = await api.put<{ updatedAt: string } | { error: string }>(`/notes/${id}`, content, {
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 400 || s in saveRejectionMessages,
   })
   const rejectionMessage = saveRejectionMessages[status]
-  return rejectionMessage ? { saved: false, message: rejectionMessage } : { saved: true, updatedAt: data.updatedAt }
+  if (rejectionMessage) return { saved: false, message: rejectionMessage }
+  // 400 Bad Request: the server says what's wrong (a long title, or blocks our editor got wrong).
+  if ('error' in data) return { saved: false, message: data.error }
+  return { saved: true, updatedAt: data.updatedAt }
 }
