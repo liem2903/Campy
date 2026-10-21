@@ -11,21 +11,15 @@ function updateNote(app: App, id: string, body: object, cookie?: string) {
   return (cookie ? req.set("Cookie", cookie) : req).send(body);
 }
 
-// Creates a note through the API, so it has its text block like a real one.
 async function createdNote(app: App, cookie: string) {
   const id = randomUUID();
   await request(app).post("/api/notes").set("Cookie", cookie).send({ id }).expect(201);
   return id;
 }
 
-// The note's title and body, read straight from the DB.
-async function storedNote(noteId: string) {
-  const [note] = await sql<{ title: string; body: string }[]>`
-    select n.title, b.properties->>'text' as body
-    from notes n join blocks b on b.note_id = n.id and b.parent_id is null
-    where n.id = ${noteId}
-  `;
-  return note;
+async function storedTitle(noteId: string) {
+  const [note] = await sql<{ title: string }[]>`select title from notes where id = ${noteId}`;
+  return note.title;
 }
 
 // The 404 body names the note, so these tests can't pass on the app's
@@ -34,22 +28,22 @@ const notFound = { error: "Note not found" };
 
 describe("PUT /api/notes/:id", () => {
   it("rejects a request with no cookie", async () => {
-    const res = await updateNote(makeApp(), randomUUID(), { title: "T", body: "B" });
+    const res = await updateNote(makeApp(), randomUUID(), { title: "T", blocks: [] });
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: "You're not logged in" });
   });
 
-  it("saves the title and body, and GET returns them", async () => {
+  it("saves the title, and GET returns it", async () => {
     const app = makeApp();
     const user = await signedUp(app);
     const id = await createdNote(app, user.cookie);
 
-    const res = await updateNote(app, id, { title: "Chem", body: "Atoms" }, user.cookie);
+    const res = await updateNote(app, id, { title: "Chem", blocks: [] }, user.cookie);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ updatedAt: expect.any(String) });
 
     const opened = await request(app).get(`/api/notes/${id}`).set("Cookie", user.cookie).expect(200);
-    expect(opened.body).toEqual({ id, title: "Chem", body: "Atoms", updatedAt: res.body.updatedAt });
+    expect(opened.body).toEqual({ id, title: "Chem", blocks: [], updatedAt: res.body.updatedAt });
   });
 
   it("moves updatedAt forward and the note to the top of the list", async () => {
@@ -61,7 +55,7 @@ describe("PUT /api/notes/:id", () => {
       select updated_at from notes where id = ${older}
     `;
 
-    const res = await updateNote(app, older, { title: "Edited", body: "" }, user.cookie).expect(200);
+    const res = await updateNote(app, older, { title: "Edited", blocks: [] }, user.cookie).expect(200);
     expect(new Date(res.body.updatedAt).getTime()).toBeGreaterThan(before.getTime());
 
     const list = await request(app).get("/api/notes").set("Cookie", user.cookie).expect(200);
@@ -74,10 +68,10 @@ describe("PUT /api/notes/:id", () => {
     const bob = await signedUp(app);
     const aliceNote = await createdNote(app, alice.cookie);
 
-    const res = await updateNote(app, aliceNote, { title: "Hacked", body: "Hacked" }, bob.cookie);
+    const res = await updateNote(app, aliceNote, { title: "Hacked", blocks: [] }, bob.cookie);
     expect(res.status).toBe(404);
     expect(res.body).toEqual(notFound);
-    expect(await storedNote(aliceNote)).toEqual({ title: "", body: "" });
+    expect(await storedTitle(aliceNote)).toBe("");
   });
 
   it("returns 404 for an unknown UUID and for a non-UUID id", async () => {
@@ -85,7 +79,7 @@ describe("PUT /api/notes/:id", () => {
     const user = await signedUp(app);
 
     for (const id of [randomUUID(), "not-a-uuid"]) {
-      const res = await updateNote(app, id, { title: "T", body: "B" }, user.cookie);
+      const res = await updateNote(app, id, { title: "T", blocks: [] }, user.cookie);
       expect(res.status).toBe(404);
       expect(res.body).toEqual(notFound);
     }
@@ -96,24 +90,24 @@ describe("PUT /api/notes/:id", () => {
     const user = await signedUp(app);
     const id = await createdNote(app, user.cookie);
 
-    await updateNote(app, id, { title: "x".repeat(200), body: "" }, user.cookie).expect(200);
-    const res = await updateNote(app, id, { title: "x".repeat(201), body: "" }, user.cookie);
+    await updateNote(app, id, { title: "x".repeat(200), blocks: [] }, user.cookie).expect(200);
+    const res = await updateNote(app, id, { title: "x".repeat(201), blocks: [] }, user.cookie);
     expect(res.status).toBe(400);
     expect(res.body).toEqual({ error: "Title must be 200 characters or fewer" });
   });
 
-  it("rejects a missing or non-string title or body with 400", async () => {
+  it("rejects a missing or non-string title with 400", async () => {
     const app = makeApp();
     const user = await signedUp(app);
     const id = await createdNote(app, user.cookie);
 
-    const badBodies = [{ body: "B" }, { title: "T" }, { title: 1, body: "B" }, { title: "T", body: null }];
+    const badBodies = [{ blocks: [] }, { title: 1, blocks: [] }, { title: null, blocks: [] }];
     for (const badBody of badBodies) {
       const res = await updateNote(app, id, badBody, user.cookie);
       expect(res.status).toBe(400);
-      expect(res.body).toEqual({ error: "Title and body must be strings" });
+      expect(res.body).toEqual({ error: "Title must be a string" });
     }
-    expect(await storedNote(id)).toEqual({ title: "", body: "" });
+    expect(await storedTitle(id)).toBe("");
   });
 
   it("rejects a body over 100kb with 413", async () => {
@@ -121,32 +115,24 @@ describe("PUT /api/notes/:id", () => {
     const user = await signedUp(app);
     const id = await createdNote(app, user.cookie);
 
-    const res = await updateNote(app, id, { title: "", body: "x".repeat(101 * 1024) }, user.cookie);
+    const res = await updateNote(app, id, { title: "", blocks: [{ id: randomUUID(), type: "text", properties: { text: "x".repeat(101 * 1024) } }] }, user.cookie);
     expect(res.status).toBe(413);
     expect(res.body).toEqual({ error: "Invalid request" });
   });
 
   // Postgres text can't hold \u0000; without stripping, every save of a pasted NUL would 500
   // and the client would retry it forever.
-  it("saves text containing a NUL character, without the NUL", async () => {
+  it("saves a title and block text containing a NUL character, without the NUL", async () => {
     const app = makeApp();
     const user = await signedUp(app);
     const id = await createdNote(app, user.cookie);
+    const blockId = randomUUID();
+    const blocks = [{ id: blockId, type: "text", properties: { text: "Bo\u0000dy" } }];
 
-    await updateNote(app, id, { title: "Ti\u0000tle", body: "Bo\u0000dy" }, user.cookie).expect(200);
-    expect(await storedNote(id)).toEqual({ title: "Title", body: "Body" });
-  });
-
-  it("returns 500 and rolls back the title when the note has no body block", async () => {
-    const app = makeApp();
-    const user = await signedUp(app);
-    const id = await createdNote(app, user.cookie);
-    await sql`delete from blocks where note_id = ${id}`;
-
-    const res = await updateNote(app, id, { title: "New", body: "B" }, user.cookie);
-    expect(res.status).toBe(500);
-    const [note] = await sql<{ title: string }[]>`select title from notes where id = ${id}`;
-    expect(note.title).toBe("");
+    await updateNote(app, id, { title: "Ti\u0000tle", blocks }, user.cookie).expect(200);
+    const opened = await request(app).get(`/api/notes/${id}`).set("Cookie", user.cookie).expect(200);
+    expect(opened.body.title).toBe("Title");
+    expect(opened.body.blocks).toEqual([{ id: blockId, type: "text", properties: { text: "Body" } }]);
   });
 
   it("rejects a non-JSON body with 415", async () => {

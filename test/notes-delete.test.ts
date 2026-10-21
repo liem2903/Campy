@@ -12,10 +12,13 @@ function deleteNote(app: App, id: string, cookie?: string) {
   return (cookie ? req.set("Cookie", cookie) : req).send({});
 }
 
-// Creates a note through the API, so it has its text block like a real one.
-async function createdNote(app: App, cookie: string) {
+// Creates a note through the API and saves one paragraph, so there's a block for the
+// cascade to delete.
+async function createdNoteWithOneBlock(app: App, cookie: string) {
   const id = randomUUID();
   await request(app).post("/api/notes").set("Cookie", cookie).send({ id }).expect(201);
+  const blocks = [{ id: randomUUID(), type: "text", properties: { text: "one" } }];
+  await request(app).put(`/api/notes/${id}`).set("Cookie", cookie).send({ title: "", blocks }).expect(200);
   return id;
 }
 
@@ -44,7 +47,7 @@ describe("DELETE /api/notes/:id", () => {
   it("deletes the user's own note and its blocks", async () => {
     const app = makeApp();
     const user = await signedUp(app);
-    const id = await createdNote(app, user.cookie);
+    const id = await createdNoteWithOneBlock(app, user.cookie);
     expect(await storedRowCounts(id)).toEqual({ noteRows: 1, blockRows: 1 });
 
     const res = await deleteNote(app, id, user.cookie);
@@ -57,7 +60,7 @@ describe("DELETE /api/notes/:id", () => {
     const app = makeApp();
     const alice = await signedUp(app);
     const bob = await signedUp(app);
-    const aliceNote = await createdNote(app, alice.cookie);
+    const aliceNote = await createdNoteWithOneBlock(app, alice.cookie);
 
     const res = await deleteNote(app, aliceNote, bob.cookie);
     expect(res.status).toBe(404);
@@ -68,7 +71,7 @@ describe("DELETE /api/notes/:id", () => {
   it("returns 404 the second time a note is deleted", async () => {
     const app = makeApp();
     const user = await signedUp(app);
-    const id = await createdNote(app, user.cookie);
+    const id = await createdNoteWithOneBlock(app, user.cookie);
 
     await deleteNote(app, id, user.cookie).expect(204);
     const res = await deleteNote(app, id, user.cookie);
@@ -80,13 +83,13 @@ describe("DELETE /api/notes/:id", () => {
   it("returns 404 to a PUT that arrives after the delete", async () => {
     const app = makeApp();
     const user = await signedUp(app);
-    const id = await createdNote(app, user.cookie);
+    const id = await createdNoteWithOneBlock(app, user.cookie);
 
     await deleteNote(app, id, user.cookie).expect(204);
     const res = await request(app)
       .put(`/api/notes/${id}`)
       .set("Cookie", user.cookie)
-      .send({ title: "Late", body: "Save" });
+      .send({ title: "Late", blocks: [] });
     expect(res.status).toBe(404);
     expect(res.body).toEqual(notFound);
     expect(await storedRowCounts(id)).toEqual({ noteRows: 0, blockRows: 0 });
@@ -104,7 +107,7 @@ describe("DELETE /api/notes/:id", () => {
   it("rejects a non-JSON request with 415", async () => {
     const app = makeApp();
     const user = await signedUp(app);
-    const id = await createdNote(app, user.cookie);
+    const id = await createdNoteWithOneBlock(app, user.cookie);
 
     const res = await request(app).delete(`/api/notes/${id}`).set("Cookie", user.cookie);
     expect(res.status).toBe(415);

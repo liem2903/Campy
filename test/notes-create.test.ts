@@ -36,11 +36,11 @@ describe("POST /api/notes", () => {
 
     const res = await createNote(app, { id }, user.cookie);
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ id, title: "", body: "", updatedAt: expect.any(String) });
+    expect(res.body).toEqual({ id, title: "", blocks: [], updatedAt: expect.any(String) });
     expect(new Date(res.body.updatedAt).toISOString()).toBe(res.body.updatedAt);
   });
 
-  it("stores one note owned by the user and one empty top-level text block", async () => {
+  it("stores one note owned by the user and no blocks", async () => {
     const app = makeApp();
     const user = await signedUp(app);
     const id = randomUUID();
@@ -48,7 +48,7 @@ describe("POST /api/notes", () => {
     await createNote(app, { id }, user.cookie).expect(201);
     const { notes, blocks } = await rowsFor(id);
     expect(notes).toEqual([{ user_id: user.id, title: "", updated_at: expect.any(Date) }]);
-    expect(blocks).toEqual([{ parent_id: null, position: "a0", type: "text", properties: { text: "" } }]);
+    expect(blocks).toEqual([]);
   });
 
   it("returns the same note when the same user retries the id", async () => {
@@ -62,7 +62,7 @@ describe("POST /api/notes", () => {
     expect(retry.body).toEqual(first.body);
     const { notes, blocks } = await rowsFor(id);
     expect(notes).toHaveLength(1);
-    expect(blocks).toHaveLength(1);
+    expect(blocks).toHaveLength(0);
   });
 
   it("handles two simultaneous creates of one id by the same user", async () => {
@@ -78,7 +78,7 @@ describe("POST /api/notes", () => {
     expect(a.body).toEqual(b.body);
     const { notes, blocks } = await rowsFor(id);
     expect(notes).toHaveLength(1);
-    expect(blocks).toHaveLength(1);
+    expect(blocks).toHaveLength(0);
   });
 
   it("rejects an id another user already owns with 409", async () => {
