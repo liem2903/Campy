@@ -25,3 +25,10 @@ export class NoteNotFoundError extends Error {
     super("Note not found");
   }
 }
+
+// A block id in the saved tree belongs to a different note (this user's or another user's).
+export class BlockOfAnotherNoteError extends Error {
+  constructor() {
+    super("A block id belongs to another note");
+  }
+}

@@ -1,11 +1,26 @@
 import type { NextFunction, Request, Response } from "express";
-import { NoteIdTakenError, NoteNotFoundError } from "../errors.js";
+import { z } from "zod";
+import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
-import type { Note, NoteWithBody } from "../services/notes.service.js";
+import type { Note, NoteBlock, NoteWithBlocks } from "../services/notes.service.js";
 
 // Lowercase only, so the id we send back always equals the one the client sent.
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const MAX_TITLE_LENGTH = 200;
+const INVALID_BLOCKS = "Invalid blocks";
+
+// The tree PUT takes. z.object drops keys it doesn't list (e.g. properties.color), so only known
+// fields reach the service. Ticket 1 is paragraphs only; Ticket 2 adds list items with children.
+// The type is a compile error if the schema and NoteBlock drift apart.
+const noteBlocksSchema: z.ZodType<NoteBlock[], unknown> = z
+  .array(z.object({
+    id: z.string().regex(uuidPattern),
+    type: z.literal("text"),
+    properties: z.object({ text: z.string().transform(withoutNul) }),
+    // Listed so it's rejected, not silently dropped: a text block can't have children.
+    children: z.never().optional(),
+  }))
+  .refine((blocks) => new Set(blocks.map((block) => block.id)).size === blocks.length);
 
 // GET /api/notes: this user's notes, most recently edited first.
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -17,7 +32,7 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-// GET /api/notes/:id: this user's note with its body. A missing note, another user's note and
+// GET /api/notes/:id: this user's note with its blocks. A missing note, another user's note and
 // a malformed id all get the same 404, so a response never reveals which.
 export async function get(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -54,25 +69,32 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-// PUT /api/notes/:id { title, body }: replaces both and returns the new updatedAt.
+// PUT /api/notes/:id { title, blocks }: replaces both and returns the new updatedAt.
 // Autosave sends the whole note every time, so both fields are required.
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const { title, body } = req.body as { title?: unknown; body?: unknown };
-  if (typeof title !== "string" || typeof body !== "string") {
-    res.status(400).json({ error: "Title and body must be strings" });
+  const { title, blocks } = req.body as { title?: unknown; blocks?: unknown };
+  if (typeof title !== "string") {
+    res.status(400).json({ error: "Title must be a string" });
     return;
   }
   // Postgres text can't store \u0000. Rejecting it would leave the user stuck on a character they
   // can't see, so drop it.
-  const content = { title: withoutNul(title), body: withoutNul(body) };
-  if (content.title.length > MAX_TITLE_LENGTH) {
+  const titleWithoutNul = withoutNul(title);
+  if (titleWithoutNul.length > MAX_TITLE_LENGTH) {
     res.status(400).json({ error: `Title must be ${MAX_TITLE_LENGTH} characters or fewer` });
+    return;
+  }
+  // One message for every shape problem: only a buggy or hostile client sends a bad tree.
+  const parsedBlocks = noteBlocksSchema.safeParse(blocks);
+  if (!parsedBlocks.success) {
+    res.status(400).json({ error: INVALID_BLOCKS });
     return;
   }
 
   try {
     // Same 404 as GET for a malformed id: it never reaches the service.
     if (!uuidPattern.test(req.params.id)) throw new NoteNotFoundError();
+    const content = { title: titleWithoutNul, blocks: parsedBlocks.data };
     const updatedAt = await notesService.updateNote(req.user!.id, req.params.id, content); // requireSession set it
     res.json({ updatedAt: updatedAt.toISOString() });
   } catch (err) {
@@ -80,7 +102,12 @@ export async function update(req: Request, res: Response, next: NextFunction): P
       res.status(404).json({ error: err.message });
       return;
     }
-    next(err); // includes a missing body block → 500 Internal Server Error, never a silent "Saved"
+    // Same message as a bad shape, so the response never reveals that the id exists elsewhere.
+    if (err instanceof BlockOfAnotherNoteError) {
+      res.status(400).json({ error: INVALID_BLOCKS });
+      return;
+    }
+    next(err);
   }
 }
 
@@ -99,14 +126,17 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-const withoutNul = (text: string) => text.replaceAll("\u0000", "");
-
-// DB row → API shape: camelCase, and updatedAt as an ISO string.
-function toJson(note: NoteWithBody) {
-  return { ...toSummaryJson(note), body: note.body };
+// A function declaration so it's hoisted: noteBlocksSchema, near the top, uses it.
+function withoutNul(text: string): string {
+  return text.replaceAll("\u0000", "");
 }
 
-// List items leave out body: the sidebar only needs id, title and updatedAt.
+// DB row → API shape: camelCase, and updatedAt as an ISO string.
+function toJson(note: NoteWithBlocks) {
+  return { ...toSummaryJson(note), blocks: note.blocks };
+}
+
+// List items leave out blocks: the sidebar only needs id, title and updatedAt.
 function toSummaryJson(note: Note) {
   return { id: note.id, title: note.title, updatedAt: note.updated_at.toISOString() };
 }
