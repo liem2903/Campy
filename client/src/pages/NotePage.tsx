@@ -23,7 +23,7 @@ function NotePage() {
           // null = 404 Not Found. For a note in our list, its create hasn't reached the server yet.
           const noteDetailOrNull = await getNoteFromServer(noteIdFromUrl)
           if (stale) return
-          const content = { title: noteDetailOrNull?.title ?? '', body: noteDetailOrNull?.body ?? '' }
+          const content = { title: noteDetailOrNull?.title ?? '', blocks: noteDetailOrNull?.blocks ?? [] }
           setServerReply({ id: noteIdFromUrl, content })
           return
         } catch {

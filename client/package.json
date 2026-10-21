@@ -10,6 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/extension-document": "^3.32.0",
+    "@tiptap/extension-paragraph": "^3.32.0",
+    "@tiptap/extension-text": "^3.32.0",
+    "@tiptap/extension-unique-id": "^3.32.0",
+    "@tiptap/extensions": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
     "axios": "^1.20.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -25,11 +25,8 @@ export function writeDraft(noteId: string, content: NoteContent): void {
 
 // Removes the draft only if it still holds `savedContent`. If a newer edit has overwritten it
 // (say, the note was reopened while this save was in flight), that edit isn't saved yet: keep it.
-export function removeDraftIfSaved(noteId: string, savedContent: NoteContent): void {
-  const draft = readDraft(noteId)
-  if (draft && draft.title === savedContent.title && draft.body === savedContent.body) {
-    removeDraft(noteId)
-  }
+export function removeDraftIfSaved(_noteId: string, _savedContent: NoteContent): void {
+  throw new Error('Not implemented')
 }
 
 // After a 409 Conflict the note gets a new id; its draft follows it.
@@ -48,13 +45,6 @@ export function removeDraft(noteId: string): void {
   }
 }
 
-function isNoteContent(value: unknown): value is NoteContent {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'title' in value &&
-    'body' in value &&
-    typeof value.title === 'string' &&
-    typeof value.body === 'string'
-  )
+function isNoteContent(_value: unknown): _value is NoteContent {
+  throw new Error('Not implemented')
 }

@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import Document from '@tiptap/extension-document'
+import Paragraph from '@tiptap/extension-paragraph'
+import Text from '@tiptap/extension-text'
+import UniqueID from '@tiptap/extension-unique-id'
+import { Placeholder, UndoRedo } from '@tiptap/extensions'
+import { EditorContent, useEditor } from '@tiptap/react'
+import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
@@ -8,6 +15,17 @@ const saveStatusLabels: Record<Exclude<SaveStatus['kind'], 'rejected'>, string> 
   saving: 'Saving…',
   retrying: "Couldn't save. Retrying…",
 }
+
+// Paragraphs only, so the editor can't hold anything the blocks can't store. UniqueID gives
+// each paragraph the id its block is saved under. Ticket 2 adds lists.
+const bodyExtensions = [
+  Document,
+  Paragraph,
+  Text,
+  UndoRedo,
+  UniqueID.configure({ types: ['paragraph'] }),
+  Placeholder.configure({ placeholder: 'Start writing...' }),
+]
 
 // The title and body of one note, saved as the user types. NotePage renders it with
 // key={noteId}, so each note gets a fresh editor and autosave.
@@ -32,14 +50,14 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
     scheduleSave(restoredDraft)
   }, [restoredDraft, noteId, moveEditedNoteToTop, scheduleSave])
 
-  // Grow the body with its content so the page scrolls, not the textarea.
-  const bodyRef = useRef<HTMLTextAreaElement>(null)
-  useLayoutEffect(() => {
-    const el = bodyRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [content.body])
+  // Built once: TipTap reads its starting content only when it's created, then keeps its own copy.
+  const [startingBodyDoc] = useState(() => blocksToEditorDoc(content.blocks))
+  // onUpdate always runs the latest render's callback, so `content.title` here is current.
+  const bodyEditor = useEditor({
+    extensions: bodyExtensions,
+    content: startingBodyDoc,
+    onUpdate: ({ editor }) => edit({ ...content, blocks: editorDocToBlocks(editor.state.doc) }),
+  })
 
   const saveFailed = saveStatus.kind === 'retrying' || saveStatus.kind === 'rejected'
   const saveStatusText = saveStatus.kind === 'rejected' ? saveStatus.message : saveStatusLabels[saveStatus.kind]
@@ -59,13 +77,7 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
         placeholder="Untitled"
         autoFocus={content.title === ''}
       />
-      <textarea
-        ref={bodyRef}
-        className="note-body"
-        value={content.body}
-        onChange={(e) => edit({ ...content, body: e.target.value })}
-        placeholder="Start writing..."
-      />
+      <EditorContent editor={bodyEditor} className="note-body" />
     </article>
   )
 }

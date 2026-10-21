@@ -292,15 +292,32 @@
 }
 
 .note-body {
-  min-height: 50vh;
   font-size: 16px;
   line-height: 1.7;
-  resize: none;
-  overflow: hidden;
 }
 
-.note-title::placeholder,
-.note-body::placeholder {
+/* The editable area fills the space, so a click below the text still lands in it */
+.note-body .ProseMirror {
+  min-height: 50vh;
+  outline: none;
+}
+
+/* One paragraph per line, like the old textarea */
+.note-body p {
+  margin: 0;
+}
+
+/* TipTap's placeholder: shown on the empty first paragraph */
+.note-body p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.note-title::placeholder {
   color: var(--muted);
   opacity: 0.6;
 }
