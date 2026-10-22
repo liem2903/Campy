@@ -8,19 +8,43 @@ import type { Note, NoteBlock, NoteWithBlocks } from "../services/notes.service.
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const MAX_TITLE_LENGTH = 200;
 const INVALID_BLOCKS = "Invalid blocks";
+// Top level is depth 1.
+const MAX_LIST_DEPTH = 9;
 
-// The tree PUT takes. z.object drops keys it doesn't list (e.g. properties.color), so only known
-// fields reach the service. Ticket 1 is paragraphs only; Ticket 2 adds list items with children.
-// The type is a compile error if the schema and NoteBlock drift apart.
-const noteBlocksSchema: z.ZodType<NoteBlock[], unknown> = z
-  .array(z.object({
+// z.object drops keys it doesn't list (e.g. properties.color), so only known fields reach the service.
+const textBlockSchema = z.object({
+  id: z.string().regex(uuidPattern),
+  type: z.literal("text"),
+  properties: z.object({ text: z.string().transform(withoutNul) }),
+  // Listed so it's rejected, not silently dropped: a text block can't have children.
+  children: z.never().optional(),
+});
+
+// One schema per depth, so the depth limit is part of the shape: an item at MAX_LIST_DEPTH only
+// accepts an empty children array. A function declaration so it's hoisted above noteBlocksSchema.
+function listItemSchemaAtDepth(depth: number): z.ZodType<NoteBlock, unknown> {
+  return z.object({
     id: z.string().regex(uuidPattern),
-    type: z.literal("text"),
-    properties: z.object({ text: z.string().transform(withoutNul) }),
-    // Listed so it's rejected, not silently dropped: a text block can't have children.
-    children: z.never().optional(),
-  }))
-  .refine((blocks) => new Set(blocks.map((block) => block.id)).size === blocks.length);
+    type: z.literal("list_item"),
+    properties: z.object({
+      text: z.string().transform(withoutNul),
+      style: z.enum(["bullet", "numbered"]),
+    }),
+    children: depth < MAX_LIST_DEPTH
+      ? z.array(listItemSchemaAtDepth(depth + 1)).default([])
+      : z.tuple([]).default([]),
+  });
+}
+
+// The tree PUT takes. Ids must be unique at every depth: a repeat would make the upsert write one
+// row twice, which Postgres rejects with a 500. The type is a compile error if the schema and
+// NoteBlock drift apart.
+const noteBlocksSchema: z.ZodType<NoteBlock[], unknown> = z
+  .array(z.union([textBlockSchema, listItemSchemaAtDepth(1)]))
+  .refine((blocks) => {
+    const allIds = idsInTree(blocks);
+    return new Set(allIds).size === allIds.length;
+  });
 
 // GET /api/notes: this user's notes, most recently edited first.
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -129,6 +153,12 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
 // A function declaration so it's hoisted: noteBlocksSchema, near the top, uses it.
 function withoutNul(text: string): string {
   return text.replaceAll("\u0000", "");
+}
+
+// Every block's id, at every depth. A function declaration so noteBlocksSchema can use it.
+function idsInTree(blocks: NoteBlock[]): string[] {
+  return blocks.flatMap((block) =>
+    block.type === "list_item" ? [block.id, ...idsInTree(block.children)] : [block.id]);
 }
 
 // DB row → API shape: camelCase, and updatedAt as an ISO string.

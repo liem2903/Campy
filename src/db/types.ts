@@ -29,11 +29,14 @@ export type Note = {
   updated_at: Date;
 };
 
+// How a list item's marker is drawn: dots or numbers.
+export type ListItemStyle = "bullet" | "numbered";
+
 // The shape of blocks.properties for each block type.
 export type BlockProperties = {
   text: { text: string };
   heading: { text: string };
-  list_item: { text: string };
+  list_item: { text: string; style: ListItemStyle };
 };
 
 type BlockOf<T extends BlockType> = {

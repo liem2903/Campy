@@ -1,20 +1,39 @@
 import { sql, type Db } from "../db/client.js";
 import type { BlockProperties } from "../db/types.js";
 
+// What one block holds, whether it's in a tree or a row.
+type TextBlockContent = { id: string; type: "text"; properties: BlockProperties["text"] };
+type ListItemBlockContent = { id: string; type: "list_item"; properties: BlockProperties["list_item"] };
+
 // One block as the API and service see it. Order and nesting come from the tree, so there's no
-// parent_id or position. Ticket 1 is paragraphs only.
-export type NoteBlock = { id: string; type: "text"; properties: BlockProperties["text"] };
+// parent_id or position. Only list items nest; the controller lets only list items in as children.
+export type NoteBlock = TextBlockContent | (ListItemBlockContent & { children: NoteBlock[] });
 
-// A NoteBlock plus where it sits. The service generates parent_id and position from the tree.
-export type NoteBlockRow = NoteBlock & { parent_id: string | null; position: string };
+// A block's content plus where it sits. The service generates parent_id and position from the tree.
+export type NoteBlockRow = (TextBlockContent | ListItemBlockContent) & {
+  parent_id: string | null; position: string;
+};
 
-// The note's blocks, ordered by position. Ticket 1: top-level only.
+// All the note's blocks at every depth, ordered by position. Positions restart in each sibling
+// group, so this order is only meaningful within one parent's children.
 export async function findBlocksOfNote(noteId: string, db: Db = sql): Promise<NoteBlockRow[]> {
   return db<NoteBlockRow[]>`
     select id, type, properties, parent_id, position from blocks
-    where note_id = ${noteId} and parent_id is null
+    where note_id = ${noteId}
     order by position
   `;
+}
+
+// True when any of blockIds is already a block of a different note.
+export async function isAnyBlockInAnotherNote(
+  noteId: string, blockIds: string[], db: Db = sql,
+): Promise<boolean> {
+  const [{ exists }] = await db<{ exists: boolean }[]>`
+    select exists (
+      select 1 from blocks where id = any(${blockIds}::uuid[]) and note_id <> ${noteId}
+    )
+  `;
+  return exists;
 }
 
 // Moves the note's blocks to positions no new row can take, so the upsert can't hit the unique
@@ -30,7 +49,7 @@ export async function upsertBlocks(
   noteId: string, blockRows: NoteBlockRow[], db: Db = sql,
 ): Promise<number> {
   if (blockRows.length === 0) return 0; // db([]) would be invalid SQL
-  // Column by column, so stray fields like Ticket 2's children never reach the insert.
+  // Column by column, so stray fields like a list item's children never reach the insert.
   const insertableRows = blockRows.map((row) => ({
     id: row.id, note_id: noteId, parent_id: row.parent_id, position: row.position,
     type: row.type, properties: db.json(row.properties),
