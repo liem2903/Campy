@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tiptap/extension-document": "^3.32.0",
+    "@tiptap/extension-list": "^3.32.0",
     "@tiptap/extension-paragraph": "^3.32.0",
     "@tiptap/extension-text": "^3.32.0",
     "@tiptap/extension-unique-id": "^3.32.0",

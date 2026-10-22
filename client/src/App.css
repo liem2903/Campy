@@ -307,6 +307,20 @@
   margin: 0;
 }
 
+/* Lists: markers change with depth, counting dot and numbered lists together (decision 9).
+   Level 3 and deeper all use the third marker. */
+.note-body ul,
+.note-body ol {
+  margin: 0;
+  padding-left: 1.5em;
+}
+.note-body ul { list-style-type: disc; }
+.note-body :is(ul, ol) ul { list-style-type: circle; }
+.note-body :is(ul, ol) :is(ul, ol) ul { list-style-type: square; }
+.note-body ol { list-style-type: decimal; }
+.note-body :is(ul, ol) ol { list-style-type: lower-alpha; }
+.note-body :is(ul, ol) :is(ul, ol) ol { list-style-type: lower-roman; }
+
 /* TipTap's placeholder: shown on the empty first paragraph */
 .note-body p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);

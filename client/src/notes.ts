@@ -2,8 +2,13 @@ import { createContext, useContext } from 'react'
 
 // One row of GET /api/notes. updatedAt is an ISO string.
 export type NoteSummary = { id: string; title: string; updatedAt: string }
-// One paragraph of a note's body, as GET and PUT /api/notes/:id carry it. Ticket 2 adds list items.
-export type NoteBlock = { id: string; type: 'text'; properties: { text: string } }
+// How a list item's marker is drawn: dots or numbers.
+export type ListItemStyle = 'bullet' | 'numbered'
+// One block of a note's body, as GET and PUT /api/notes/:id carry it: a paragraph, or a list
+// item with its nested items. Consecutive list items form one list.
+export type NoteBlock =
+  | { id: string; type: 'text'; properties: { text: string } }
+  | { id: string; type: 'list_item'; properties: { text: string; style: ListItemStyle }; children: NoteBlock[] }
 // One note from GET /api/notes/:id.
 export type NoteDetail = NoteSummary & { blocks: NoteBlock[] }
 // The part of a note the user edits. Autosave sends both fields on every save.

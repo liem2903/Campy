@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import Document from '@tiptap/extension-document'
+import { BulletList, ListItem, ListKeymap, OrderedList } from '@tiptap/extension-list'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
-import { EditorContent, useEditor } from '@tiptap/react'
+import { EditorContent, Extension, useEditor } from '@tiptap/react'
 import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
@@ -16,14 +17,31 @@ const saveStatusLabels: Record<Exclude<SaveStatus['kind'], 'rejected'>, string> 
   retrying: "Couldn't save. Retrying…",
 }
 
-// Paragraphs only, so the editor can't hold anything the blocks can't store. UniqueID gives
-// each paragraph the id its block is saved under. Ticket 2 adds lists.
+// Tab outside a list inserts 4 spaces instead of moving focus out of the editor (decision 8).
+// Inside a list it returns false, so the list's own Tab (nest the item) runs instead.
+const TabInsertsSpaces = Extension.create({
+  name: 'tabInsertsSpaces',
+  addKeyboardShortcuts() {
+    return {
+      Tab: ({ editor }) => !editor.isActive('listItem') && editor.commands.insertContent('    '),
+    }
+  },
+})
+
+// Only what the blocks can store: paragraphs and dot/numbered list items. An item holds one
+// paragraph, then nested lists, matching a list_item block's text and children. UniqueID gives
+// each paragraph and item the id its block is saved under.
 const bodyExtensions = [
   Document,
   Paragraph,
   Text,
+  BulletList,
+  OrderedList,
+  ListItem.extend({ content: 'paragraph (bulletList | orderedList)*' }),
+  ListKeymap,
+  TabInsertsSpaces,
   UndoRedo,
-  UniqueID.configure({ types: ['paragraph'] }),
+  UniqueID.configure({ types: ['paragraph', 'listItem'] }),
   Placeholder.configure({ placeholder: 'Start writing...' }),
 ]
 

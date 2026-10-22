@@ -62,18 +62,27 @@ function isNoteContent(value: unknown): value is NoteContent {
   )
 }
 
+// A paragraph, or a list item whose children are all valid blocks too.
 function isNoteBlock(value: unknown): value is NoteBlock {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('id' in value) ||
+    !('type' in value) ||
+    !('properties' in value) ||
+    typeof value.id !== 'string' ||
+    typeof value.properties !== 'object' ||
+    value.properties === null ||
+    !('text' in value.properties) ||
+    typeof value.properties.text !== 'string'
+  ) return false
+  if (value.type === 'text') return true
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    'type' in value &&
-    'properties' in value &&
-    typeof value.id === 'string' &&
-    value.type === 'text' &&
-    typeof value.properties === 'object' &&
-    value.properties !== null &&
-    'text' in value.properties &&
-    typeof value.properties.text === 'string'
+    value.type === 'list_item' &&
+    'style' in value.properties &&
+    (value.properties.style === 'bullet' || value.properties.style === 'numbered') &&
+    'children' in value &&
+    Array.isArray(value.children) &&
+    value.children.every(isNoteBlock)
   )
 }
