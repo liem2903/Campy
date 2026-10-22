@@ -15,7 +15,10 @@ export async function insertNote(userId: string, id: string, db: Db = sql): Prom
 export async function findNoteByIdForUser(
   userId: string, id: string, db: Db = sql,
 ): Promise<Note | null> {
-  throw new Error("Not implemented");
+  const [note] = await db<Note[]>`
+    select * from notes where id = ${id} and user_id = ${userId}
+  `;
+  return note ?? null;
 }
 
 // This user's notes, most recently edited first.
