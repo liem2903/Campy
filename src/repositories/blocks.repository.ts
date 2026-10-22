@@ -1,32 +1,35 @@
 import { sql, type Db } from "../db/client.js";
-import type { Block, BlockProperties } from "../db/types.js";
+import type { BlockProperties } from "../db/types.js";
 
 // One block as the API and service see it. Order and nesting come from the tree, so there's no
 // parent_id or position. Ticket 1 is paragraphs only.
 export type NoteBlock = { id: string; type: "text"; properties: BlockProperties["text"] };
 
-// What a caller supplies; the DB fills in id, version and timestamps. parent_id defaults to null.
-export type NewBlock = Pick<Block, "type" | "position" | "properties">;
+// A NoteBlock plus where it sits. The service generates parent_id and position from the tree.
+export type NoteBlockRow = NoteBlock & { parent_id: string | null; position: string };
 
-export async function insertBlock(noteId: string, block: NewBlock, db: Db = sql): Promise<void> {
-  await db`
-    insert into blocks (note_id, position, type, properties)
-    values (${noteId}, ${block.position}, ${block.type}, ${db.json(block.properties)})
-  `;
+// The note's blocks, ordered by position. Ticket 1: top-level only.
+export async function findBlocksOfNote(noteId: string, db: Db = sql): Promise<NoteBlockRow[]> {
+  throw new Error("Not implemented");
 }
 
-// Sets the note's body: the text of its first top-level text block, the same block
-// findNoteWithBody reads. Returns how many rows changed (0 = the note has no such block).
-// The caller has already checked the note belongs to the user.
-export async function updateBodyText(noteId: string, text: string, db: Db = sql): Promise<number> {
-  const { count } = await db`
-    update blocks set properties = properties || jsonb_build_object('text', ${text}::text)
-    where id = (
-      select id from blocks
-      where note_id = ${noteId} and parent_id is null and type = 'text'
-      order by position
-      limit 1
-    )
-  `;
-  return count;
+// Moves the note's blocks to positions no new row can take, so the upsert can't hit the unique
+// sibling-position indexes.
+export async function moveBlocksToTemporaryPositions(noteId: string, db: Db = sql): Promise<void> {
+  throw new Error("Not implemented");
+}
+
+// Inserts or updates each row in array order (parents before children). Skips a row whose id
+// belongs to another note, so it can't overwrite that block. Returns how many rows it wrote.
+export async function upsertBlocks(
+  noteId: string, blockRows: NoteBlockRow[], db: Db = sql,
+): Promise<number> {
+  throw new Error("Not implemented");
+}
+
+// Deletes the note's blocks whose id isn't in keptBlockIds.
+export async function deleteBlocksMissingFrom(
+  noteId: string, keptBlockIds: string[], db: Db = sql,
+): Promise<void> {
+  throw new Error("Not implemented");
 }
