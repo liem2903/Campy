@@ -44,6 +44,7 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
       <div className="grid min-h-0 flex-1 grid-cols-2">
         <section className={`bg-[color-mix(in_srgb,var(--brand)_7%,var(--bg))] ${halfEnter}`}>
           <p className={halfLabel}>From memory</p>
+          <h1 className="note-title">{title}</h1>
           <p className="m-0 text-[17px] leading-[1.7] whitespace-pre-wrap">{blurtText}</p>
         </section>
         <section className={`delay-[60ms] ${halfEnter}`}>
