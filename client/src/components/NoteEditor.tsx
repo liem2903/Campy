@@ -3,7 +3,7 @@ import { ListKeymap } from '@tiptap/extension-list'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, Extension, useEditor } from '@tiptap/react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
@@ -46,6 +46,20 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
   // Edits that never reached the server (expired session, closed tab, crash) win over its copy.
   const [restoredDraft] = useState(() => readDraft(noteId))
   const [content, setContent] = useState<NoteContent>(restoredDraft ?? serverContent)
+  const navigate = useNavigate()
+  const blurtPagePath = `/notes/${noteId}/blurt`
+
+  // Ctrl/⌘ + Shift + Enter opens the blurt page. Capture phase, so it runs before the editor
+  // sees the Enter and splits the paragraph.
+  useEffect(() => {
+    const openBlurtOnShortcut = (event: KeyboardEvent) => {
+      if (event.key !== 'Enter' || !event.shiftKey || !(event.ctrlKey || event.metaKey)) return
+      event.preventDefault()
+      navigate(blurtPagePath)
+    }
+    window.addEventListener('keydown', openBlurtOnShortcut, { capture: true })
+    return () => window.removeEventListener('keydown', openBlurtOnShortcut, { capture: true })
+  }, [navigate, blurtPagePath])
 
   function edit(editedContent: NoteContent) {
     setContent(editedContent)
@@ -77,8 +91,8 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
     <article className="paper">
       <p className="paper-crumbs">
         Notes / {content.title || 'Untitled'}
-        <Link to={`/notes/${noteId}/blurt`} className="crumbs-blurt">
-          Blurt
+        <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter">
+          Blurt <kbd className="crumbs-key-hint">Ctrl + Shift + Enter</kbd>
         </Link>
         <span className="save-status" data-failed={saveFailed || undefined} role="status">
           {saveStatusText}
