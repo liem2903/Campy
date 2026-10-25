@@ -83,8 +83,8 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [ ] Move the "This page doesn't exist" view out of `NotePage` into `NoteNotFound`, shared with the blurt page (A5)
 
 ### Checkpoint 3 🟡: Reveal
-- [ ] On Done: fetch the body (A1), then split the sheet into "From memory" | "The note" (A3) with its two actions (A4) in a bottom bar
-- [ ] Each column scrolls on its own (capped at the screen height), so a long note can be read while the blurt stays in view. No pagination (decided 2026-10-25)
+- [x] On Done: fetch the body (A1), then split the sheet into "From memory" | "The note" (A3) with its two actions (A4) in a bottom bar
+- [x] Each column scrolls on its own (capped at the screen height), so a long note can be read while the blurt stays in view. No pagination (decided 2026-10-25)
 
 ### Checkpoint 4 🟡: Entry points
 - [ ] "Blurt" button in the `NotePage` header
