@@ -2,30 +2,28 @@
 
 **Sprint:** 2 · **Branch:** `feature/blurting` (from `main`) · **Created:** 2026-10-20
 
+> **Updated 2026-10-21:** built **after** FEAT-004 (block editor). Ticket B (AI gap check) is
+> **dropped**: no AI checks in blurting. The reveal shows the note in a read-only TipTap editor
+> (A3). See `docs/tickets/FEAT-004-block-editor.md`.
+
 ## Context
 
 Blurting is a study technique: hide the material, write down everything you remember, then
-compare. Campi notes are stored per user on the server (FEAT-002). Each note's body is **one
-`text` block** holding plain text, edited in a plain `<textarea>` (`NoteEditor`). There is no LLM
-integration yet.
+compare. Campi notes are stored per user on the server (FEAT-002). After FEAT-004, a note's body
+is a tree of blocks (paragraphs and list items) edited in TipTap.
 
 **Goal:** from any note, open a blurt page that hides the body, type everything you remember, then
-reveal the note next to your blurt. Optionally, ask Claude which points you missed, got wrong or
-got right.
+reveal the note next to your blurt.
 
-The work is split into **two tracer-bullet tickets**. Ticket A is useful on its own and is the base
-that Ticket B builds on.
+The work is one tracer-bullet ticket, Ticket A.
 
 **Out of scope:**
 - Related-notes suggestions ("what else connects to this"). A later feature, since it searches
   across all notes.
-- Covering block by block. A later feature, after notes are split into real blocks (block editor).
+- Covering block by block. A later feature, now that notes are real blocks (FEAT-004).
 - Covering by heading section. Sections aren't stored, so there's nothing to cover by.
 - Saving blurt attempts or AI feedback. Every attempt is thrown away after use.
 - "Extra" items (things you wrote that aren't in the note).
-- Scaling AI checks for public use: a shared rate-limit store (Redis/Postgres) instead of
-  in-memory, a per-user daily quota, a monthly spending cap in the Anthropic console, email
-  verification against throwaway accounts, a per-IP cap on the check endpoint.
 
 ## Shared decisions (grilled 2026-10-20)
 
@@ -34,7 +32,7 @@ that Ticket B builds on.
 | 1 | What's hidden | The whole note body. The title stays visible as the recall cue. |
 | 2 | Where | Its own page, `/notes/:id/blurt`. |
 | 3 | Entry points | A "Blurt" button in the note page header **and** on each note in the sidebar. |
-| 4 | Input | A plain textarea. Matches the plain-text note, so the comparison is like-for-like. |
+| 4 | Input | A plain textarea (re-confirmed 2026-10-25). Recall doesn't need list formatting, and the draft stays a plain string. |
 | 5 | Storage | Nothing in the database. **No migration.** |
 | 6 | Unfinished blurt | Kept in localStorage per note (like `campi.draft.<id>`) until Done, then cleared. |
 | 7 | Empty note | Allowed. The reveal just shows an empty note. |
@@ -61,7 +59,7 @@ type → "Done" → your blurt and the note appear side by side.
 |---|---|---|
 | A1 | Loading the body | The body is **not fetched until Done**, so it never reaches the browser while you blurt and is always the latest version at reveal. The reveal has its own loading state and a "Couldn't load the note. Retry" error state. |
 | A2 | Loading the title | Needed at page start. Options (call `getNoteFromServer` and use only the title, read it from `NotesProvider`'s list, or a title-only fetch) go in the Checkpoint 1 plan. |
-| A3 | Reveal layout | Side by side: blurt on the left, note on the right, both read-only. |
+| A3 | Reveal layout | Side by side: blurt on the left, note on the right (a read-only TipTap editor showing its blocks), both read-only. |
 | A4 | Reveal actions | "Blurt again" (hides the note, empty textarea, new attempt) and "Back to note" (`/notes/:id`). |
 | A5 | Missing note | Another user's or a deleted note → the existing "This page doesn't exist" view, as on `NotePage`. |
 | A6 | Back end | No new endpoint. Reuses `GET /api/notes/:id` via `getNoteFromServer`. |
@@ -70,13 +68,21 @@ type → "Done" → your blurt and the note appear side by side.
 No front-end test setup: Ticket A's acceptance checks are a **manual checklist** run in the browser
 (`npm run dev:all`) before committing each checkpoint. There is no Checkpoint 0.
 
-### Checkpoint 1 🟡: Page
+Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
+
+### Checkpoint 1 🟢: Read-only note viewer
+- [ ] Move the TipTap body extensions out of `NoteEditor.tsx` so the editor and a viewer share them
+- [ ] A read-only component that shows a note's blocks (A3)
+
+### Checkpoint 2 🟡: Page, route and draft
 - [ ] `client/src/pages/BlurtPage.tsx`: title as the cue, textarea, "Done"
 - [ ] Route `notes/:noteId/blurt` in `client/src/App.tsx`, inside the logged-in layout
 - [ ] Draft in localStorage per note (6), restored on open, cleared on Done
+
+### Checkpoint 3 🟡: Reveal
 - [ ] On Done: fetch the body (A1), then show the side-by-side reveal (A3) with its two actions (A4)
 
-### Checkpoint 2 🟡: Entry points
+### Checkpoint 4 🟡: Entry points
 - [ ] "Blurt" button in the `NotePage` header
 - [ ] "Blurt" button on each note in `Sidebar` (e.g. on hover, next to "×")
 
@@ -96,7 +102,7 @@ Start a blurt from the sidebar without opening the note first.
 
 ---
 
-## Ticket B: AI gap check
+## ~~Ticket B: AI gap check~~ (dropped 2026-10-21, kept for reference only)
 
 **Slice:** On the reveal screen, "Check my gaps with AI" sends your blurt to the server, which
 asks Claude to compare it with the note, and shows what you **missed**, got **wrong** and got
