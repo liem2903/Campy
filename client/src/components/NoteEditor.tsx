@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ListKeymap } from '@tiptap/extension-list'
+import { Selection, TextSelection } from '@tiptap/pm/state'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, Extension, useEditor } from '@tiptap/react'
@@ -27,10 +28,38 @@ const TabInsertsSpaces = Extension.create({
   },
 })
 
+// Backspace at the start of a paragraph right after a list moves its text onto the end of the
+// list's last item. ListKeymap's own version moves the whole paragraph into that item, which an
+// item's one-paragraph schema can't hold, so ProseMirror wrapped it in a new item: the dot came back.
+const BackspaceJoinsParagraphIntoListAbove = Extension.create({
+  name: 'backspaceJoinsParagraphIntoListAbove',
+  priority: 101, // runs before ListKeymap's Backspace
+  addKeyboardShortcuts() {
+    return {
+      Backspace: ({ editor }) => {
+        const { $from, empty } = editor.state.selection
+        if (!empty || $from.depth !== 1 || $from.parentOffset !== 0) return false
+        const paragraphStart = $from.before()
+        const $paragraphStart = editor.state.doc.resolve(paragraphStart)
+        const listAbove = $paragraphStart.nodeBefore
+        if (listAbove?.type.name !== 'bulletList' && listAbove?.type.name !== 'orderedList') return false
+        const lastItemTextEnd = Selection.findFrom($paragraphStart, -1, true)?.from
+        if (lastItemTextEnd === undefined) return false
+        return editor.commands.command(({ tr }) => {
+          tr.delete(paragraphStart, $from.after()).insert(lastItemTextEnd, $from.parent.content)
+          tr.setSelection(TextSelection.create(tr.doc, lastItemTextEnd))
+          return true
+        })
+      },
+    }
+  },
+})
+
 // What a note body can hold, plus what typing needs. UniqueID gives each paragraph and item the
 // id its block is saved under.
 const bodyExtensions = [
   ...noteBodyNodeExtensions,
+  BackspaceJoinsParagraphIntoListAbove,
   ListKeymap,
   TabInsertsSpaces,
   UndoRedo,
