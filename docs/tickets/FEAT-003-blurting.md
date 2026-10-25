@@ -34,7 +34,7 @@ The work is one tracer-bullet ticket, Ticket A.
 | 3 | Entry points | A "Blurt" button in the note page header **and** on each note in the sidebar. |
 | 4 | Input | A plain textarea (re-confirmed 2026-10-25). Recall doesn't need list formatting, and the draft stays a plain string. |
 | 5 | Storage | Nothing in the database. **No migration.** |
-| 6 | Unfinished blurt | Kept in localStorage per note (like `campi.draft.<id>`) until Done, then cleared. |
+| 6 | Unfinished blurt | Not stored (changed 2026-10-25). While writing, a hint says it isn't saved, closing or reloading the tab asks "Leave site?" (`beforeunload`), and "Close ✕" asks first. Only when the blurt isn't empty. No warning once revealed. |
 | 7 | Empty note | Allowed. The reveal just shows an empty note. |
 | 8 | Workflow | Same as FEAT-001/002 (see CLAUDE.md): tests first, then top-down checkpoints, each one explained, quizzed and committed. Blast-radius tags below are estimates; re-check each when its plan is presented. |
 
@@ -76,10 +76,11 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [ ] Move the TipTap body extensions out of `NoteEditor.tsx` so the editor and a viewer share them
 - [ ] A read-only component that shows a note's blocks (A3)
 
-### Checkpoint 2 🟡: Page, route and draft
+### Checkpoint 2 🔴: Page, route and leave warning
 - [ ] `client/src/pages/BlurtPage.tsx`: the focus sheet (A3): top bar with title, timer, word count and Close, centered title as the cue, textarea, "I'm done →"
 - [ ] Route `notes/:noteId/blurt` in `client/src/App.tsx`, inside the logged-in layout
-- [ ] Draft in localStorage per note (6), restored on open, cleared on Done
+- [ ] Leave warning while writing (6)
+- [ ] Move the "This page doesn't exist" view out of `NotePage` into `NoteNotFound`, shared with the blurt page (A5)
 
 ### Checkpoint 3 🟡: Reveal
 - [ ] On Done: fetch the body (A1), then split the sheet into "From memory" | "The note" (A3) with its two actions (A4) in a bottom bar
@@ -93,14 +94,13 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [ ] The blurt page shows the note's title and an empty textarea, and **no body text**
 - [ ] The body is not requested until Done
 - [ ] Done shows the blurt and the note body side by side
-- [ ] Typing, then reloading, restores the half-typed blurt. After Done, a reload starts empty.
+- [ ] While writing a non-empty blurt: a hint says it isn't saved, reload/close asks "Leave site?", and "Close ✕" asks first. An empty blurt leaves without asking.
 - [ ] "Blurt again" hides the body and empties the textarea. "Back to note" opens `/notes/:id`.
 - [ ] Another user's note id → "This page doesn't exist"
 - [ ] An empty note can be blurted, and the reveal shows an empty body
 - [ ] The body fetch failing at Done → error message with "Retry", and the blurt is kept
 
-**Demo:** Open a note → "Blurt" → a full-screen sheet with only the title, timer and word count → type what you remember → reload
-(text is still there) → "I'm done" → the sheet splits, blurt left and note right → "Blurt again" → empty again.
+**Demo:** Open a note → "Blurt" → a full-screen sheet with only the title, timer and word count → type what you remember → "I'm done" → the sheet splits, blurt left and note right → "Blurt again" → empty again.
 Start a blurt from the sidebar without opening the note first.
 
 ---
@@ -192,6 +192,5 @@ the check says "AI checks aren't set up", and self-compare still works.
 
 ## Overall verification (after Ticket B)
 - [ ] `npm run build` and `npm test` pass
-- [ ] Full flow in `npm run dev:all`: open a note → Blurt → reload mid-blurt → Done → side by
+- [ ] Full flow in `npm run dev:all`: open a note → Blurt → Done → side by
   side → AI check → Blurt again
-- [ ] No blurt data left in localStorage after a finished attempt

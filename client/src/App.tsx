@@ -4,6 +4,7 @@ import './App.css'
 import { useAuth } from './auth.ts'
 import Sidebar from './components/Sidebar.tsx'
 import AllNotesPage from './pages/AllNotesPage.tsx'
+import BlurtPage from './pages/BlurtPage.tsx'
 import HomePage from './pages/HomePage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
@@ -46,6 +47,7 @@ function App() {
         <Route path="notes" element={<AllNotesPage />} />
         <Route path="quiz" element={<QuizPage />} />
         <Route path="notes/:noteId" element={<NotePage />} />
+        <Route path="notes/:noteId/blurt" element={<BlurtPage />} />
       </Route>
       <Route path="login" element={<LoginPage />} />
       <Route path="signup" element={<SignupPage />} />

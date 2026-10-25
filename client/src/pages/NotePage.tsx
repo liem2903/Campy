@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { getNoteFromServer } from '../api.ts'
 import NoteEditor from '../components/NoteEditor.tsx'
+import NoteNotFound from '../components/NoteNotFound.tsx'
 import { useNotes, type NoteContent } from '../notes.ts'
 import { RETRY_MS, wait } from '../retry.ts'
 
@@ -41,22 +42,7 @@ function NotePage() {
   // On a reload, wait for the list rather than flash "doesn't exist".
   if (loading) return null
   // The list holds only this user's notes, so another user's id lands here too.
-  if (!listEntry) {
-    return (
-      <div className="page-content empty-state">
-        <h1 className="auth-title">
-          Nothing <em>here.</em>
-        </h1>
-        <p className="auth-lede">This page doesn't exist, or it was deleted.</p>
-        <Link to="/" className="auth-submit">
-          Back to your notes
-          <span className="auth-submit-arrow" aria-hidden="true">
-            →
-          </span>
-        </Link>
-      </div>
-    )
-  }
+  if (!listEntry) return <NoteNotFound />
   if (serverReply?.id !== listEntry.id) return null
 
   return <NoteEditor key={listEntry.id} noteId={listEntry.id} serverContent={serverReply.content} />
