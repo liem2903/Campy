@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { getNoteFromServer } from '../api.ts'
 import NoteEditor from '../components/NoteEditor.tsx'
 import NoteNotFound from '../components/NoteNotFound.tsx'
+import NoteSkeleton from '../components/NoteSkeleton.tsx'
 import { useNotes, type NoteContent } from '../notes.ts'
 import { RETRY_MS, wait } from '../retry.ts'
 
@@ -40,10 +41,10 @@ function NotePage() {
   }, [noteIdFromUrl])
 
   // On a reload, wait for the list rather than flash "doesn't exist".
-  if (loading) return null
+  if (loading) return <NoteSkeleton />
   // The list holds only this user's notes, so another user's id lands here too.
   if (!listEntry) return <NoteNotFound />
-  if (serverReply?.id !== listEntry.id) return null
+  if (serverReply?.id !== listEntry.id) return <NoteSkeleton />
 
   return <NoteEditor key={listEntry.id} noteId={listEntry.id} serverContent={serverReply.content} />
 }

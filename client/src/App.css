@@ -953,6 +953,10 @@
 .page-skeleton:nth-child(2) { margin-right: 60px; }
 .home-card-skeleton { margin: 7px 0; }
 .home-card-skeleton:nth-child(2) { width: 70%; }
+.note-crumbs-skeleton { width: 140px; margin-bottom: 36px; }
+.note-title-skeleton { width: 55%; height: 44px; margin-bottom: 28px; border-radius: 6px; }
+.note-line-skeleton { height: 14px; margin-bottom: 14px; }
+.note-line-skeleton:last-child { width: 60%; }
 
 .sidebar-status {
   margin: 4px 10px;
