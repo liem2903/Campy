@@ -5,7 +5,6 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 ## Roadmap
 - **Sprint 1**: basic note taking (CRUD) + authentication
 - **Sprint 2**: AI features (blurting, quizzes, flashcards, custom criteria)
-- **Sprint 3**: concurrency (safe concurrent access and editing of notes)
 
 ## Stack and commands
 - TypeScript + Node.js + Express
@@ -26,6 +25,12 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
   - `src/services/`: business rules and transactions (`sql.begin`). No `req`/`res`, no SQL text.
   - `src/repositories/`: SQL only. Take a `db: Db = sql` last parameter so services can pass a transaction; return typed plain objects.
 
+## Code style
+- Optimize for readability and simplicity first. Pick the simplest solution that is still efficient.
+- Ask "is this the best solution?" every time. When an issue or code section has more than one reasonable approach, list the alternatives (a short snippet or sketch of each, plus their trade-offs) so the user can compare them, then say which one you'd pick and why.
+- Names must be descriptive: a reader should know what a function or variable does from its name alone (e.g. `findNoteByIdForUser`, not `getNote`; `noteIdFromUrl`, not `id`).
+- Names must be clearly distinct. No two names in the same scope should be near-duplicates (avoid pairs like `note`/`notes2` or `data`/`dataObj`); make the difference in meaning show in the names.
+
 ## Working style
 - Build features in small checkpoints of at most 50 lines each. Test files are exempt from the limit.
 - Keep code as simple as possible while still efficient.
@@ -38,7 +43,7 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
   - 🟢: new code in one place that nothing existing calls yet (a new file, a stub, a test). No existing signatures or behavior change. A mistake can't spread.
   - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
   - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build and tests before committing.
-- Design before reveal (so the user gets to design it themselves first): describe what the checkpoint needs to do, without code. Then ask the user how they would build it (design, tests, edge cases) and wait for their attempt. Only then reveal all of the checkpoint's code at once, in the plan format below, pointing out where it matches or differs from their approach and why. Still get their OK before writing files.
+- Design before reveal (so the user gets to design it themselves first): describe what the checkpoint needs to do, without code. Then ask the user, in one plain sentence, how they would build it, and wait for their attempt. Don't add hint bullets or leading questions (where code should go, which options to consider, edge cases to think about); those design it for them. Only then reveal all of the checkpoint's code at once, in the plan format below, pointing out where it matches or differs from their approach and why. Still get their OK before writing files.
 - Present each checkpoint plan in this order:
   1. **What it achieves**, in plain words, including what's stubbed. Start with the blast-radius tag and one line on why it gets that tag.
   2. **Flow**: a small diagram of what calls what.
