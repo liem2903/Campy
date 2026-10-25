@@ -59,7 +59,8 @@ type → "Done" → your blurt and the note appear side by side.
 |---|---|---|
 | A1 | Loading the body | The body is **not fetched until Done**, so it never reaches the browser while you blurt and is always the latest version at reveal. The reveal has its own loading state and a "Couldn't load the note. Retry" error state. |
 | A2 | Loading the title | Needed at page start. Options (call `getNoteFromServer` and use only the title, read it from `NotesProvider`'s list, or a title-only fetch) go in the Checkpoint 1 plan. |
-| A3 | Reveal layout | Side by side: blurt on the left, note on the right (a read-only TipTap editor showing its blocks), both read-only. |
+| A3 | Layout: focus sheet (picked from a 4-way prototype, 2026-10-25) | The blurt page is a full-screen sheet over the whole app, sidebar included, so nothing else can cue you. A thin top bar shows "Blurting · <title>", a timer, a live word count and "Close ✕" (back to `/notes/:id`). **Writing:** big centered serif title, then a borderless textarea filling the rest, then "I'm done →" centered underneath. **Reveal:** the sheet splits in half, "From memory" (your blurt, on a tinted background) on the left and "The note" (title + read-only TipTap viewer) on the right, each scrolling on its own, with the A4 actions in a bottom bar. The Done button gets a design pass (`emil-design-eng`). Prototype kept on branch `prototype/blurt-layouts`. |
+| A3b | Timer and word count | Timer counts up from page open, stops at Done and restarts on "Blurt again". Display only, nothing stored. Word count = whitespace-separated words in the blurt. |
 | A4 | Reveal actions | "Blurt again" (hides the note, empty textarea, new attempt) and "Back to note" (`/notes/:id`). |
 | A5 | Missing note | Another user's or a deleted note → the existing "This page doesn't exist" view, as on `NotePage`. |
 | A6 | Back end | No new endpoint. Reuses `GET /api/notes/:id` via `getNoteFromServer`. |
@@ -75,12 +76,13 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [ ] A read-only component that shows a note's blocks (A3)
 
 ### Checkpoint 2 🟡: Page, route and draft
-- [ ] `client/src/pages/BlurtPage.tsx`: title as the cue, textarea, "Done"
+- [ ] `client/src/pages/BlurtPage.tsx`: the focus sheet (A3): top bar with title, timer, word count and Close, centered title as the cue, textarea, "I'm done →"
 - [ ] Route `notes/:noteId/blurt` in `client/src/App.tsx`, inside the logged-in layout
 - [ ] Draft in localStorage per note (6), restored on open, cleared on Done
 
 ### Checkpoint 3 🟡: Reveal
-- [ ] On Done: fetch the body (A1), then show the side-by-side reveal (A3) with its two actions (A4)
+- [ ] On Done: fetch the body (A1), then split the sheet into "From memory" | "The note" (A3) with its two actions (A4) in a bottom bar
+- [ ] Each column scrolls on its own (capped at the screen height), so a long note can be read while the blurt stays in view. No pagination (decided 2026-10-25)
 
 ### Checkpoint 4 🟡: Entry points
 - [ ] "Blurt" button in the `NotePage` header
@@ -96,8 +98,8 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [ ] An empty note can be blurted, and the reveal shows an empty body
 - [ ] The body fetch failing at Done → error message with "Retry", and the blurt is kept
 
-**Demo:** Open a note → "Blurt" → only the title is visible → type what you remember → reload
-(text is still there) → "Done" → blurt and note side by side → "Blurt again" → empty again.
+**Demo:** Open a note → "Blurt" → a full-screen sheet with only the title, timer and word count → type what you remember → reload
+(text is still there) → "I'm done" → the sheet splits, blurt left and note right → "Blurt again" → empty again.
 Start a blurt from the sidebar without opening the note first.
 
 ---

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react'
-import Document from '@tiptap/extension-document'
-import { BulletList, ListItem, ListKeymap, OrderedList } from '@tiptap/extension-list'
-import Paragraph from '@tiptap/extension-paragraph'
-import Text from '@tiptap/extension-text'
+import { ListKeymap } from '@tiptap/extension-list'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, Extension, useEditor } from '@tiptap/react'
 import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
+import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
 
@@ -28,16 +26,10 @@ const TabInsertsSpaces = Extension.create({
   },
 })
 
-// Only what the blocks can store: paragraphs and dot/numbered list items. An item holds one
-// paragraph, then nested lists, matching a list_item block's text and children. UniqueID gives
-// each paragraph and item the id its block is saved under.
+// What a note body can hold, plus what typing needs. UniqueID gives each paragraph and item the
+// id its block is saved under.
 const bodyExtensions = [
-  Document,
-  Paragraph,
-  Text,
-  BulletList,
-  OrderedList,
-  ListItem.extend({ content: 'paragraph (bulletList | orderedList)*' }),
+  ...noteBodyNodeExtensions,
   ListKeymap,
   TabInsertsSpaces,
   UndoRedo,
