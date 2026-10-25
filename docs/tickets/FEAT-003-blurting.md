@@ -87,8 +87,8 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [x] Each column scrolls on its own (capped at the screen height), so a long note can be read while the blurt stays in view. No pagination (decided 2026-10-25)
 
 ### Checkpoint 4 🟡: Entry points
-- [ ] "Blurt" button in the `NotePage` header
-- [ ] "Blurt" button on each note in `Sidebar` (e.g. on hover, next to "×")
+- [x] "Blurt" button in the `NotePage` header
+- [x] "Blurt" button on each note in `Sidebar` (e.g. on hover, next to "×")
 
 ### Acceptance tests
 - [ ] The blurt page shows the note's title and an empty textarea, and **no body text**

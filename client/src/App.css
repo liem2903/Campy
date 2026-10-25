@@ -148,15 +148,42 @@
   transition: opacity 0.12s ease, transform 0.12s var(--ease), color 0.15s ease;
 }
 
+/* Left of ×, shown with it. */
+.blurt-page {
+  position: absolute;
+  top: 50%;
+  right: 30px;
+  transform: translateY(-50%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.15s ease;
+}
+
+.blurt-page:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* Room for both buttons, so a long title stops before them. */
+.page-row:hover .page-link,
+.page-row:focus-within .page-link {
+  padding-right: 72px;
+}
+
 /* Opacity, not visibility, so it can fade and still be reached with Tab. */
-.page-row:hover .delete-page,
-.page-row:focus-within .delete-page {
+.page-row:hover :is(.delete-page, .blurt-page),
+.page-row:focus-within :is(.delete-page, .blurt-page) {
   opacity: 1;
 }
 
 /* No hover on touch screens, so there it's always shown. */
 @media (hover: none) {
-  .delete-page { opacity: 1; }
+  .delete-page, .blurt-page { opacity: 1; }
+  .page-link { padding-right: 72px; }
 }
 
 .delete-page:hover {
@@ -259,6 +286,18 @@
 .save-status {
   float: right;
   margin-left: 12px;
+}
+
+.crumbs-blurt {
+  float: right;
+  margin-left: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.crumbs-blurt:hover {
+  color: var(--text);
 }
 
 .save-status[data-failed] {

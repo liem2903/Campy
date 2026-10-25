@@ -3,6 +3,7 @@ import { ListKeymap } from '@tiptap/extension-list'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, Extension, useEditor } from '@tiptap/react'
+import { Link } from 'react-router'
 import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
@@ -76,6 +77,9 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
     <article className="paper">
       <p className="paper-crumbs">
         Notes / {content.title || 'Untitled'}
+        <Link to={`/notes/${noteId}/blurt`} className="crumbs-blurt">
+          Blurt
+        </Link>
         <span className="save-status" data-failed={saveFailed || undefined} role="status">
           {saveStatusText}
         </span>

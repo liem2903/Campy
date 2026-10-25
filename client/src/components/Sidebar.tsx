@@ -93,6 +93,9 @@ function Sidebar() {
             <NavLink to={`/notes/${note.id}`} className="sidebar-item page-link">
               {note.title || 'Untitled'}
             </NavLink>
+            <Link to={`/notes/${note.id}/blurt`} className="blurt-page" aria-label={`Blurt ${note.title || 'Untitled'}`}>
+              Blurt
+            </Link>
             <button
               type="button"
               className="delete-page"
