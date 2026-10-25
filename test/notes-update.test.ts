@@ -43,7 +43,7 @@ describe("PUT /api/notes/:id", () => {
     expect(res.body).toEqual({ updatedAt: expect.any(String) });
 
     const opened = await request(app).get(`/api/notes/${id}`).set("Cookie", user.cookie).expect(200);
-    expect(opened.body).toEqual({ id, title: "Chem", blocks: [], updatedAt: res.body.updatedAt });
+    expect(opened.body).toEqual({ id, title: "Chem", blocks: [], tags: [], updatedAt: res.body.updatedAt });
   });
 
   it("moves updatedAt forward and the note to the top of the list", async () => {

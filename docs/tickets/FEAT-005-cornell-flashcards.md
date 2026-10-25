@@ -43,7 +43,8 @@ note` → rename it to `queues` → the note shows `queues`.
 | T1.2 | Names | Lowercased and trimmed on the server. 1–50 characters, else 400 Bad Request. |
 | T1.3 | On a note | Chips under the title. "+ tag" opens an input that autocompletes from your tags; Enter creates a new tag on first use. "×" removes. Saves straight away (no Save button). |
 | T1.4 | Unused tags | Stay until deleted on the Tags page. |
-| T1.5 | Tags page | Lists each tag with counts (`queue: 3 notes, 2 questions`; questions once T2 exists). Rename onto an existing name → **refused** ("A tag called queue already exists", 409 Conflict). Delete asks first ("Remove `queue` from 3 notes and 2 questions?") and only removes the tag. |
+| T1.5 | Tags page | Lists each tag with counts (`queue: 3 notes, 2 questions`; questions once T2 exists). Rename onto an existing name → **refused** ("A tag called queue already exists", 409 Conflict). Delete asks first ("Remove `queue` from 3 notes and 2 questions?") and only removes the tag. A "+ New tag" input creates a tag with no note. |
+| T1.6 | Endpoints (grilled 2026-10-25) | `GET /api/notes/:id` gains `tags: [{ id, name }]`. `GET /api/tags` → `[{ id, name, noteCount }]` (one endpoint for the autocomplete and the Tags page). `POST /api/tags { name }` → 201 Created, existing name → 409 Conflict. `POST /api/notes/:id/tags { name }` → finds or creates, then attaches, in one transaction → `{ id, name }`; already attached is a no-op. `DELETE /api/notes/:id/tags/:tagId` → 204 No Content, takes it off that note only. `PATCH /api/tags/:tagId { name }` → 200 OK, taken name → 409 Conflict. `DELETE /api/tags/:tagId` → 204 No Content, cascade removes it from every note. |
 
 ---
 

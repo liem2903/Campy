@@ -36,7 +36,7 @@ describe("POST /api/notes", () => {
 
     const res = await createNote(app, { id }, user.cookie);
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ id, title: "", blocks: [], updatedAt: expect.any(String) });
+    expect(res.body).toEqual({ id, title: "", blocks: [], tags: [], updatedAt: expect.any(String) });
     expect(new Date(res.body.updatedAt).toISOString()).toBe(res.body.updatedAt);
   });
 

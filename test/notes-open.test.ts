@@ -52,6 +52,7 @@ describe("GET /api/notes/:id", () => {
       title: "Chem",
       updatedAt: "2026-01-01T10:00:00.000Z",
       blocks: [{ id: blockIds[0], type: "text", properties: { text: "Atoms" } }],
+      tags: [],
     });
   });
 
