@@ -39,12 +39,12 @@ The work is one tracer-bullet ticket, Ticket A.
 | 8 | Workflow | Same as FEAT-001/002 (see CLAUDE.md): tests first, then top-down checkpoints, each one explained, quizzed and committed. Blast-radius tags below are estimates; re-check each when its plan is presented. |
 
 ### Definition of done (every ticket)
-- [ ] Built with the Workflow: tests first, then top-down checkpoints, each one explained and committed
-- [ ] Acceptance tests written and passing (`npm test`)
-- [ ] `npm run build` passes (strict TS, no `any`)
-- [ ] Demo path works in `npm run dev:all`
-- [ ] Back-end tickets: feature described by the developer, `backend-reviewer` sub-agent run, findings addressed
-- [ ] Committed on `feature/blurting`
+- [x] Built with the Workflow: tests first, then top-down checkpoints, each one explained and committed
+- [x] Acceptance tests written and passing (`npm test`; Ticket A uses the manual browser checklist below, run 2026-10-25)
+- [x] `npm run build` passes (strict TS, no `any`)
+- [x] Demo path works in `npm run dev:all`
+- [x] Back-end tickets: n/a (Ticket A is client only)
+- [x] Committed on `feature/blurting`
 
 ---
 
@@ -73,14 +73,14 @@ No front-end test setup: Ticket A's acceptance checks are a **manual checklist**
 Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 
 ### Checkpoint 1 🟢: Read-only note viewer
-- [ ] Move the TipTap body extensions out of `NoteEditor.tsx` so the editor and a viewer share them
-- [ ] A read-only component that shows a note's blocks (A3)
+- [x] Move the TipTap body extensions out of `NoteEditor.tsx` so the editor and a viewer share them
+- [x] A read-only component that shows a note's blocks (A3)
 
 ### Checkpoint 2 🔴: Page, route and leave warning
-- [ ] `client/src/pages/BlurtPage.tsx`: the focus sheet (A3): top bar with title, timer, word count and Close, centered title as the cue, textarea, "I'm done →"
-- [ ] Route `notes/:noteId/blurt` in `client/src/App.tsx`, inside the logged-in layout
-- [ ] Leave warning while writing (6)
-- [ ] Move the "This page doesn't exist" view out of `NotePage` into `NoteNotFound`, shared with the blurt page (A5)
+- [x] `client/src/pages/BlurtPage.tsx`: the focus sheet (A3): top bar with title, timer, word count and Close, centered title as the cue, textarea, "I'm done →"
+- [x] Route `notes/:noteId/blurt` in `client/src/App.tsx`, inside the logged-in layout
+- [x] Leave warning while writing (6)
+- [x] Move the "This page doesn't exist" view out of `NotePage` into `NoteNotFound`, shared with the blurt page (A5)
 
 ### Checkpoint 3 🟡: Reveal
 - [x] On Done: fetch the body (A1), then split the sheet into "From memory" | "The note" (A3) with its two actions (A4) in a bottom bar
@@ -91,14 +91,14 @@ Split into four checkpoints on 2026-10-25 so each stays under 50 lines.
 - [x] "Blurt" button on each note in `Sidebar` (e.g. on hover, next to "×")
 
 ### Acceptance tests
-- [ ] The blurt page shows the note's title and an empty textarea, and **no body text**
-- [ ] The body is not requested until Done
-- [ ] Done shows the blurt and the note body side by side
-- [ ] While writing a non-empty blurt: a hint says it isn't saved, reload/close asks "Leave site?", and "Close ✕" asks first. An empty blurt leaves without asking.
-- [ ] "Blurt again" hides the body and empties the textarea. "Back to note" opens `/notes/:id`.
-- [ ] Another user's note id → "This page doesn't exist"
-- [ ] An empty note can be blurted, and the reveal shows an empty body
-- [ ] The body fetch failing at Done → error message with "Retry", and the blurt is kept
+- [x] The blurt page shows the note's title and an empty textarea, and **no body text**
+- [x] The body is not requested until Done
+- [x] Done shows the blurt and the note body side by side
+- [x] While writing a non-empty blurt: a hint says it isn't saved, reload/close asks "Leave site?", and "Close ✕" asks first. An empty blurt leaves without asking.
+- [x] "Blurt again" hides the body and empties the textarea. "Back to note" opens `/notes/:id`.
+- [x] Another user's note id → "This page doesn't exist"
+- [x] An empty note can be blurted, and the reveal shows an empty body
+- [x] The body fetch failing at Done → error message with "Retry", and the blurt is kept
 
 **Demo:** Open a note → "Blurt" → a full-screen sheet with only the title, timer and word count → type what you remember → "I'm done" → the sheet splits, blurt left and note right → "Blurt again" → empty again.
 Start a blurt from the sidebar without opening the note first.
@@ -190,7 +190,7 @@ the check says "AI checks aren't set up", and self-compare still works.
 
 ---
 
-## Overall verification (after Ticket B)
-- [ ] `npm run build` and `npm test` pass
-- [ ] Full flow in `npm run dev:all`: open a note → Blurt → Done → side by
-  side → AI check → Blurt again
+## Overall verification (2026-10-25, Ticket A only since B is dropped)
+- [x] `npm run build` and `npm test` pass (119 tests)
+- [x] Full flow in the browser: open a note → Blurt → Done → side by side → Blurt again, plus
+  every Ticket A acceptance check and the A4b shortcuts (scripted in Chromium)
