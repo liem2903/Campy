@@ -32,3 +32,17 @@ export class BlockOfAnotherNoteError extends Error {
     super("A block id belongs to another note");
   }
 }
+
+// A missing tag and another user's tag share this, so a response never reveals which.
+export class TagNotFoundError extends Error {
+  constructor() {
+    super("Tag not found");
+  }
+}
+
+// The user already has a tag with this name (names are compared trimmed and lowercased).
+export class TagNameTakenError extends Error {
+  constructor(name: string) {
+    super(`A tag called ${name} already exists`);
+  }
+}

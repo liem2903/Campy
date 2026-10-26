@@ -83,6 +83,9 @@ function Sidebar() {
         <NavLink to="/notes" end className="sidebar-item">
           All notes
         </NavLink>
+        <NavLink to="/tags" className="sidebar-item">
+          Tags
+        </NavLink>
       </nav>
       <p className="sidebar-label">Notes</p>
       <nav className="page-list" aria-busy={loading}>

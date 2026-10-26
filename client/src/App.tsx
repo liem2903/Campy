@@ -11,6 +11,7 @@ import NotePage from './pages/NotePage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
 import QuizPage from './pages/QuizPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
+import TagsPage from './pages/TagsPage.tsx'
 
 function Workspace() {
   return (
@@ -45,6 +46,7 @@ function App() {
       >
         <Route index element={<HomePage />} />
         <Route path="notes" element={<AllNotesPage />} />
+        <Route path="tags" element={<TagsPage />} />
         <Route path="quiz" element={<QuizPage />} />
         <Route path="notes/:noteId" element={<NotePage />} />
         <Route path="notes/:noteId/blurt" element={<BlurtPage />} />

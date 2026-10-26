@@ -53,3 +53,10 @@ type BlockOf<T extends BlockType> = {
 
 // Discriminated union: checking block.type narrows block.properties.
 export type Block = { [T in BlockType]: BlockOf<T> }[BlockType];
+
+export type Tag = {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: Date;
+};

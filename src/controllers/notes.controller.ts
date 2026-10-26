@@ -2,10 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
-import type { Note, NoteBlock, NoteWithBlocks } from "../services/notes.service.js";
-
-// Lowercase only, so the id we send back always equals the one the client sent.
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+import type { Note, NoteBlock, NoteDetail } from "../services/notes.service.js";
+import { uuidPattern } from "./validation.js";
 const MAX_TITLE_LENGTH = 200;
 const INVALID_BLOCKS = "Invalid blocks";
 // Top level is depth 1.
@@ -56,7 +54,7 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-// GET /api/notes/:id: this user's note with its blocks. A missing note, another user's note and
+// GET /api/notes/:id: this user's note with its blocks and tags. A missing note, another user's note and
 // a malformed id all get the same 404, so a response never reveals which.
 export async function get(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -162,8 +160,8 @@ function idsInTree(blocks: NoteBlock[]): string[] {
 }
 
 // DB row → API shape: camelCase, and updatedAt as an ISO string.
-function toJson(note: NoteWithBlocks) {
-  return { ...toSummaryJson(note), blocks: note.blocks };
+function toJson(note: NoteDetail) {
+  return { ...toSummaryJson(note), blocks: note.blocks, tags: note.tags };
 }
 
 // List items leave out blocks: the sidebar only needs id, title and updatedAt.

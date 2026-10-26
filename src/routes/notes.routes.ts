@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { AppOptions } from "../app.js";
 import * as notes from "../controllers/notes.controller.js";
+import * as tags from "../controllers/tags.controller.js";
 import { requireSession } from "../middleware/requireSession.js";
 
 export function notesRoutes(options: AppOptions): Router {
@@ -14,5 +15,7 @@ export function notesRoutes(options: AppOptions): Router {
   router.get("/:id", notes.get);
   router.put("/:id", notes.update);
   router.delete("/:id", notes.remove);
+  router.post("/:id/tags", tags.addToNote);
+  router.delete("/:id/tags/:tagId", tags.removeFromNote);
   return router;
 }

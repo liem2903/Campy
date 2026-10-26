@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { Tag } from './tags.ts'
 
 // One row of GET /api/notes. updatedAt is an ISO string.
 export type NoteSummary = { id: string; title: string; updatedAt: string }
@@ -9,8 +10,8 @@ export type ListItemStyle = 'bullet' | 'numbered'
 export type NoteBlock =
   | { id: string; type: 'text'; properties: { text: string } }
   | { id: string; type: 'list_item'; properties: { text: string; style: ListItemStyle }; children: NoteBlock[] }
-// One note from GET /api/notes/:id.
-export type NoteDetail = NoteSummary & { blocks: NoteBlock[] }
+// One note from GET /api/notes/:id. Tags are in name order and saved on their own, not by autosave.
+export type NoteDetail = NoteSummary & { blocks: NoteBlock[]; tags: Tag[] }
 // The part of a note the user edits. Autosave sends both fields on every save.
 export type NoteContent = Pick<NoteDetail, 'title' | 'blocks'>
 

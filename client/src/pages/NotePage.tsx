@@ -6,6 +6,7 @@ import NoteNotFound from '../components/NoteNotFound.tsx'
 import NoteSkeleton from '../components/NoteSkeleton.tsx'
 import { useNotes, type NoteContent } from '../notes.ts'
 import { RETRY_MS, wait } from '../retry.ts'
+import type { Tag } from '../tags.ts'
 
 function NotePage() {
   const { noteId: noteIdFromUrl } = useParams()
@@ -14,7 +15,7 @@ function NotePage() {
 
   // The server's copy, tagged with its note id: while the next note loads, the old one's
   // content doesn't match noteIdFromUrl, so it never shows on the wrong page.
-  const [serverReply, setServerReply] = useState<{ id: string; content: NoteContent }>()
+  const [serverReply, setServerReply] = useState<{ id: string; content: NoteContent; tags: Tag[] }>()
   useEffect(() => {
     if (!noteIdFromUrl) return
     // Set by the cleanup when noteIdFromUrl changes, so a late answer can't overwrite a newer one.
@@ -26,7 +27,7 @@ function NotePage() {
           const noteDetailOrNull = await getNoteFromServer(noteIdFromUrl)
           if (stale) return
           const content = { title: noteDetailOrNull?.title ?? '', blocks: noteDetailOrNull?.blocks ?? [] }
-          setServerReply({ id: noteIdFromUrl, content })
+          setServerReply({ id: noteIdFromUrl, content, tags: noteDetailOrNull?.tags ?? [] })
           return
         } catch {
           // Network error or 5xx: stay blank and try again.
@@ -46,7 +47,14 @@ function NotePage() {
   if (!listEntry) return <NoteNotFound />
   if (serverReply?.id !== listEntry.id) return <NoteSkeleton />
 
-  return <NoteEditor key={listEntry.id} noteId={listEntry.id} serverContent={serverReply.content} />
+  return (
+    <NoteEditor
+      key={listEntry.id}
+      noteId={listEntry.id}
+      serverContent={serverReply.content}
+      serverTags={serverReply.tags}
+    />
+  )
 }
 
 export default NotePage

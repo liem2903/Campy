@@ -3,12 +3,14 @@ import type { Note } from "../db/types.js";
 import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as blocksRepository from "../repositories/blocks.repository.js";
 import * as notesRepository from "../repositories/notes.repository.js";
+import * as tagsRepository from "../repositories/tags.repository.js";
 import type { NoteBlock, NoteBlockRow } from "../repositories/blocks.repository.js";
+import type { TagSummary } from "../repositories/tags.repository.js";
 
 export type { Note, NoteBlock };
-// A note with its blocks as a tree, in order.
-export type NoteWithBlocks = Note & { blocks: NoteBlock[] };
-export type CreateNoteResult = { note: NoteWithBlocks; created: boolean };
+// A note with its blocks as a tree, in order, and its tags in name order.
+export type NoteDetail = Note & { blocks: NoteBlock[]; tags: TagSummary[] };
+export type CreateNoteResult = { note: NoteDetail; created: boolean };
 // What the user edits: autosave sends both on every save.
 export type NoteContent = { title: string; blocks: NoteBlock[] };
 
@@ -18,17 +20,17 @@ export async function createNote(userId: string, id: string): Promise<CreateNote
   // Relies on READ COMMITTED: after a conflict, the lookup sees the other transaction's commit.
   return sql.begin(async (tx) => {
     const note = await notesRepository.insertNote(userId, id, tx);
-    if (note) return { note: { ...note, blocks: [] }, created: true };
-    // The id exists. findNoteWithBlocks only sees this user's notes, so null = someone else's.
-    const existing = await findNoteWithBlocks(userId, id, tx);
+    if (note) return { note: { ...note, blocks: [], tags: [] }, created: true };
+    // The id exists. findNoteDetail only sees this user's notes, so null = someone else's.
+    const existing = await findNoteDetail(userId, id, tx);
     if (!existing) throw new NoteIdTakenError();
     return { note: existing, created: false };
   });
 }
 
-// This user's note with its blocks. Throws NoteNotFoundError when it's missing or another user's.
-export async function getNote(userId: string, id: string): Promise<NoteWithBlocks> {
-  const note = await findNoteWithBlocks(userId, id);
+// This user's note with its blocks and tags. Throws NoteNotFoundError when it's missing or another user's.
+export async function getNote(userId: string, id: string): Promise<NoteDetail> {
+  const note = await findNoteDetail(userId, id);
   if (!note) throw new NoteNotFoundError();
   return note;
 }
@@ -77,13 +79,16 @@ export async function deleteNote(userId: string, id: string): Promise<void> {
 }
 
 // Used inside createNote's transaction and on its own, so it takes a Db like a repository.
-async function findNoteWithBlocks(
+async function findNoteDetail(
   userId: string, id: string, db: Db = sql,
-): Promise<NoteWithBlocks | null> {
+): Promise<NoteDetail | null> {
   const note = await notesRepository.findNoteByIdForUser(userId, id, db);
   if (!note) return null;
-  const blockRows = await blocksRepository.findBlocksOfNote(id, db);
-  return { ...note, blocks: blockTreeFromRows(blockRows) };
+  const [blockRows, tags] = await Promise.all([
+    blocksRepository.findBlocksOfNote(id, db),
+    tagsRepository.findTagsOfNote(id, db),
+  ]);
+  return { ...note, blocks: blockTreeFromRows(blockRows), tags };
 }
 
 // Tree → the rows the DB stores: each block, then its whole subtree, so parents come before

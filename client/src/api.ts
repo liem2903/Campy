@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { NoteContent, NoteDetail, NoteSummary } from './notes.ts'
+import type { Tag, TagWithNoteCount } from './tags.ts'
 
 export type User = { id: string; email: string }
 
@@ -99,4 +100,40 @@ export async function saveNoteToServer(id: string, content: NoteContent): Promis
   // 400 Bad Request: the server says what's wrong (a long title, or blocks our editor got wrong).
   if ('error' in data) return { saved: false, message: data.error }
   return { saved: true, updatedAt: data.updatedAt }
+}
+
+// Tag calls reject with the server's message (e.g. "A tag called queue already exists" on a
+// 409 Conflict), so the caller can show it as is.
+
+// This user's tags in name order, each with how many notes it's on.
+export async function listTagsFromServer(): Promise<TagWithNoteCount[]> {
+  const { data } = await api.get<TagWithNoteCount[]>('/tags')
+  return data
+}
+
+// Creates a tag on no notes. The server trims and lowercases the name.
+export async function createTagOnServer(name: string): Promise<Tag> {
+  const { data } = await api.post<Tag>('/tags', { name })
+  return data
+}
+
+export async function renameTagOnServer(tagId: string, name: string): Promise<Tag> {
+  const { data } = await api.patch<Tag>(`/tags/${tagId}`, { name })
+  return data
+}
+
+// Deletes the tag and takes it off every note.
+export async function deleteTagOnServer(tagId: string): Promise<void> {
+  await api.delete(`/tags/${tagId}`, { data: {} })
+}
+
+// Puts the tag called `name` on the note, creating the tag if it's new, and returns that tag.
+export async function tagNoteOnServer(noteId: string, name: string): Promise<Tag> {
+  const { data } = await api.post<Tag>(`/notes/${noteId}/tags`, { name })
+  return data
+}
+
+// Takes the tag off this note only.
+export async function untagNoteOnServer(noteId: string, tagId: string): Promise<void> {
+  await api.delete(`/notes/${noteId}/tags/${tagId}`, { data: {} })
 }

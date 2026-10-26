@@ -1047,3 +1047,186 @@
     font-size: 34px;
   }
 }
+
+/* Tags: "stamps", small uppercase labels in a hairline tan frame, under a note's title and on
+   the Tags page */
+
+.note-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -2px 0 28px;
+}
+
+.tag-stamp,
+.tag-stamp-add,
+.tag-stamp-input {
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tag-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--brand) 55%, transparent);
+  color: var(--brand);
+}
+
+/* A stamp with a × keeps less padding on the right, where the × sits */
+.tag-stamp:has(.tag-stamp-remove) {
+  padding-right: 4px;
+}
+
+.tag-stamp-remove {
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.tag-stamp-remove:hover {
+  opacity: 1;
+}
+
+.tag-stamp-add {
+  padding: 4px 9px;
+  border: 1px dashed var(--line);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.tag-stamp-add:hover {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+.tag-stamp-form {
+  position: relative;
+  display: inline-flex;
+}
+
+.tag-stamp-input {
+  width: 150px;
+  padding: 3px 9px;
+  border: 1px solid var(--brand);
+  outline: none;
+  background: var(--bg);
+  color: var(--brand);
+}
+
+.tag-stamp-input::placeholder {
+  color: var(--muted);
+}
+
+.tag-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  min-width: 200px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+  list-style: none;
+}
+
+.tag-suggestions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tag-suggestions li[aria-selected='true'] {
+  background: var(--hover);
+}
+
+.tag-suggestion-hint {
+  color: var(--muted);
+}
+
+.tag-error {
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.tags-page .auth-title {
+  margin-bottom: 24px;
+}
+
+.tag-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag-card {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.tag-card-count {
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.tag-card-count small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+}
+
+.tag-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: -6px;
+}
+
+.tag-card-actions button {
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.tag-card-actions button:hover {
+  color: var(--text);
+}

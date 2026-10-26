@@ -9,7 +9,9 @@ import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
+import type { Tag } from '../tags.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
+import NoteTagChips from './NoteTagChips.tsx'
 
 const saveStatusLabels: Record<Exclude<SaveStatus['kind'], 'rejected'>, string> = {
   saved: 'Saved',
@@ -67,9 +69,11 @@ const bodyExtensions = [
   Placeholder.configure({ placeholder: 'Start writing...' }),
 ]
 
-// The title and body of one note, saved as the user types. NotePage renders it with
-// key={noteId}, so each note gets a fresh editor and autosave.
-function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: NoteContent }) {
+// The title and body of one note, saved as the user types, with its tags between them.
+// NotePage renders it with key={noteId}, so each note gets a fresh editor and autosave.
+function NoteEditor(
+  { noteId, serverContent, serverTags }: { noteId: string; serverContent: NoteContent; serverTags: Tag[] },
+) {
   const { moveEditedNoteToTop } = useNotes()
   const { saveStatus, scheduleSave } = useAutosave(noteId)
   // Edits that never reached the server (expired session, closed tab, crash) win over its copy.
@@ -134,6 +138,7 @@ function NoteEditor({ noteId, serverContent }: { noteId: string; serverContent: 
         placeholder="Untitled"
         autoFocus={content.title === ''}
       />
+      <NoteTagChips noteId={noteId} serverTags={serverTags} />
       <EditorContent editor={bodyEditor} className="note-body" />
     </article>
   )

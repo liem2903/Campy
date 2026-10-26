@@ -39,12 +39,22 @@ note` → rename it to `queues` → the note shows `queues`.
 
 | # | Area | Decision |
 |---|---|---|
-| T1.1 | Storage | `tags (id, user_id → users cascade, name, unique (user_id, name))` and `note_tags (note_id → notes cascade, tag_id → tags cascade, pk (note_id, tag_id))`. |
+| T1.1 | Storage | `tags (id, user_id → users cascade, name, unique (user_id, name))` and `note_tags (note_id, tag_id, user_id, pk (note_id, tag_id))`, with foreign keys `(note_id, user_id) → notes (id, user_id)` and `(tag_id, user_id) → tags (id, user_id)`, both cascade, so Postgres refuses a link between two users' note and tag. |
 | T1.2 | Names | Lowercased and trimmed on the server. 1–50 characters, else 400 Bad Request. |
 | T1.3 | On a note | Chips under the title. "+ tag" opens an input that autocompletes from your tags; Enter creates a new tag on first use. "×" removes. Saves straight away (no Save button). |
 | T1.4 | Unused tags | Stay until deleted on the Tags page. |
 | T1.5 | Tags page | Lists each tag with counts (`queue: 3 notes, 2 questions`; questions once T2 exists). Rename onto an existing name → **refused** ("A tag called queue already exists", 409 Conflict). Delete asks first ("Remove `queue` from 3 notes and 2 questions?") and only removes the tag. A "+ New tag" input creates a tag with no note. |
 | T1.6 | Endpoints (grilled 2026-10-25) | `GET /api/notes/:id` gains `tags: [{ id, name }]`. `GET /api/tags` → `[{ id, name, noteCount }]` (one endpoint for the autocomplete and the Tags page). `POST /api/tags { name }` → 201 Created, existing name → 409 Conflict. `POST /api/notes/:id/tags { name }` → finds or creates, then attaches, in one transaction → `{ id, name }`; already attached is a no-op. `DELETE /api/notes/:id/tags/:tagId` → 204 No Content, takes it off that note only. `PATCH /api/tags/:tagId { name }` → 200 OK, taken name → 409 Conflict. `DELETE /api/tags/:tagId` → 204 No Content, cascade removes it from every note. |
+| T1.7 | Edge cases (review 2026-10-26) | `DELETE /api/notes/:id/tags/:tagId` with an unknown tag or another user's tag → still 204 No Content: the note ends up without it either way, and the delete is filtered by `user_id`, so it can't touch another user's link. Adding or removing a tag does **not** bump the note's `updated_at`; tagging isn't editing the note. |
+
+---
+
+## T1b: Filter notes by tag (added 2026-10-25, not grilled yet)
+
+**Slice:** pick tag `queue` → the sidebar and the All Notes page show only notes tagged `queue`.
+
+Open: server-side (`GET /api/notes?tag=…`) vs note list carrying each note's tags and filtering in
+the browser; one tag or several; where the picker lives; whether the filter is remembered.
 
 ---
 
