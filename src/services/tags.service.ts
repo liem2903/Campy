@@ -21,14 +21,13 @@ export async function createTag(userId: string, name: string): Promise<TagSummar
 }
 
 // Throws TagNameTakenError when another of the user's tags has the name, TagNotFoundError when
-// the tag is missing or another user's. Two renames racing onto one free name: the loser hits the
-// unique constraint and gets a 500 (accepted, like signUp; a retry gets the normal 409).
+// the tag is missing or another user's. No check before the update: the unique constraint
+// decides, so two renames racing onto one free name still give the loser a 409.
 export async function renameTag(userId: string, tagId: string, name: string): Promise<TagSummary> {
-  const tagWithThatName = await tagsRepository.findTagByNameForUser(userId, name);
-  if (tagWithThatName && tagWithThatName.id !== tagId) throw new TagNameTakenError(name);
-  const renamedTag = await tagsRepository.renameTagForUser(userId, tagId, name);
-  if (!renamedTag) throw new TagNotFoundError();
-  return renamedTag;
+  const renameResult = await tagsRepository.renameTagForUser(userId, tagId, name);
+  if (renameResult === "name_taken") throw new TagNameTakenError(name);
+  if (!renameResult) throw new TagNotFoundError();
+  return renameResult;
 }
 
 // Deletes the tag and takes it off every note. Throws TagNotFoundError when the tag is missing
@@ -43,7 +42,8 @@ export async function deleteTag(userId: string, tagId: string): Promise<void> {
 // when the note is missing or another user's.
 export async function addTagToNote(userId: string, noteId: string, name: string): Promise<TagSummary> {
   return sql.begin(async (tx) => {
-    const note = await notesRepository.findNoteByIdForUser(userId, noteId, tx);
+    // Locked until commit, so deleting the note waits instead of breaking the insert below.
+    const note = await notesRepository.findNoteByIdForUserAndLock(userId, noteId, tx);
     if (!note) throw new NoteNotFoundError();
     const tag = await tagsRepository.upsertTag(userId, name, tx);
     await tagsRepository.attachTagToNote(userId, noteId, tag.id, tx);

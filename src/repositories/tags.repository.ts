@@ -1,5 +1,8 @@
+import postgres from "postgres";
 import { sql, type Db } from "../db/client.js";
 import type { Tag } from "../db/types.js";
+
+const UNIQUE_VIOLATION = "23505";
 
 // What the API shows of a tag.
 export type TagSummary = Pick<Tag, "id" | "name">;
@@ -31,16 +34,6 @@ export async function findTagsOfNote(noteId: string, db: Db = sql): Promise<TagS
   `;
 }
 
-// This user's tag with exactly this name; null when they have none.
-export async function findTagByNameForUser(
-  userId: string, name: string, db: Db = sql,
-): Promise<TagSummary | null> {
-  const [tag] = await db<TagSummary[]>`
-    select id, name from tags where user_id = ${userId} and name = ${name}
-  `;
-  return tag ?? null;
-}
-
 // Inserts the tag; null when the user already has one with this name.
 export async function insertTag(userId: string, name: string, db: Db = sql): Promise<TagSummary | null> {
   const [tag] = await db<TagSummary[]>`
@@ -62,16 +55,22 @@ export async function upsertTag(userId: string, name: string, db: Db = sql): Pro
   return tag;
 }
 
-// Renames this user's tag; null when this user has no tag with that id.
+// Renames this user's tag. null when this user has no tag with that id; "name_taken" when
+// another of their tags already has the name.
 export async function renameTagForUser(
   userId: string, tagId: string, name: string, db: Db = sql,
-): Promise<TagSummary | null> {
-  const [tag] = await db<TagSummary[]>`
-    update tags set name = ${name}
-    where id = ${tagId} and user_id = ${userId}
-    returning id, name
-  `;
-  return tag ?? null;
+): Promise<TagSummary | null | "name_taken"> {
+  try {
+    const [tag] = await db<TagSummary[]>`
+      update tags set name = ${name}
+      where id = ${tagId} and user_id = ${userId}
+      returning id, name
+    `;
+    return tag ?? null;
+  } catch (err) {
+    if (err instanceof postgres.PostgresError && err.code === UNIQUE_VIOLATION) return "name_taken";
+    throw err;
+  }
 }
 
 // Deletes this user's tag; on delete cascade takes it off every note. Returns the number of tags

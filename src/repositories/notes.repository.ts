@@ -21,6 +21,17 @@ export async function findNoteByIdForUser(
   return note ?? null;
 }
 
+// Like findNoteByIdForUser, but locks the note until the transaction ends, so it can't be
+// deleted in the meantime. Edits to its title still go through.
+export async function findNoteByIdForUserAndLock(
+  userId: string, id: string, db: Db = sql,
+): Promise<Note | null> {
+  const [note] = await db<Note[]>`
+    select * from notes where id = ${id} and user_id = ${userId} for key share
+  `;
+  return note ?? null;
+}
+
 // This user's notes, most recently edited first.
 export async function listNotes(userId: string, db: Db = sql): Promise<Note[]> {
   return db<Note[]>`
