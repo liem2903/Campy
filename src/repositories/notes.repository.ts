@@ -32,10 +32,16 @@ export async function findNoteByIdForUserAndLock(
   return note ?? null;
 }
 
+// A note plus the ids of its tags, so the note list can be filtered by tag in the browser.
+export type NoteWithTagIds = Note & { tag_ids: string[] };
+
 // This user's notes, most recently edited first.
-export async function listNotes(userId: string, db: Db = sql): Promise<Note[]> {
-  return db<Note[]>`
-    select * from notes
+export async function listNotes(userId: string, db: Db = sql): Promise<NoteWithTagIds[]> {
+  // A subquery rather than a join + group by, so a note with no tags still gets '{}'.
+  return db<NoteWithTagIds[]>`
+    select notes.*,
+           array(select tag_id from note_tags where note_tags.note_id = notes.id) as tag_ids
+    from notes
     where user_id = ${userId}
     order by updated_at desc
   `;

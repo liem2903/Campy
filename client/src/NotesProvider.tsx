@@ -102,7 +102,7 @@ function NotesProvider({ children }: { children: ReactNode }) {
   const createNote = useCallback(() => {
     const id = crypto.randomUUID()
     // Newest first, matching the server's order.
-    setNotes((prev) => [{ id, title: '', updatedAt: new Date().toISOString() }, ...prev])
+    setNotes((prev) => [{ id, title: '', updatedAt: new Date().toISOString(), tagIds: [] }, ...prev])
     finalIdsRef.current.set(id, syncCreate(id))
     return id
   }, [syncCreate])
@@ -121,6 +121,10 @@ function NotesProvider({ children }: { children: ReactNode }) {
       const otherNotes = prev.filter((note) => note.id !== id)
       return [{ ...editedNote, title, updatedAt: new Date().toISOString() }, ...otherNotes]
     })
+  }, [])
+
+  const replaceTagIdsOfNoteInList = useCallback((id: string, tagIds: string[]) => {
+    setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, tagIds } : note)))
   }, [])
 
   const markNoteSaved = useCallback((id: string, updatedAt: string) => {
@@ -162,13 +166,14 @@ function NotesProvider({ children }: { children: ReactNode }) {
       loadFailed,
       createNote,
       moveEditedNoteToTop,
+      replaceTagIdsOfNoteInList,
       markNoteSaved,
       deleteNote,
       waitForCreate,
       registerFlush,
       flushAllSaves,
     }),
-    [notes, loading, loadFailed, createNote, moveEditedNoteToTop, markNoteSaved, deleteNote,
+    [notes, loading, loadFailed, createNote, moveEditedNoteToTop, replaceTagIdsOfNoteInList, markNoteSaved, deleteNote,
       waitForCreate, registerFlush, flushAllSaves],
   )
 

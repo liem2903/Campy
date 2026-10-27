@@ -64,12 +64,29 @@ describe("GET /api/notes", () => {
     expect(ids(res.body)).toEqual([c, b, a]);
   });
 
-  it("returns exactly id, title and updatedAt for each note", async () => {
+  it("returns exactly id, title, updatedAt and tagIds for each note", async () => {
     const app = makeApp();
     const user = await signedUp(app);
     const id = await seedNote(user.id, "Chem", "2026-01-01T10:00:00.000Z");
 
     const res = await listNotes(app, user.cookie).expect(200);
-    expect(res.body).toEqual([{ id, title: "Chem", updatedAt: "2026-01-01T10:00:00.000Z" }]);
+    expect(res.body).toEqual([{ id, title: "Chem", updatedAt: "2026-01-01T10:00:00.000Z", tagIds: [] }]);
+  });
+
+  it("lists the ids of each note's tags, so the client can filter by tag (T1b)", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const taggedId = await seedNote(user.id, "Tagged", "2026-01-01T11:00:00.000Z");
+    const untaggedId = await seedNote(user.id, "Untagged", "2026-01-01T10:00:00.000Z");
+    const tagNote = (name: string) =>
+      request(app).post(`/api/notes/${taggedId}/tags`).set("Cookie", user.cookie).send({ name }).expect(200);
+    const queueTagId = (await tagNote("queue")).body.id;
+    const stackTagId = (await tagNote("stack")).body.id;
+
+    const res = await listNotes(app, user.cookie).expect(200);
+    expect(res.body.map((note: { id: string; tagIds: string[] }) => [note.id, [...note.tagIds].sort()])).toEqual([
+      [taggedId, [queueTagId, stackTagId].sort()],
+      [untaggedId, []],
+    ]);
   });
 });

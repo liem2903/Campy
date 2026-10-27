@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
-import type { Note, NoteBlock, NoteDetail } from "../services/notes.service.js";
+import type { Note, NoteBlock, NoteDetail, NoteWithTagIds } from "../services/notes.service.js";
 import { uuidPattern } from "./validation.js";
 const MAX_TITLE_LENGTH = 200;
 const INVALID_BLOCKS = "Invalid blocks";
@@ -44,11 +44,11 @@ const noteBlocksSchema: z.ZodType<NoteBlock[], unknown> = z
     return new Set(allIds).size === allIds.length;
   });
 
-// GET /api/notes: this user's notes, most recently edited first.
+// GET /api/notes: this user's notes, most recently edited first, each with its tag ids.
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const notes = await notesService.listNotes(req.user!.id); // requireSession set it
-    res.json(notes.map(toSummaryJson));
+    res.json(notes.map(toListItemJson));
   } catch (err) {
     next(err);
   }
@@ -164,7 +164,11 @@ function toJson(note: NoteDetail) {
   return { ...toSummaryJson(note), blocks: note.blocks, tags: note.tags };
 }
 
-// List items leave out blocks: the sidebar only needs id, title and updatedAt.
 function toSummaryJson(note: Note) {
   return { id: note.id, title: note.title, updatedAt: note.updated_at.toISOString() };
+}
+
+// List items leave out blocks: the sidebar needs id, title and updatedAt, the tag filter tagIds.
+function toListItemJson(note: NoteWithTagIds) {
+  return { ...toSummaryJson(note), tagIds: note.tag_ids };
 }

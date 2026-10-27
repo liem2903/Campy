@@ -6,9 +6,10 @@ import * as notesRepository from "../repositories/notes.repository.js";
 import * as questionsRepository from "../repositories/questions.repository.js";
 import * as tagsRepository from "../repositories/tags.repository.js";
 import type { NoteBlock, NoteBlockRow } from "../repositories/blocks.repository.js";
+import type { NoteWithTagIds } from "../repositories/notes.repository.js";
 import type { TagSummary } from "../repositories/tags.repository.js";
 
-export type { Note, NoteBlock };
+export type { Note, NoteBlock, NoteWithTagIds };
 // A note with its blocks as a tree, in order, and its tags in name order.
 export type NoteDetail = Note & { blocks: NoteBlock[]; tags: TagSummary[] };
 export type CreateNoteResult = { note: NoteDetail; created: boolean };
@@ -70,7 +71,7 @@ export async function updateNote(
 }
 
 // This user's notes, most recently edited first.
-export async function listNotes(userId: string): Promise<Note[]> {
+export async function listNotes(userId: string): Promise<NoteWithTagIds[]> {
   return notesRepository.listNotes(userId);
 }
 

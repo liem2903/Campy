@@ -53,8 +53,14 @@ note` → rename it to `queues` → the note shows `queues`.
 
 **Slice:** pick tag `queue` → the sidebar and the All Notes page show only notes tagged `queue`.
 
-Open: server-side (`GET /api/notes?tag=…`) vs note list carrying each note's tags and filtering in
-the browser; one tag or several; where the picker lives; whether the filter is remembered.
+Built 2026-10-27 together with T4b (user: "flashcard by tag, and filter out notes by my tag"):
+
+| # | Area | Decision |
+|---|---|---|
+| T1b.1 | Where it filters | In the browser. `GET /api/notes` gains `tagIds` per note; the list is already loaded whole, so no second fetch. Tagging a note on its page updates the list at once (`replaceTagIdsOfNoteInList`). |
+| T1b.2 | Several tags | Same as flashcards (T4.7): notes with **any** of the picked tags. |
+| T1b.3 | Picker | A row of tag chips (`TagFilterChips`) on the All Notes page, also used on the Flashcards start screen. Tags page gets "Notes" (`/notes?tag=<id>`) and "Study" (`/flashcards?tag=<id>`) links. The sidebar list isn't filtered. |
+| T1b.4 | Remembered | In the URL (`?tag=<id>&tag=<id>`): survives reload, links can pre-select, nothing stored. |
 
 ---
 

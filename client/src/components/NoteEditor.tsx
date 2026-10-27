@@ -78,12 +78,16 @@ const bodyExtensions = [
 function NoteEditor(
   { noteId, serverContent, serverTags }: { noteId: string; serverContent: NoteContent; serverTags: Tag[] },
 ) {
-  const { moveEditedNoteToTop } = useNotes()
+  const { moveEditedNoteToTop, replaceTagIdsOfNoteInList } = useNotes()
   const { saveStatus, scheduleSave, saveNow } = useAutosave(noteId)
   // Edits that never reached the server (expired session, closed tab, crash) win over its copy.
   const [restoredDraft] = useState(() => readDraft(noteId))
   const [content, setContent] = useState<NoteContent>(restoredDraft ?? serverContent)
   const [noteTags, setNoteTags] = useState(serverTags)
+  // So All Notes, filtered by tag, shows a note tagged here without a reload.
+  useEffect(() => {
+    replaceTagIdsOfNoteInList(noteId, noteTags.map((tag) => tag.id))
+  }, [noteId, noteTags, replaceTagIdsOfNoteInList])
   // While testing, the body is covered (inert: blurred, can't be focused or read) so you can't peek.
   const [isTestingQuestions, setIsTestingQuestions] = useState(false)
   // Whether the cursor was last in the body rather than the title, so a new question knows if it's
