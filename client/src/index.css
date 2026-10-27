@@ -77,6 +77,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  /* A word too long for its line (a URL, a pasted hash) breaks instead of spilling out. */
+  overflow-wrap: break-word;
 }
 
 a {

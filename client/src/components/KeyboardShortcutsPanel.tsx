@@ -41,7 +41,7 @@ function KeyboardShortcutsPanel() {
     <dialog
       ref={dialogRef}
       onClick={(event) => event.target === event.currentTarget && dialogRef.current?.close()}
-      className="m-auto w-[min(440px,calc(100vw-32px))] rounded-xl border border-[var(--line)] bg-bg p-0 text-text backdrop:bg-black/30"
+      className="m-auto w-[min(440px,calc(100vw-32px))] rounded-xl border border-[var(--line)] bg-bg p-0 text-text shadow-[0_16px_48px_rgba(0,0,0,0.18)] outline-none backdrop:bg-black/30"
     >
       <div className="p-6">
         <h2 className="mt-0 mb-4 text-[16px] font-semibold">Keyboard shortcuts</h2>

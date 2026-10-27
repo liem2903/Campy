@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { startTransition, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import { logOut } from '../api.ts'
 import { useAuth } from '../auth.ts'
@@ -53,11 +53,16 @@ function Sidebar() {
   // Only forget the user once the server has ended the session; on failure they stay logged in.
   // Pending saves go first, while the session still works. A save that never answers can't
   // block logout: after FLUSH_LIMIT_MS we go anyway, and the draft keeps the unsaved text.
+  // React Router moves to /login in a transition; forgetting the user in the same transition makes
+  // both land in one render. Otherwise RequireAuth sees no user on this page first and saves it as
+  // "where to go after login", so the next person to log in lands on this user's note.
   async function handleLogOut() {
     await Promise.race([flushAllSaves(), wait(FLUSH_LIMIT_MS)])
     await logOut()
-    navigate('/login', { replace: true })
-    setUser(null)
+    startTransition(() => {
+      navigate('/login', { replace: true })
+      setUser(null)
+    })
   }
 
   return (

@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import express, { type NextFunction, type Request, type Response } from "express";
 import path from "node:path";
 import { requireJson } from "./middleware/requireJson.js";
+import { securityHeaders } from "./middleware/securityHeaders.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { notesRoutes } from "./routes/notes.routes.js";
 import { questionsRoutes } from "./routes/questions.routes.js";
@@ -17,6 +18,8 @@ const clientDist = path.resolve("client/dist");
 
 export function createApp(options: AppOptions = {}) {
   const app = express();
+  app.disable("x-powered-by"); // don't advertise the framework
+  app.use(securityHeaders);
   // Number of proxy hops to trust: 0 locally (unset), 1 on Railway.
   // Fail fast on a typo: NaN would silently trust no proxy and give every user one rate-limit bucket.
   const trustProxy = Number(process.env.TRUST_PROXY ?? 0);

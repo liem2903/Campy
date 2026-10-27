@@ -81,8 +81,11 @@
   transition: background 0.15s;
 }
 
-.sidebar-item:hover {
-  background: var(--hover);
+/* Hover backgrounds only for a mouse: on a phone a tap leaves them stuck on. */
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-item:hover {
+    background: var(--hover);
+  }
 }
 
 .page-list {
@@ -163,9 +166,11 @@
   transition: opacity 0.12s ease, color 0.15s ease;
 }
 
-.blurt-page:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .blurt-page:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 /* Room for both buttons, so a long title stops before them. */
@@ -186,9 +191,11 @@
   .page-link { padding-right: 72px; }
 }
 
-.delete-page:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .delete-page:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .delete-page:active {
@@ -1325,7 +1332,7 @@
 
 .tag-shelf {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
   gap: 12px;
   margin: 24px 0 0;
   padding: 0;
@@ -1403,6 +1410,7 @@
 }
 
 .cornell-grid .note-body {
+  box-sizing: border-box; /* the padding sits inside the column, not 28px past it */
   min-width: 0;
   max-width: 68ch; /* about 70 characters a line: longer lines are tiring to read */
   padding-left: 28px;
@@ -1438,6 +1446,11 @@
   font: inherit;
   font-size: 14px;
   cursor: pointer;
+  transition: transform 0.12s var(--ease);
+}
+
+.test-card-button:active {
+  transform: scale(0.97);
 }
 
 .test-card-button:focus-visible {
@@ -1499,30 +1512,33 @@
   }
 }
 
-/* "Your answer" while testing: a quiet box that grows with what you type. */
+/* "Your answer" while testing: no box, just a soft patch of the card to write on, so it reads as
+   part of the card rather than a form. It grows with what you type. */
 .test-typed-answer {
   box-sizing: border-box;
   width: 100%;
-  min-height: 60px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 0;
   border-radius: 8px;
-  background: transparent;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
   color: var(--text);
   font: inherit;
   font-size: 14px;
   line-height: 1.5;
   resize: none;
   field-sizing: content;
-  transition: border-color 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .test-typed-answer::placeholder {
   color: var(--muted);
+  font-style: italic;
 }
 
 .test-typed-answer:focus {
-  border-color: color-mix(in srgb, var(--brand) 60%, transparent);
+  background: color-mix(in srgb, var(--brand) 6%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent);
   outline: none;
 }
 
@@ -1660,13 +1676,15 @@
   line-height: 26px;
 }
 
-.cue-header-label:hover,
-.cue-header-action:hover {
-  color: var(--text);
-}
+@media (hover: hover) and (pointer: fine) {
+  .cue-header-label:hover,
+  .cue-header-action:hover {
+    color: var(--text);
+  }
 
-.cue-header-action:hover {
-  background: color-mix(in srgb, var(--brand) 10%, transparent);
+  .cue-header-action:hover {
+    background: color-mix(in srgb, var(--brand) 10%, transparent);
+  }
 }
 
 .cue-header-action:active {

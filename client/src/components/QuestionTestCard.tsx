@@ -112,7 +112,7 @@ function QuestionTestCard({ noteId, questions, onStop }: { noteId: string; quest
               setIsAnswerShowing(true)
             }}
             rows={2}
-            placeholder="Your answer (optional)"
+            placeholder="Answer from memory…"
             aria-label="Your answer (optional)"
             className="test-typed-answer"
           />

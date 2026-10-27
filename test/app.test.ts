@@ -19,6 +19,20 @@ describe("error handler", () => {
   });
 });
 
+describe("security headers", () => {
+  // /health answers before the API stack; an unknown /api path goes through it to the JSON 404.
+  it.each(["/health", "/api/does-not-exist"])("sends them on %s", async (path) => {
+    const res = await request(createApp()).get(path);
+
+    expect(res.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(res.headers["x-frame-options"]).toBe("DENY");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    expect(res.headers["referrer-policy"]).toBe("same-origin");
+    expect(res.headers["strict-transport-security"]).toBe("max-age=31536000");
+    expect(res.headers["x-powered-by"]).toBeUndefined();
+  });
+});
+
 describe("TRUST_PROXY", () => {
   it("accepts a whole number", () => {
     vi.stubEnv("TRUST_PROXY", "1");

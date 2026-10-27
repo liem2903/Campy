@@ -23,7 +23,7 @@ function QuestionCard({ question, noteTags, isAboutDeletedBlock, isAnswerShowing
           type="button"
           onClick={onToggleAnswer}
           aria-expanded={isAnswerShowing}
-          className="flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[17px] leading-[1.4] whitespace-pre-wrap text-text italic [font-family:var(--serif)]"
+          className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-left text-[17px] leading-[1.4] whitespace-pre-wrap text-text italic [font-family:var(--serif)]"
         >
           {question.question}
         </button>
