@@ -147,6 +147,19 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 
 ---
 
+## T4a review follow-ups (backend-reviewer, 2026-10-27; not built yet)
+Left out of CP3d/CP3e (1cd89df, 24cecda) to ship first. Already applied: #1 (session reads in one
+repeatable-read snapshot); accepted: #2 (DST night moves the 4 am boundary by an hour).
+
+| # | Item |
+|---|---|
+| F1 | Auth: session expiry is set from JS `Date` but checked against the DB's `now()`; use one clock. (Why the flashcard tests fake dates in the future.) |
+| F2 | Test: two simultaneous Again grades → ease 2.3, so removing the row lock fails a test. |
+| F3 | Tests for `nextDue`: Easy → `{ daysFromToday: 4 }`; held-back new cards + cards already due tomorrow add up. |
+| F4 | Test with a non-UTC zone (e.g. `Australia/Sydney`) so `studyDayIn` must use `timeZone`. |
+| F5 | `saveFlashcardSchedule` returns `FlashcardRow` (non-null); drop the unreachable 404 check in `gradeFlashcard`. |
+| F6 | Names: `counts` → `flashcardCounts`, `card` → `cardBeforeGrade`; export `EarliestDueDay` from the repository instead of repeating it inline. |
+
 ## Overall verification
 - [ ] `npm run build` and `npm test` pass
 - [ ] Every ticket's slice works in `npm run dev:all`
