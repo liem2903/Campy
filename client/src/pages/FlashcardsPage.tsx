@@ -56,7 +56,16 @@ function FlashcardsPage() {
       </div>
     )
   }
-  if (session === null && !errorMessage) return null
+  if (session === null && !errorMessage) {
+    return (
+      <div className="page-content empty-state" aria-busy="true">
+        <h1 className="auth-title">
+          Your <em>flashcards.</em>
+        </h1>
+        <span className="skeleton flashcards-count-skeleton" aria-hidden="true" />
+      </div>
+    )
+  }
   const newCardCount = session?.cards.filter((card) => card.isNew).length ?? 0
   const dueCardCount = (session?.cards.length ?? 0) - newCardCount
   const isFiltered = selectedTagIds.length > 0

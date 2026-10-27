@@ -85,7 +85,9 @@ function TagsPage() {
         </p>
       )}
       {tags?.length === 0 && <p className="auth-lede">No tags yet. Add one here or on a note.</p>}
-      <ul className="tag-shelf">
+      <ul className="tag-shelf" aria-busy={tags === null}>
+        {tags === null && !errorMessage &&
+          [0, 1, 2].map((i) => <li key={i} className="skeleton tag-card-skeleton" aria-hidden="true" />)}
         {tags?.map((tag) => (
           <li key={tag.id} className="tag-card">
             {tagBeingRenamed?.id === tag.id ? (

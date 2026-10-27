@@ -19,8 +19,20 @@ function AllNotesPage() {
     listTagsFromServer().then(setTags, () => {})
   }, [])
 
-  // Blank until the list arrives, so the empty state doesn't flash.
-  if (loading) return null
+  // Card-shaped placeholders until the list arrives, laid out like the grid so nothing jumps.
+  if (loading) {
+    return (
+      <div className="page-content library" aria-busy="true">
+        <h1 className="auth-title">
+          All <em>notes.</em>
+        </h1>
+        <span className="skeleton library-lede-skeleton" aria-hidden="true" />
+        <div className="library-grid" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className="skeleton library-card-skeleton" />)}
+        </div>
+      </div>
+    )
+  }
   if (notes.length === 0) {
     return (
       <div className="page-content empty-state">

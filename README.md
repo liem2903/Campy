@@ -1,36 +1,34 @@
 # Campi
 
-Campi is a note-taking app with built-in AI study tools. Write your notes, then use them to actually learn the material through blurting practice, active-recall quizzes, and flashcards — graded against criteria you define.
+Campi is a note-taking app built around one idea: reading your notes isn't the same as knowing them. You write notes like you would anywhere else, and then Campi gives you a few ways to actually test yourself on them.
 
-## Features
+It's live at a Railway URL for now (no custom domain yet).
 
-- **Note taking** – create, edit, organize, and delete notes.
-- **Authentication** – user accounts so your notes stay private to you.
-- **Blurting practice** – write down everything you remember about a note from memory; AI compares your attempt against the original and highlights what you missed.
-- **Active recall quizzing** – AI generates quiz questions from your notes to test understanding.
-- **Flashcards** – automatically generate flashcards from your notes for review.
-- **Custom grading criteria** – define your own criteria for what counts as "correct" or "complete", and have your blurts and quiz answers marked against them.
+## What you can do
 
-## Roadmap
+**Write notes.** A clean page with a title and a body. Type `- ` or `1. ` to start a list, and Tab / Shift+Tab to nest it. Everything saves as you type.
 
-### Sprint 1 — Core notes + authentication
-- Basic note CRUD (create, read, update, delete)
-- User sign-up / login
-- Notes scoped to the authenticated user
+**Write questions beside your notes.** Like the cue column in Cornell notes: next to your notes you jot down a question and its answer (Ctrl+Alt+M). Each question sits beside the part of the note it's about.
 
-### Sprint 2 — AI features
-- Blurting practice with AI feedback
-- AI-generated active recall quizzes
-- AI-generated flashcards
-- User-defined marking criteria
+**Quiz yourself on a note.** Run through one note's questions: think of the answer (or type it), flip it, and mark yourself right or wrong.
 
-### Sprint 3 — Concurrency
-- Support concurrent access and editing (e.g. multiple sessions/users working on notes at the same time) safely and consistently
+**Study with flashcards.** All your questions from every note become flashcards with spaced repetition, like Anki. Cards you get right come back later; cards you miss come back sooner. You only see what's due today.
 
-## Tech stack
+**Blurt.** Pick a note, and Campi hides it. Write down everything you can remember, then reveal the note next to what you wrote and see what you missed.
 
-- TypeScript
-- Node.js + Express
+**Organise with tags.** Tag notes by topic, then filter your notes or study only the flashcards for one tag (handy before an exam on one subject).
+
+Press `?` (when you're not typing) to see every keyboard shortcut.
+
+### Not there yet
+
+Campi doesn't use AI yet. You write your own questions, and you check your own blurts. AI-generated questions and feedback might come later. Folders are planned too.
+
+## Built with
+
+- **Back end:** TypeScript, Node.js, Express, with Postgres on [Supabase](https://supabase.com)
+- **Front end:** React, Vite, Tailwind, and [TipTap](https://tiptap.dev) for the editor
+- **Hosting:** one Railway service. Express serves both the API and the built front end.
 
 ## Getting started
 
@@ -41,13 +39,10 @@ Campi is a note-taking app with built-in AI study tools. Write your notes, then 
 
 ### Install
 
+The front end lives in `client/` and has its own dependencies, so install both:
+
 ```bash
 npm install
-```
-
-The front end lives in `client/` (Vite + React + TypeScript) and has its own dependencies:
-
-```bash
 npm install --prefix client
 ```
 
@@ -112,3 +107,14 @@ Apply pending migrations to the hosted database:
 ```bash
 npm run db:push
 ```
+
+## Deploying (Railway)
+
+Campi runs as a single Railway service, deployed from the `main` branch. Every push to `main` redeploys it.
+
+- **Build:** `npm run build` (installs the client's dependencies, then builds the server and the client)
+- **Start:** `npm start`
+- **Variables:** `DATABASE_URL` (the Supabase **session pooler** string, not the direct one) and `TRUST_PROXY=1`. Railway sets `PORT` itself.
+- **Domain:** service → Settings → Networking → Generate Domain, pointed at the port the app logs on startup.
+
+Railway only deploys code. If you've added a migration, run `npm run db:push` too.

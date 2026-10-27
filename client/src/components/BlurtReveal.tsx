@@ -50,7 +50,8 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
         <section className={`delay-[60ms] ${halfEnter}`}>
           <p className={halfLabel}>The note</p>
           <h1 className="note-title">{title}</h1>
-          {revealedNote.status === 'loading' && <p className="text-muted">Loading the note…</p>}
+          {revealedNote.status === 'loading' &&
+            [0, 1, 2].map((i) => <span key={i} className="skeleton note-line-skeleton" aria-hidden="true" />)}
           {revealedNote.status === 'failed' && (
             <p className="text-danger">
               Couldn't load the note.{' '}
