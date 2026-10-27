@@ -71,7 +71,7 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
           <IconPillButton onClick={onBlurtAgain} disabled={!canBlurtAgain} icon="↺">
             Blurt again
           </IconPillButton>
-          <kbd className="rounded border border-[var(--line)] px-1.5 py-0.5 text-[12px] text-muted [font-family:inherit]">R</kbd>
+          <kbd className="keyboard-only rounded border border-[var(--line)] px-1.5 py-0.5 text-[12px] text-muted [font-family:inherit]">R</kbd>
         </span>
         <Link to={`/notes/${noteId}`} className="text-[15px] text-muted no-underline transition-colors duration-150 hover:text-text">
           Back to note

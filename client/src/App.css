@@ -254,6 +254,55 @@
   color: var(--text);
 }
 
+/* Phone only (see the 640px query): a top bar with ☰ and the brand, and a backdrop behind the
+   open drawer. */
+.phone-bar {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--sidebar-bg);
+}
+
+.phone-bar-menu {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s var(--ease);
+}
+
+.phone-bar-menu:active {
+  background: var(--hover);
+  transform: scale(0.97);
+}
+
+/* Two classes: .auth-brand, later in the file, would otherwise pin it to the top. */
+.phone-bar .phone-bar-brand {
+  align-self: center;
+  font-size: 19px;
+}
+
+.drawer-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  padding: 0;
+  border: none;
+  background: rgb(0 0 0 / 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
 /* Page: plain while writing; the dotted canvas only behind the empty and not-found states */
 
 .page {
@@ -1043,8 +1092,50 @@
 }
 
 @media (max-width: 640px) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .phone-bar {
+    display: flex;
+  }
+
+  /* The sidebar becomes a drawer over the page. Closed, it's hidden after it slides out, so Tab
+     can't land in it. */
   .sidebar {
-    width: 180px;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 20;
+    width: min(288px, 85vw);
+    box-shadow: 0 0 32px rgb(0 0 0 / 0.12);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.25s var(--ease-drawer), visibility 0s 0.25s;
+  }
+
+  .workspace[data-drawer-open] .sidebar {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.3s var(--ease-drawer), visibility 0s;
+  }
+
+  .drawer-backdrop {
+    display: block;
+  }
+
+  .workspace[data-drawer-open] .drawer-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .page {
+    min-height: 0;
+  }
+
+  /* Finger-sized rows in the drawer. */
+  .sidebar-item {
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
   .page-content {
@@ -1402,6 +1493,23 @@
     padding-left: 0;
   }
 
+  /* The questions come right after the text, not half a screen below it. */
+  .note-body .ProseMirror {
+    min-height: 6em;
+  }
+
+  /* Testing: the card is below the body here, so hide the body instead of blurring it, and the
+     card moves up to where the note was. */
+  .note-body[inert] {
+    display: none;
+  }
+
+  .cornell-grid:has(.note-body[inert]) .question-column {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
   .question-column,
   .question-column[data-hidden] {
     order: 1;
@@ -1412,5 +1520,27 @@
     padding: 24px 0 0;
     border-right: 0;
     border-top: 1px solid color-mix(in srgb, var(--brand) 55%, transparent);
+  }
+}
+
+/* Reduced motion: the phone drawer fades in place instead of sliding. */
+@media (prefers-reduced-motion: reduce) and (max-width: 640px) {
+  .sidebar {
+    opacity: 0;
+    transform: none;
+    transition: opacity 0.2s ease, visibility 0s 0.2s;
+  }
+
+  .workspace[data-drawer-open] .sidebar {
+    opacity: 1;
+    transition: opacity 0.2s ease, visibility 0s;
+  }
+}
+
+/* Touch screens have no keyboard to press these on. */
+@media (hover: none) and (pointer: coarse) {
+  .keyboard-only,
+  .crumbs-key-hint {
+    display: none;
   }
 }

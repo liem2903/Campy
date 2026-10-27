@@ -104,7 +104,10 @@ function BlurtPage() {
               I'm done
             </IconPillButton>
             <span className="text-[12px] text-muted">
-              or <kbd className={keyHint}>Ctrl</kbd> + <kbd className={keyHint}>Enter</kbd> · not saved, leaving deletes it
+              <span className="keyboard-only">
+                or <kbd className={keyHint}>Ctrl</kbd> + <kbd className={keyHint}>Enter</kbd> ·{' '}
+              </span>
+              not saved, leaving deletes it
             </span>
           </div>
         </div>

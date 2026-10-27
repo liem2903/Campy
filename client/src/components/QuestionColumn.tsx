@@ -326,8 +326,10 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
           </ol>
           {questions?.length === 0 && cardBeingEdited === null && (
             <p className="m-0 text-[13px] leading-[1.5] text-muted">
-              No questions yet. Press + to write a cue beside a paragraph, then test yourself. Press{' '}
-              <kbd className="crumbs-key-hint !ml-0">?</kbd> for shortcuts.
+              No questions yet. Press + to write a cue about a paragraph, then test yourself.
+              <span className="keyboard-only">
+                {' '}Press <kbd className="crumbs-key-hint !ml-0">?</kbd> for shortcuts.
+              </span>
             </p>
           )}
         </>
