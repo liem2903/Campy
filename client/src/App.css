@@ -1050,7 +1050,8 @@
 /* Reduced motion: drop movement, keep the fades (they still show what changed). */
 @media (prefers-reduced-motion: reduce) {
   @starting-style {
-    .cue-answer {
+    .cue-answer,
+    .test-score {
       transform: none;
     }
   }
@@ -1398,6 +1399,132 @@
 .test-card-button:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* Wrong / Right: the same quiet outline, so neither looks like the "expected" answer; a coloured
+   ✕ / ✓ tells them apart. Press feedback only; marking by key (1 / 2) has no animation. */
+.test-mark-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s var(--ease);
+}
+
+.test-mark-button:active {
+  transform: scale(0.97);
+}
+
+.test-mark-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.test-mark-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.test-mark-button[data-mark='wrong'] .test-mark-icon {
+  color: var(--danger);
+}
+
+.test-mark-button[data-mark='right'] .test-mark-icon {
+  color: var(--brand);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .test-mark-button[data-mark='wrong']:hover {
+    border-color: color-mix(in srgb, var(--danger) 40%, transparent);
+    background: color-mix(in srgb, var(--danger) 6%, transparent);
+  }
+
+  .test-mark-button[data-mark='right']:hover {
+    border-color: color-mix(in srgb, var(--brand) 60%, transparent);
+    background: color-mix(in srgb, var(--brand) 10%, transparent);
+  }
+}
+
+/* The score screen shows once per test, so it can rise in gently. */
+.test-score {
+  transition: opacity 0.2s ease, transform 0.25s var(--ease);
+}
+
+@starting-style {
+  .test-score {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.test-score-segment {
+  background: var(--line);
+}
+
+.test-score-segment[data-mark='right'] {
+  background: var(--brand);
+}
+
+.test-score-segment[data-mark='wrong'] {
+  background: color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+/* Blurt is the next study step, so it's the one solid button; Review notes stays quiet. */
+.test-primary-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 14px;
+  text-decoration: none;
+  transition: opacity 0.15s ease, transform 0.12s var(--ease);
+}
+
+.test-quiet-button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.12s var(--ease);
+}
+
+.test-primary-button:active,
+.test-quiet-button:active {
+  transform: scale(0.97);
+}
+
+.test-primary-button:focus-visible,
+.test-quiet-button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .test-primary-button:hover {
+    opacity: 0.88;
+  }
+
+  .test-quiet-button:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 /* A shown answer drops in from just above the question. */

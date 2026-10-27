@@ -99,16 +99,19 @@ the card shows `About: "Glycolysis runs in the…"` → Save → the cue sits be
 
 ## T3: Note quiz
 
-**Slice:** on a note with questions, press "Quiz" → one question at a time → reveal, mark Right or
+**Slice:** on a note with questions, press "Test" → one question at a time → reveal, mark Right or
 Wrong → "4 / 5 right" → "Blurt" or "Review notes".
+
+**Decided 2026-10-27: option A.** T3 extends T2's "Test yourself" mode on the note page instead of
+adding a `/notes/:id/quiz` page (that would duplicate it).
 
 | # | Area | Decision |
 |---|---|---|
-| T3.1 | Entry | "Quiz" button in the note page header, **only when the note has questions**. Opens `/notes/:id/quiz`. |
-| T3.2 | Page | Title visible as the cue; body and cue column hidden. |
-| T3.3 | Flow | One question at a time, in created order. "Show answer" (Space), then **Right / Wrong**. |
-| T3.4 | End | Score (right / wrong), then **Blurt** (FEAT-003 blurt page) or **Review notes** (`/notes/:id`). |
-| T3.5 | Storage | Nothing saved. Never touches the flashcard schedule. No new endpoint (uses T2's `GET`). |
+| T3.1 | Entry | The existing "Test" button in the cue column header (shown only when the note has questions). No new page or route. |
+| T3.2 | Page | Same as T2's test mode: body inert and blurred, cue column swapped for one card at a time. |
+| T3.3 | Flow | One question at a time, in created order. "Show answer" (Space), then **Wrong / Right** instead of "Next". |
+| T3.4 | End | After the last mark: score ("4 / 5 right"), then **Blurt** (FEAT-003 blurt page, `/notes/:id/blurt`) or **Review notes** (leaves test mode). Stop (Esc) mid-way ends without a score. |
+| T3.5 | Storage | Nothing saved. Never touches the flashcard schedule. No new endpoint. |
 
 ---
 

@@ -252,7 +252,7 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
   if (isTesting && questions !== null) {
     return (
       <aside className="question-column" aria-label="Questions">
-        <QuestionTestCard questions={questions} onStop={stopTest} />
+        <QuestionTestCard noteId={noteId} questions={questions} onStop={stopTest} />
       </aside>
     )
   }
