@@ -3,6 +3,7 @@ import type { Note } from "../db/types.js";
 import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as blocksRepository from "../repositories/blocks.repository.js";
 import * as notesRepository from "../repositories/notes.repository.js";
+import * as questionsRepository from "../repositories/questions.repository.js";
 import * as tagsRepository from "../repositories/tags.repository.js";
 import type { NoteBlock, NoteBlockRow } from "../repositories/blocks.repository.js";
 import type { TagSummary } from "../repositories/tags.repository.js";
@@ -61,6 +62,9 @@ export async function updateNote(
     // rollback still writes nothing.
     if (writtenCount < blockRows.length) throw new BlockOfAnotherNoteError();
     await blocksRepository.deleteBlocksMissingFrom(id, blockIds, tx);
+    // Their questions become General, marked "(deleted paragraph)". The foreign key is checked
+    // at commit, so this can come after the delete.
+    await questionsRepository.unlinkQuestionsFromBlocksMissingFrom(id, blockIds, tx);
     return updatedAt;
   });
 }

@@ -21,29 +21,57 @@ export async function findQuestionByIdForUser(
   return question ?? null;
 }
 
+// What a card's Save writes to the row: its text and the block it's about (null = General).
+export type QuestionContent = { questionText: string; answerText: string; blockId: string | null };
+
+// The note this user's question is on; null when this user has no question with that id.
+export async function findNoteIdOfQuestionForUser(
+  userId: string, questionId: string, db: Db = sql,
+): Promise<string | null> {
+  const [question] = await db<Pick<Question, "note_id">[]>`
+    select note_id from questions where id = ${questionId} and user_id = ${userId}
+  `;
+  return question?.note_id ?? null;
+}
+
 // Inserts the question on the note and returns its new id. Postgres refuses it when the note
 // isn't this user's.
 export async function insertQuestion(
-  userId: string, noteId: string, questionText: string, answerText: string, db: Db = sql,
+  userId: string, noteId: string, { questionText, answerText, blockId }: QuestionContent, db: Db = sql,
 ): Promise<string> {
   const [question] = await db<Pick<Question, "id">[]>`
-    insert into questions (user_id, note_id, question, answer)
-    values (${userId}, ${noteId}, ${questionText}, ${answerText})
+    insert into questions (user_id, note_id, block_id, question, answer)
+    values (${userId}, ${noteId}, ${blockId}, ${questionText}, ${answerText})
     returning id
   `;
   return question.id;
 }
 
-// Replaces this user's question's text. false when this user has no question with that id.
+// Replaces this user's question's text and block. false when this user has no question with that
+// id. A "(deleted paragraph)" mark stays until the question is linked to a block again.
 // The updated row stays locked until the transaction ends, so a concurrent delete waits.
-export async function updateQuestionTextForUser(
-  userId: string, questionId: string, questionText: string, answerText: string, db: Db = sql,
+export async function updateQuestionContentForUser(
+  userId: string, questionId: string, { questionText, answerText, blockId }: QuestionContent, db: Db = sql,
 ): Promise<boolean> {
   const result = await db`
-    update questions set question = ${questionText}, answer = ${answerText}
+    update questions
+    set question = ${questionText}, answer = ${answerText}, block_id = ${blockId},
+        block_was_deleted = block_was_deleted and ${blockId}::uuid is null
     where id = ${questionId} and user_id = ${userId}
   `;
   return result.count === 1;
+}
+
+// Unlinks the note's questions whose block isn't in keptBlockIds and marks them, so their cards
+// say "(deleted paragraph)". Autosave calls it right after deleting those blocks.
+export async function unlinkQuestionsFromBlocksMissingFrom(
+  noteId: string, keptBlockIds: string[], db: Db = sql,
+): Promise<void> {
+  // "is not null" spelled out: against an empty list, <> all(...) is true even for a null block_id.
+  await db`
+    update questions set block_id = null, block_was_deleted = true
+    where note_id = ${noteId} and block_id is not null and block_id <> all(${keptBlockIds}::uuid[])
+  `;
 }
 
 // Deletes this user's question; on delete cascade removes its tag links. Returns the number of

@@ -2,8 +2,10 @@ import type { Question } from '../questions.ts'
 
 // A saved question (a "cue") in the cue column. The answer stays hidden until you click the
 // question, so you can test yourself first.
-function QuestionCard({ question, isAnswerShowing, onToggleAnswer, onEdit, onDelete }: {
+function QuestionCard({ question, isAboutDeletedBlock, isAnswerShowing, onToggleAnswer, onEdit, onDelete }: {
   question: Question
+  // Its block is gone, so it no longer sits beside anything: say so, and Edit can re-attach it.
+  isAboutDeletedBlock: boolean
   isAnswerShowing: boolean
   onToggleAnswer: () => void
   onEdit: () => void
@@ -11,6 +13,7 @@ function QuestionCard({ question, isAnswerShowing, onToggleAnswer, onEdit, onDel
 }) {
   return (
     <article className="border-b border-[var(--line)] pb-3">
+      {isAboutDeletedBlock && <p className="mt-0 mb-1 text-[12px] text-muted">About: (deleted paragraph)</p>}
       <div className="flex items-start gap-2">
         <button
           type="button"

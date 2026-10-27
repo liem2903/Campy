@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ListKeymap } from '@tiptap/extension-list'
 import { Selection, TextSelection } from '@tiptap/pm/state'
 import UniqueID from '@tiptap/extension-unique-id'
 import { Placeholder, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, Extension, useEditor } from '@tiptap/react'
 import { Link, useNavigate } from 'react-router'
-import { blocksToEditorDoc, editorDocToBlocks } from '../blockTreeConversion.ts'
+import { blockIdAtSelectionStart, blocksToEditorDoc, blockTextsInReadingOrder, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
+import type { NoteBodyForQuestions } from '../questions.ts'
 import type { Tag } from '../tags.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
 import KeyboardShortcutsPanel from './KeyboardShortcutsPanel.tsx'
@@ -78,13 +79,17 @@ function NoteEditor(
   { noteId, serverContent, serverTags }: { noteId: string; serverContent: NoteContent; serverTags: Tag[] },
 ) {
   const { moveEditedNoteToTop } = useNotes()
-  const { saveStatus, scheduleSave } = useAutosave(noteId)
+  const { saveStatus, scheduleSave, saveNow } = useAutosave(noteId)
   // Edits that never reached the server (expired session, closed tab, crash) win over its copy.
   const [restoredDraft] = useState(() => readDraft(noteId))
   const [content, setContent] = useState<NoteContent>(restoredDraft ?? serverContent)
   const [noteTags, setNoteTags] = useState(serverTags)
   // While testing, the body is covered (inert: blurred, can't be focused or read) so you can't peek.
   const [isTestingQuestions, setIsTestingQuestions] = useState(false)
+  // Whether the cursor was last in the body rather than the title, so a new question knows if it's
+  // about a block. A ref: only read when a card asks, never rendered.
+  const isCursorInBodyRef = useRef(false)
+  const bodyElementRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const blurtPagePath = `/notes/${noteId}/blurt`
 
@@ -121,7 +126,18 @@ function NoteEditor(
     extensions: bodyExtensions,
     content: startingBodyDoc,
     onUpdate: ({ editor }) => edit({ ...content, blocks: editorDocToBlocks(editor.state.doc) }),
+    onFocus: () => {
+      isCursorInBodyRef.current = true
+    },
   })
+
+  // TipTap keeps the selection after the body loses focus, so it still says where the cursor was.
+  const noteBodyForQuestions: NoteBodyForQuestions = {
+    readCursorBlockId: () => (isCursorInBodyRef.current ? blockIdAtSelectionStart(bodyEditor.state.selection) : null),
+    readBlockTexts: () => blockTextsInReadingOrder(bodyEditor.state.doc),
+    bodyElementRef,
+    saveNow,
+  }
 
   const saveFailed = saveStatus.kind === 'retrying' || saveStatus.kind === 'rejected'
   const saveStatusText = saveStatus.kind === 'rejected' ? saveStatus.message : saveStatusLabels[saveStatus.kind]
@@ -142,6 +158,9 @@ function NoteEditor(
           className="note-title"
           value={content.title}
           onChange={(e) => edit({ ...content, title: e.target.value })}
+          onFocus={() => {
+            isCursorInBodyRef.current = false
+          }}
           placeholder="Untitled"
           autoFocus={content.title === ''}
         />
@@ -150,10 +169,11 @@ function NoteEditor(
           <QuestionColumn
             noteId={noteId}
             noteTags={noteTags}
+            noteBody={noteBodyForQuestions}
             isTesting={isTestingQuestions}
             onTestingChange={setIsTestingQuestions}
           />
-          <EditorContent editor={bodyEditor} className="note-body" inert={isTestingQuestions} />
+          <EditorContent ref={bodyElementRef} editor={bodyEditor} className="note-body" inert={isTestingQuestions} />
         </div>
       </article>
       <KeyboardShortcutsPanel />

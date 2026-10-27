@@ -65,6 +65,10 @@ export type Question = {
   id: string;
   user_id: string;
   note_id: string;
+  // The block of its note it's about; null = General.
+  block_id: string | null;
+  // True once autosave deleted its block (block_id is then null), until it's linked again.
+  block_was_deleted: boolean;
   question: string;
   answer: string;
   created_at: Date;

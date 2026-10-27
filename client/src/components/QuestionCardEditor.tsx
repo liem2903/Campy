@@ -12,8 +12,12 @@ function cleanedTagName(typedName: string): string | null {
 
 // A question card open for editing. Nothing is saved until Save; Cancel or Esc goes back to the
 // last saved text (or drops a card that was never saved). Ctrl/⌘ + Enter saves.
-function QuestionCardEditor({ fields, onFieldsChange, onSave, onCancel, isSaving }: {
+function QuestionCardEditor({ fields, aboutText, onAttachToCursorBlock, onFieldsChange, onSave, onCancel, isSaving }: {
   fields: QuestionFields
+  // "General", "(deleted paragraph)" or the block's opening words.
+  aboutText: string
+  // Moves the card to the block the body's cursor was last in (or General when there's none).
+  onAttachToCursorBlock: () => void
   onFieldsChange: (changedFields: QuestionFields) => void
   // Gets the fields to send, including a tag still typed in the input.
   onSave: (fieldsToSave: QuestionFields) => void
@@ -53,6 +57,29 @@ function QuestionCardEditor({ fields, onFieldsChange, onSave, onCancel, isSaving
 
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-[var(--brand)] p-3" onKeyDown={cancelOrSaveOnShortcut}>
+      <div className="flex flex-col items-start gap-1 text-[12px] text-muted">
+        <span>
+          About: {aboutText}
+          {fields.blockId !== null && (
+            <button
+              type="button"
+              className="tag-stamp-remove ml-1"
+              aria-label="Unlink from paragraph"
+              onClick={() => onFieldsChange({ ...fields, blockId: null })}
+            >
+              ×
+            </button>
+          )}
+        </span>
+        <button
+          type="button"
+          onClick={onAttachToCursorBlock}
+          disabled={isSaving}
+          className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-muted underline-offset-2 [font-family:inherit] hover:text-text hover:underline"
+        >
+          Attach to current paragraph
+        </button>
+      </div>
       <textarea
         className={fieldClass}
         rows={2}

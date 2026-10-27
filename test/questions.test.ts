@@ -103,6 +103,8 @@ describe("POST /api/notes/:id/questions", () => {
     expect(res.body).toEqual({
       id: expect.any(String),
       noteId,
+      blockId: null,
+      blockWasDeleted: false,
       question: "What is a queue?",
       answer: "First in, first out.",
       tags: [],

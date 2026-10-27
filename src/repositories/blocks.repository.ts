@@ -36,6 +36,13 @@ export async function isAnyBlockInAnotherNote(
   return exists;
 }
 
+// True when blockId is a block of this note. Locks it until the transaction ends, so a
+// concurrent autosave can't delete it before a question pointing at it is saved.
+export async function lockBlockIfInNote(noteId: string, blockId: string, db: Db = sql): Promise<boolean> {
+  const rows = await db`select 1 from blocks where note_id = ${noteId} and id = ${blockId} for key share`;
+  return rows.length === 1;
+}
+
 // Moves the note's blocks to positions no new row can take, so the upsert can't hit the unique
 // sibling-position indexes.
 export async function moveBlocksToTemporaryPositions(noteId: string, db: Db = sql): Promise<void> {

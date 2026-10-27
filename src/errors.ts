@@ -33,6 +33,13 @@ export class BlockOfAnotherNoteError extends Error {
   }
 }
 
+// A question's block id isn't a block of the question's note (any longer, or ever).
+export class BlockNotInNoteError extends Error {
+  constructor() {
+    super("That paragraph isn't in this note");
+  }
+}
+
 // A missing tag and another user's tag share this, so a response never reveals which.
 export class TagNotFoundError extends Error {
   constructor() {

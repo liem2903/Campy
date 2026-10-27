@@ -119,8 +119,8 @@ function createAutosaver({ noteId, waitForCreate, onSaved, onStatusChange }: Aut
   return { schedule, saveNow, start, stop }
 }
 
-// Saves a note's title and body as the user types. Returns the status to show and the function
-// to call on every edit.
+// Saves a note's title and body as the user types. Returns the status to show, the function to
+// call on every edit, and one that sends a pending save now (resolving once it's done or failed).
 export function useAutosave(noteId: string) {
   const { waitForCreate, markNoteSaved, registerFlush } = useNotes()
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ kind: 'saved' })
@@ -155,5 +155,5 @@ export function useAutosave(noteId: string) {
     return () => window.removeEventListener('beforeunload', askBeforeLeaving)
   }, [hasUnsavedEdits])
 
-  return { saveStatus, scheduleSave: autosaver.schedule }
+  return { saveStatus, scheduleSave: autosaver.schedule, saveNow: autosaver.saveNow }
 }

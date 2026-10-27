@@ -1,4 +1,5 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
+import type { Selection } from '@tiptap/pm/state'
 import type { JSONContent } from '@tiptap/react'
 import type { ListItemStyle, NoteBlock } from './notes.ts'
 
@@ -22,6 +23,31 @@ export function editorDocToBlocks(editorDoc: ProseMirrorNode): NoteBlock[] {
     topLevelNode.type.name === 'paragraph'
       ? [{ id: String(topLevelNode.attrs.id), type: 'text', properties: { text: topLevelNode.textContent } }]
       : listNodeToBlocks(topLevelNode))
+}
+
+// The saved block the selection starts in: the list item around it, else its top-level paragraph.
+// The paragraph inside an item isn't saved (its id is thrown away), so the item comes first.
+// null when it starts in neither (a whole-document selection).
+export function blockIdAtSelectionStart(selection: Selection): string | null {
+  const { $from } = selection
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth)
+    if (node.type.name === 'listItem') return String(node.attrs.id)
+  }
+  const topLevelNode = $from.depth > 0 ? $from.node(1) : null
+  return topLevelNode?.type.name === 'paragraph' ? String(topLevelNode.attrs.id) : null
+}
+
+// Every saved block's text by id, in reading order (a list item comes before its nested items).
+export function blockTextsInReadingOrder(editorDoc: ProseMirrorNode): Map<string, string> {
+  const blockTexts = new Map<string, string>()
+  editorDoc.descendants((node, _position, parentNode) => {
+    if (node.type.name === 'listItem') blockTexts.set(String(node.attrs.id), node.firstChild?.textContent ?? '')
+    else if (node.type.name === 'paragraph' && parentNode === editorDoc) blockTexts.set(String(node.attrs.id), node.textContent)
+    // A paragraph holds only text, so there's nothing saved further down.
+    return node.type.name !== 'paragraph'
+  })
+  return blockTexts
 }
 
 function blocksToNodes(blocks: NoteBlock[]): JSONContent[] {

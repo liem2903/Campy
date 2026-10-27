@@ -15,7 +15,7 @@ column. Tag notes (and questions) by topic. Quiz yourself on one note's question
 questions as Anki-style spaced-repetition flashcards, optionally filtered by tag.
 
 **Out of scope:**
-- Questions pointing at a block (a nullable `questions.block_id` can come later).
+- ~~Questions pointing at a block~~: moved into scope as T2b (2026-10-27).
 - Rich-text questions or answers (plain text converts cleanly into a paragraph later).
 - Saving note-quiz scores, flashcard statistics, graphs, review history.
 - Reordering questions by hand, merging tags.
@@ -76,6 +76,24 @@ reload → the card is still there, oldest first.
 | T2.9 | Endpoints | `GET /api/notes/:id/questions` (oldest first), `POST /api/notes/:id/questions` `{ question, answer, tags }` → 201 Created, `PUT /api/questions/:questionId` → 200 OK (full replace, like notes), `DELETE /api/questions/:questionId` → 204 No Content. Empty or too-long field → 400 Bad Request. |
 | T2.10 | Note delete | Deletes its questions (cascade), and anything hanging off them. |
 | T2.11 | Built 2026-10-26 | One card open for editing at a time (opening another asks if it has changes). Ctrl/⌘ + Enter saves a card. A tag still typed in the card's input is saved with it. The leave warning (T2.7) covers link clicks and tab close/reload; the back button and the sidebar's New page button aren't caught (the router has no navigation blocker). |
+
+---
+
+## T2b: Questions attached to a paragraph (decided and built 2026-10-27)
+
+**Slice:** put the cursor in the "Glycolysis…" paragraph → Ctrl+Alt+M (or click "+ Question") →
+the card shows `About: "Glycolysis runs in the…"` → Save → the cue sits beside that paragraph.
+
+| # | Area | Decision |
+|---|---|---|
+| T2b.1 | Storage | New migration (T2's is already pushed): nullable `questions.block_id`, foreign key `(note_id, block_id) → blocks (note_id, id)` so the block must be in the question's note. Autosave upserts blocks and keeps their ids, so the link survives saves. |
+| T2b.2 | Which block | The editor's **last cursor position**, for both Ctrl+Alt+M and the "+ Question" button (TipTap keeps the selection after blur). Cursor in a paragraph, list item or heading → that block. Cursor in the title, or never in the body → no block ("General"). Selection over several blocks → the block it starts in. |
+| T2b.3 | Card | The open card shows `About: "<start of the paragraph>…"` with × to unlink (→ General). |
+| T2b.4 | Alignment (grilled 2026-10-27) | **Pixel-aligned**: each cue sits level with its paragraph, re-measured when the text changes, the window resizes or fonts load. Overlapping cues push the lower one down. General questions sit at the top. |
+| T2b.5 | Paragraph deleted | **Unlink and mark**: `on delete set null (block_id)` (only that column; `note_id` stays). The card shows `About: (deleted paragraph)` so it's distinguishable from a never-linked General question; needs one extra stored fact (flag or snapshot, decided in the migration checkpoint). |
+| T2b.6 | Unsaved paragraph | **Wait for the block**: Save waits for any pending note autosave to finish before sending the question (like `waitForCreate`), showing "Saving…". |
+| T2b.7 | Re-attach | An open card has **"Attach to current paragraph"**, using the editor's last cursor block (same rule as T2b.2). Also fixes a "(deleted paragraph)" card. |
+| T2b.8 | Built 2026-10-27 | **Storage changed from T2b.5:** the foreign key is `deferrable initially deferred` instead of `on delete set null (block_id)`. Autosave deletes missing blocks, then sets `block_id = null, block_was_deleted = true` on their questions in the same transaction, so it locks blocks before questions, the same order as a question save (which locks its block `for key share` first). `block_was_deleted` survives text-only edits and clears when the question is attached again. Bad `blockId` → 400 Bad Request; a block not in the note → 400 Bad Request ("That paragraph isn't in this note"). The cue column now scrolls with the page (no longer sticky), so cues can stay level. Clearing a paragraph's text keeps its block (and its questions); it's only deleted once it merges into another paragraph. |
 
 ---
 
