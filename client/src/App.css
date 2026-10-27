@@ -1102,9 +1102,10 @@
   opacity: 1;
 }
 
+/* No outline until hovered, so "+ Tag" reads as a quiet link next to the real tags. */
 .tag-stamp-add {
   padding: 4px 9px;
-  border: 1px dashed var(--line);
+  border: 1px dashed transparent;
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -1293,6 +1294,74 @@
 .test-card-button:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* The cue column's one header row: "2 questions" on the left, Test and + on the right. */
+.cue-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.cue-header-label,
+.cue-header-action {
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.12s var(--ease);
+}
+
+.cue-header-label {
+  margin-right: auto;
+  padding: 4px 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cue-header-action {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.cue-header-add {
+  width: 26px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 26px;
+}
+
+.cue-header-label:hover,
+.cue-header-action:hover {
+  color: var(--text);
+}
+
+.cue-header-action:hover {
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
+}
+
+.cue-header-action:active {
+  transform: scale(0.97);
+}
+
+/* Edit and × stay out of the way until you point at a cue or tab into it. Touch screens can't
+   hover, so they keep them visible. */
+@media (hover: hover) and (pointer: fine) {
+  .cue-card-actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .cue-card:hover .cue-card-actions,
+  .cue-card:focus-within .cue-card-actions {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 1100px) {

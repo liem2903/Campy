@@ -147,8 +147,8 @@ function NoteEditor(
       <article className="paper">
         <p className="paper-crumbs">
           Notes / {content.title || 'Untitled'}
-          <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter">
-            Blurt <kbd className="crumbs-key-hint">Ctrl + Shift + Enter</kbd>
+          <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter" title="Blurt (Ctrl + Shift + Enter)">
+            Blurt
           </Link>
           <span className="save-status" data-failed={saveFailed || undefined} role="status">
             {saveStatusText}

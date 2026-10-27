@@ -258,27 +258,34 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
 
   return (
     <aside className="question-column" aria-label="Questions" data-hidden={isHidden || undefined}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-[13px] text-muted">
-        {isHidden ? (
-          <button type="button" className="tag-stamp-add whitespace-nowrap" onClick={() => setHiddenAndRemember(false)}>
-            {questionCountLabel}
-          </button>
-        ) : (
+      {/* One quiet row: the count (click to hide or show the cues), then Test and +. Shortcuts
+          live in the "?" panel and the tooltips, not on the page. */}
+      <div className="cue-header">
+        <button
+          type="button"
+          className="cue-header-label"
+          aria-expanded={!isHidden}
+          title={isHidden ? 'Show questions' : 'Hide questions'}
+          onClick={() => setHiddenAndRemember(!isHidden)}
+        >
+          {questionCountLabel}
+        </button>
+        {!isHidden && (
           <>
-            <button type="button" className="tag-stamp-add whitespace-nowrap" onClick={openNewCard} aria-keyshortcuts="Control+Alt+M">
-              + Question <kbd className="crumbs-key-hint tracking-normal normal-case max-sm:hidden">Ctrl + Alt + M</kbd>
-            </button>
             {canStartTest && (
-              <button ref={testButtonRef} type="button" className="test-card-button w-full" onClick={() => onTestingChange(true)}>
-                Test yourself
+              <button ref={testButtonRef} type="button" className="cue-header-action" onClick={() => onTestingChange(true)}>
+                Test
               </button>
             )}
             <button
               type="button"
-              onClick={() => setHiddenAndRemember(true)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-[12px] whitespace-nowrap text-muted [font-family:inherit] hover:text-text"
+              className="cue-header-action cue-header-add"
+              onClick={openNewCard}
+              aria-label="Add question"
+              aria-keyshortcuts="Control+Alt+M"
+              title="Add question (Ctrl + Alt + M)"
             >
-              Hide questions
+              +
             </button>
           </>
         )}
@@ -301,6 +308,7 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
                   {editedCard ? renderEditor(editedCard, question.blockWasDeleted) : (
                     <QuestionCard
                       question={question}
+                      noteTags={noteTags}
                       isAboutDeletedBlock={isAboutDeletedBlock(question.blockId, question.blockWasDeleted, blockTexts)}
                       isAnswerShowing={questionIdsShowingAnswer.has(question.id)}
                       onToggleAnswer={() => toggleAnswer(question.id)}
@@ -317,12 +325,10 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
           </ol>
           {questions?.length === 0 && cardBeingEdited === null && (
             <p className="m-0 text-[13px] leading-[1.5] text-muted">
-              No questions yet. Write cues for your notes here, then test yourself on them.
+              No questions yet. Press + to write a cue beside a paragraph, then test yourself. Press{' '}
+              <kbd className="crumbs-key-hint !ml-0">?</kbd> for shortcuts.
             </p>
           )}
-          <p className="mt-6 mb-0 text-[12px] text-muted">
-            Press <kbd className="crumbs-key-hint">?</kbd> for keyboard shortcuts
-          </p>
         </>
       )}
     </aside>
