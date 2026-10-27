@@ -49,7 +49,7 @@ note` → rename it to `queues` → the note shows `queues`.
 
 ---
 
-## T1b: Filter notes by tag (added 2026-10-25, not grilled yet)
+## T1b: Filter notes by tag (added 2026-10-25, not grilled yet; deferred until after T4 on 2026-10-26)
 
 **Slice:** pick tag `queue` → the sidebar and the All Notes page show only notes tagged `queue`.
 
@@ -65,16 +65,17 @@ reload → the card is still there, oldest first.
 
 | # | Area | Decision |
 |---|---|---|
-| T2.1 | Storage | `questions (id uuid default gen_random_uuid(), note_id → notes cascade, question text 1–500, answer text 1–5000, created_at, updated_at)`, index `(note_id, created_at)`. Server-generated ids. No `user_id` (ownership through the note). Plus `question_tags (question_id → questions cascade, tag_id → tags cascade)`. |
+| T2.1 | Storage (revised 2026-10-26) | `questions (id uuid default gen_random_uuid(), user_id, note_id, question text 1–500, answer text 1–5000, created_at, updated_at, unique (id, user_id))`, foreign key `(note_id, user_id) → notes (id, user_id)` cascade, index `(note_id, created_at)`. Server-generated ids. One note per question (a column, not a join table): the same question text in two notes is two separate rows, told apart by their note and tags. Plus `question_tags (question_id, tag_id, user_id, pk (question_id, tag_id))` with foreign keys `(question_id, user_id) → questions (id, user_id)` and `(tag_id, user_id) → tags (id, user_id)`, both cascade, same pattern as `note_tags`. |
 | T2.2 | Where | A cue column beside the note body (below it on phones), oldest first, answers collapsed. A "Hide questions" toggle collapses it to a "3 questions" badge; remembered in localStorage. |
 | T2.3 | Adding | "+ Question" button at the top of the column, or **Ctrl+Alt+M** (Cmd+Option+M on Mac). The button shows the key. |
 | T2.4 | Shortcuts panel | `?` opens a "Keyboard shortcuts" panel listing every shortcut (add question, Tab inserts 4 spaces, list keys). |
 | T2.5 | Cards | Plain text, multi-line. Edited in place. **Save** button, no autosave. **Cancel / Esc** reverts to the last saved text (or removes a never-saved card). Save disabled until both fields have text. |
 | T2.6 | Delete | "×" asks "Delete this question?" first. |
 | T2.7 | Leaving | Unsaved card edits → warn ("You have an unsaved question. Leave anyway?") on note switch and tab close. |
-| T2.8 | Question tags | Effective tags = note's tags ∪ the question's own, computed with a join (never copied). Inherited ones show greyed out with no "×". Own tags save with the card's Save. |
-| T2.9 | Endpoints | `GET /api/notes/:id/questions` (oldest first), `POST /api/notes/:id/questions` `{ question, answer, tags }` → 201 Created, `PATCH /api/questions/:questionId` → 200 OK, `DELETE /api/questions/:questionId` → 204 No Content. Empty or too-long field → 400 Bad Request. |
+| T2.8 | Question tags (revised 2026-10-26) | One plain list per question, every tag removable. A new card's tag input is **pre-filled on the client** with the note's tags; remove any before Save. Save sends tag **names** (found or created, like T1). The server stores exactly what's sent, never adds the note's tags itself. A one-off copy: tagging the note later doesn't reach existing questions. No inherited tags. |
+| T2.9 | Endpoints | `GET /api/notes/:id/questions` (oldest first), `POST /api/notes/:id/questions` `{ question, answer, tags }` → 201 Created, `PUT /api/questions/:questionId` → 200 OK (full replace, like notes), `DELETE /api/questions/:questionId` → 204 No Content. Empty or too-long field → 400 Bad Request. |
 | T2.10 | Note delete | Deletes its questions (cascade), and anything hanging off them. |
+| T2.11 | Built 2026-10-26 | One card open for editing at a time (opening another asks if it has changes). Ctrl/⌘ + Enter saves a card. A tag still typed in the card's input is saved with it. The leave warning (T2.7) covers link clicks and tab close/reload; the back button and the sidebar's New page button aren't caught (the router has no navigation blocker). |
 
 ---
 
@@ -106,7 +107,7 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 | T4.4 | Days | Calendar days in the user's time zone (browser sends it, e.g. `Australia/Sydney`); the day starts at **4 am**. |
 | T4.5 | New-card cap | Per day, set on a settings page (default 20). |
 | T4.6 | Edits | Editing a question keeps its schedule. |
-| T4.7 | Page | "Flashcards" in the sidebar → `/flashcards`. Start screen: "N due · M new", optional tag filter (empty = everything; several tags = cards with **any** of them, inherited tags included), Start. Nothing due → "All done for today. Next card due tomorrow (4)". |
+| T4.7 | Page | "Flashcards" in the sidebar → `/flashcards`. Start screen: "N due · M new", optional tag filter (empty = everything; several tags = cards with **any** of them, by the question's own tags), Start. Nothing due → "All done for today. Next card due tomorrow (4)". Also reachable from a "Study" link per tag on the Tags page → `/flashcards?tag=<id>` (same screen, tag pre-selected). One schedule per question: grading from a tag session counts everywhere (added 2026-10-26). |
 | T4.8 | Session | Progress ("8 left"), question, Show answer (Space), grade. Each grade saves at once, so leaving mid-session loses nothing. End: "Done: 17 cards" with counts per button, "Back". |
 
 ---

@@ -40,6 +40,13 @@ export class TagNotFoundError extends Error {
   }
 }
 
+// A missing question and another user's question share this, so a response never reveals which.
+export class QuestionNotFoundError extends Error {
+  constructor() {
+    super("Question not found");
+  }
+}
+
 // The user already has a tag with this name (names are compared trimmed and lowercased).
 export class TagNameTakenError extends Error {
   constructor(name: string) {

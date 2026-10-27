@@ -1,20 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
-import { z } from "zod";
 import { NoteNotFoundError, TagNameTakenError, TagNotFoundError } from "../errors.js";
 import * as tagsService from "../services/tags.service.js";
 import type { TagWithNoteCount } from "../services/tags.service.js";
-import { uuidPattern } from "./validation.js";
-
-const INVALID_TAG_NAME = "A tag name must be 1 to 50 characters";
-
-// Trimmed and lowercased before the length check, so "  Queue " is stored as "queue". The length
-// counts characters like Postgres does ([...name] splits by code point, so an emoji counts once).
-// Postgres text can't store \u0000, so a name containing it is refused rather than a 500.
-const tagNameSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .refine((name) => [...name].length >= 1 && [...name].length <= 50 && !name.includes("\u0000"));
+import { INVALID_TAG_NAME, tagNameSchema, uuidPattern } from "./validation.js";
 
 // GET /api/tags: this user's tags in name order, each with its note count.
 export async function list(req: Request, res: Response, next: NextFunction): Promise<void> {

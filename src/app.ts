@@ -4,6 +4,7 @@ import path from "node:path";
 import { requireJson } from "./middleware/requireJson.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { notesRoutes } from "./routes/notes.routes.js";
+import { questionsRoutes } from "./routes/questions.routes.js";
 import { tagsRoutes } from "./routes/tags.routes.js";
 
 export type AppOptions = {
@@ -31,6 +32,7 @@ export function createApp(options: AppOptions = {}) {
   app.use("/api/auth", authRoutes(options));
   app.use("/api/notes", notesRoutes(options));
   app.use("/api/tags", tagsRoutes(options));
+  app.use("/api/questions", questionsRoutes(options));
   // Unknown API paths get JSON, not the SPA's index.html.
   app.use("/api", (_req, res) => {
     res.status(404).json({ error: "Not found" });

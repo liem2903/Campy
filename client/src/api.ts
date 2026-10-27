@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { NoteContent, NoteDetail, NoteSummary } from './notes.ts'
+import type { Question, QuestionFields } from './questions.ts'
 import type { Tag, TagWithNoteCount } from './tags.ts'
 
 export type User = { id: string; email: string }
@@ -136,4 +137,32 @@ export async function tagNoteOnServer(noteId: string, name: string): Promise<Tag
 // Takes the tag off this note only.
 export async function untagNoteOnServer(noteId: string, tagId: string): Promise<void> {
   await api.delete(`/notes/${noteId}/tags/${tagId}`, { data: {} })
+}
+
+// Question calls reject with the server's message (e.g. "A question must be 1 to 500 characters"
+// on a 400 Bad Request), so the caller can show it as is.
+
+// The note's questions, oldest first.
+export async function listQuestionsFromServer(noteId: string): Promise<Question[]> {
+  const { data } = await api.get<Question[]>(`/notes/${noteId}/questions`)
+  return data
+}
+
+export async function createQuestionOnServer(noteId: string, fields: QuestionFields): Promise<Question> {
+  const { data } = await api.post<Question>(`/notes/${noteId}/questions`, fields)
+  return data
+}
+
+// Replaces the question's text and its whole tag list.
+export async function updateQuestionOnServer(questionId: string, fields: QuestionFields): Promise<Question> {
+  const { data } = await api.put<Question>(`/questions/${questionId}`, fields)
+  return data
+}
+
+// Deletes the question. 404 Not Found resolves too: it's already gone.
+export async function deleteQuestionOnServer(questionId: string): Promise<void> {
+  await api.delete(`/questions/${questionId}`, {
+    data: {},
+    validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
+  })
 }

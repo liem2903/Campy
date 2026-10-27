@@ -55,6 +55,19 @@ export async function upsertTag(userId: string, name: string, db: Db = sql): Pro
   return tag;
 }
 
+// upsertTag for several names in one statement. Pass the names deduplicated (Postgres refuses
+// to update one row twice in a statement) and sorted, so two saves lock shared tags in the same
+// order and can't deadlock.
+export async function upsertTags(userId: string, names: string[], db: Db = sql): Promise<TagSummary[]> {
+  if (names.length === 0) return [];
+  return db<TagSummary[]>`
+    insert into tags (user_id, name)
+    select ${userId}, unnest(${names}::text[])
+    on conflict (user_id, name) do update set name = excluded.name
+    returning id, name
+  `;
+}
+
 // Renames this user's tag. null when this user has no tag with that id; "name_taken" when
 // another of their tags already has the name.
 export async function renameTagForUser(

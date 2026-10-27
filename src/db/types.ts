@@ -60,3 +60,13 @@ export type Tag = {
   name: string;
   created_at: Date;
 };
+
+export type Question = {
+  id: string;
+  user_id: string;
+  note_id: string;
+  question: string;
+  answer: string;
+  created_at: Date;
+  updated_at: Date;
+};

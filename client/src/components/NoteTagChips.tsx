@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, type Dispatch, type FormEvent, type KeyboardEvent, type SetStateAction } from 'react'
 import { listTagsFromServer, tagNoteOnServer, untagNoteOnServer } from '../api.ts'
 import { useNotes } from '../notes.ts'
 import { noteCountText, type Tag, type TagWithNoteCount } from '../tags.ts'
@@ -9,10 +9,14 @@ const byName = (first: Tag, second: Tag) => first.name.localeCompare(second.name
 type Suggestion = { kind: 'existing'; tag: TagWithNoteCount } | { kind: 'create'; name: string }
 
 // The tag stamps under a note's title. Each add or remove saves straight away, on its own: tags
-// aren't part of the title and body autosave.
-function NoteTagChips({ noteId, serverTags }: { noteId: string; serverTags: Tag[] }) {
+// aren't part of the title and body autosave. NoteEditor holds the tags, so new questions can
+// start with them.
+function NoteTagChips({ noteId, noteTags, setNoteTags }: {
+  noteId: string
+  noteTags: Tag[]
+  setNoteTags: Dispatch<SetStateAction<Tag[]>>
+}) {
   const { waitForCreate } = useNotes()
-  const [noteTags, setNoteTags] = useState(serverTags)
   // null = the "+ Tag" button shows; a string = the input is open with this text in it.
   const [typedTagName, setTypedTagName] = useState<string | null>(null)
   const [allTags, setAllTags] = useState<TagWithNoteCount[]>([])

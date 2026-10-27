@@ -11,7 +11,9 @@ import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import type { Tag } from '../tags.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
+import KeyboardShortcutsPanel from './KeyboardShortcutsPanel.tsx'
 import NoteTagChips from './NoteTagChips.tsx'
+import QuestionColumn from './QuestionColumn.tsx'
 
 const saveStatusLabels: Record<Exclude<SaveStatus['kind'], 'rejected'>, string> = {
   saved: 'Saved',
@@ -69,7 +71,8 @@ const bodyExtensions = [
   Placeholder.configure({ placeholder: 'Start writing...' }),
 ]
 
-// The title and body of one note, saved as the user types, with its tags between them.
+// The title and body of one note, saved as the user types, with its tags between them and its
+// questions in a Cornell cue column left of the body.
 // NotePage renders it with key={noteId}, so each note gets a fresh editor and autosave.
 function NoteEditor(
   { noteId, serverContent, serverTags }: { noteId: string; serverContent: NoteContent; serverTags: Tag[] },
@@ -79,6 +82,9 @@ function NoteEditor(
   // Edits that never reached the server (expired session, closed tab, crash) win over its copy.
   const [restoredDraft] = useState(() => readDraft(noteId))
   const [content, setContent] = useState<NoteContent>(restoredDraft ?? serverContent)
+  const [noteTags, setNoteTags] = useState(serverTags)
+  // While testing, the body is covered (inert: blurred, can't be focused or read) so you can't peek.
+  const [isTestingQuestions, setIsTestingQuestions] = useState(false)
   const navigate = useNavigate()
   const blurtPagePath = `/notes/${noteId}/blurt`
 
@@ -121,26 +127,37 @@ function NoteEditor(
   const saveStatusText = saveStatus.kind === 'rejected' ? saveStatus.message : saveStatusLabels[saveStatus.kind]
 
   return (
-    <article className="paper">
-      <p className="paper-crumbs">
-        Notes / {content.title || 'Untitled'}
-        <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter">
-          Blurt <kbd className="crumbs-key-hint">Ctrl + Shift + Enter</kbd>
-        </Link>
-        <span className="save-status" data-failed={saveFailed || undefined} role="status">
-          {saveStatusText}
-        </span>
-      </p>
-      <input
-        className="note-title"
-        value={content.title}
-        onChange={(e) => edit({ ...content, title: e.target.value })}
-        placeholder="Untitled"
-        autoFocus={content.title === ''}
-      />
-      <NoteTagChips noteId={noteId} serverTags={serverTags} />
-      <EditorContent editor={bodyEditor} className="note-body" />
-    </article>
+    <div className="note-layout">
+      <article className="paper">
+        <p className="paper-crumbs">
+          Notes / {content.title || 'Untitled'}
+          <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter">
+            Blurt <kbd className="crumbs-key-hint">Ctrl + Shift + Enter</kbd>
+          </Link>
+          <span className="save-status" data-failed={saveFailed || undefined} role="status">
+            {saveStatusText}
+          </span>
+        </p>
+        <input
+          className="note-title"
+          value={content.title}
+          onChange={(e) => edit({ ...content, title: e.target.value })}
+          placeholder="Untitled"
+          autoFocus={content.title === ''}
+        />
+        <NoteTagChips noteId={noteId} noteTags={noteTags} setNoteTags={setNoteTags} />
+        <div className="cornell-grid">
+          <QuestionColumn
+            noteId={noteId}
+            noteTags={noteTags}
+            isTesting={isTestingQuestions}
+            onTestingChange={setIsTestingQuestions}
+          />
+          <EditorContent editor={bodyEditor} className="note-body" inert={isTestingQuestions} />
+        </div>
+      </article>
+      <KeyboardShortcutsPanel />
+    </div>
   )
 }
 
