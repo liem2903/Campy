@@ -32,17 +32,17 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
 - Names must be clearly distinct. No two names in the same scope should be near-duplicates (avoid pairs like `note`/`notes2` or `data`/`dataObj`); make the difference in meaning show in the names.
 
 ## Working style
-- Build features in small checkpoints of at most 50 lines each. Test files are exempt from the limit.
+- Build features in small checkpoints of at most 50 lines each.
 - Keep code as simple as possible while still efficient.
-- Order: write the acceptance tests first, then go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
+- Order: go top-down: page → `client/src/api.ts` → route → controller → service → repository/DB.
 - Each checkpoint stubs the next layer (real signature, `throw new Error('Not implemented')`) so every commit builds.
 - After each checkpoint, stop: explain what the code does and the decisions in it, and wait for the user's pushback before starting the next one.
-- Before every commit, quiz the user on the checkpoint: one question per message, wait for the answer, correct misunderstandings, then ask the next. Commit only once they understand it. This applies to every checkpoint, including test-only ones, and a request to "commit" doesn't skip it. The questions come from the `checkpoint-quizzer` sub-agent (see Sub-agents).
+- Before every commit, quiz the user on the checkpoint: one question per message, wait for the answer, correct misunderstandings, then ask the next. Commit only once they understand it. This applies to every checkpoint, and a request to "commit" doesn't skip it. The questions come from the `checkpoint-quizzer` sub-agent (see Sub-agents).
 - Always write an HTTP status code with its name, e.g. "401 Unauthorized", "404 Not Found", "409 Conflict", "415 Unsupported Media Type". Never a bare number.
 - Tag every checkpoint with its blast radius, i.e. how much existing code it can break. When unsure, pick the higher tag.
-  - 🟢: new code in one place that nothing existing calls yet (a new file, a stub, a test). No existing signatures or behavior change. A mistake can't spread.
+  - 🟢: new code in one place that nothing existing calls yet (a new file, a stub). No existing signatures or behavior change. A mistake can't spread.
   - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
-  - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build and tests before committing.
+  - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build before committing.
 - Design before reveal (so the user gets to design it themselves first): describe what the checkpoint needs to do, without code. Then ask the user, in one plain sentence, how they would build it, and wait for their attempt. Don't add hint bullets or leading questions (where code should go, which options to consider, edge cases to think about); those design it for them. Only then reveal all of the checkpoint's code at once, in the plan format below, pointing out where it matches or differs from their approach and why. Still get their OK before writing files.
 - Present each checkpoint plan in this order:
   1. **What it achieves**, in plain words, including what's stubbed. Start with the blast-radius tag and one line on why it gets that tag.
