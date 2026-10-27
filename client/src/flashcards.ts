@@ -17,6 +17,8 @@ export type FlashcardSession = {
   cards: Flashcard[]
   // null = nothing scheduled after today.
   nextDue: { daysFromToday: number; cardCount: number } | null
+  // false = the user has never written a question, so "All done" would be misleading.
+  hasAnyQuestions: boolean
 }
 
 // The browser's time zone, e.g. "Australia/Sydney". The server uses it to work out "today" (T4.4).

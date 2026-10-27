@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { getFlashcardSessionFromServer } from '../api.ts'
 import { browserTimeZone, nextDueText, type FlashcardSession } from '../flashcards.ts'
 
@@ -26,7 +27,18 @@ function FlashcardsPage() {
       {session && session.cards.length > 0 && (
         <p className="auth-lede">{newCardCount} new · {dueCardCount} due</p>
       )}
-      {session && session.cards.length === 0 && (
+      {session && session.cards.length === 0 && !session.hasAnyQuestions && (
+        <>
+          <p className="auth-lede">No questions yet. Press Ctrl+Alt+M in a note to write one.</p>
+          <Link to="/notes" className="auth-submit">
+            Go to your notes
+            <span className="auth-submit-arrow" aria-hidden="true">
+              →
+            </span>
+          </Link>
+        </>
+      )}
+      {session && session.cards.length === 0 && session.hasAnyQuestions && (
         <p className="auth-lede">All done for today. {session.nextDue && nextDueText(session.nextDue)}</p>
       )}
     </div>
