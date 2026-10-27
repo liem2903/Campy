@@ -63,6 +63,7 @@ afterEach(() => {
 const badTimeZone = { error: "timeZone must be a time zone like Australia/Sydney" };
 const badGrade = { error: "grade must be again, hard, good or easy" };
 const questionNotFound = { error: "Question not found" };
+const notUpToday = { error: "That card isn't due today. It may have been graded in another tab" };
 
 describe("the T4a slice", () => {
   it("study a new card with Good, and it comes back the next day", async () => {
@@ -195,6 +196,54 @@ describe("POST /api/flashcards/:questionId/grade", () => {
     setNow("2027-03-11T12:00:00Z");
     await gradedCard(app, questionId, "again", user.cookie);
     expect((await storedSchedule(questionId)).ease).toBe(2.1);
+  });
+
+  it("409 Conflict when the card was already passed today, and the schedule stays", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const questionId = await addedQuestionId(app, noteId, "Passed", user.cookie);
+
+    await gradedCard(app, questionId, "good", user.cookie);
+    await gradeCard(app, questionId, { grade: "easy", timeZone }, user.cookie).expect(409, notUpToday);
+    expect(await storedSchedule(questionId)).toMatchObject({ ease: 2.5, intervalDays: 1 });
+  });
+
+  it("a card failed with Again can be graded again the same day", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const questionId = await addedQuestionId(app, noteId, "Failed once", user.cookie);
+
+    await gradedCard(app, questionId, "again", user.cookie);
+    await gradedCard(app, questionId, "good", user.cookie);
+    expect(await storedSchedule(questionId)).toMatchObject({ intervalDays: 6 });
+    await gradeCard(app, questionId, { grade: "good", timeZone }, user.cookie).expect(409, notUpToday);
+  });
+
+  it("two tabs grading the same card at once: one 200 OK, the other 409 Conflict", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const questionId = await addedQuestionId(app, noteId, "Two tabs", user.cookie);
+
+    const responses = await Promise.all([
+      gradeCard(app, questionId, { grade: "easy", timeZone }, user.cookie),
+      gradeCard(app, questionId, { grade: "easy", timeZone }, user.cookie),
+    ]);
+    expect(responses.map((res) => res.status).sort()).toEqual([200, 409]);
+    expect((await storedSchedule(questionId)).ease).toBe(2.65);
+  });
+
+  it("409 Conflict for a new card over today's cap of 20", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const questionIds: string[] = [];
+    for (let i = 1; i <= 21; i++) questionIds.push(await addedQuestionId(app, noteId, `Question ${i}`, user.cookie));
+
+    for (const questionId of questionIds.slice(0, 20)) await gradedCard(app, questionId, "good", user.cookie);
+    await gradeCard(app, questionIds[20], { grade: "good", timeZone }, user.cookie).expect(409, notUpToday);
   });
 
   it("400 Bad Request for an unknown grade or time zone", async () => {

@@ -78,6 +78,8 @@ export type Question = {
   due_on: Date | null;
   last_graded_on: Date | null;
   first_graded_on: Date | null;
+  // null until graded; with last_graded_on it tells "failed with Again today" apart from "passed today".
+  last_grade: "again" | "hard" | "good" | "easy" | null;
   created_at: Date;
   updated_at: Date;
 };

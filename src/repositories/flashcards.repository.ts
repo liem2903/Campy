@@ -5,11 +5,14 @@ import type { Question } from "../db/types.js";
 export type FlashcardRow = Pick<Question, "id" | "question" | "answer" | "ease" | "interval_days"> & {
   is_new: boolean; // due_on is null
   was_graded_today: boolean; // last_graded_on = today
+  is_up_today: boolean; // new, due, or failed with Again today, so it may be graded
 };
 
 function flashcardColumns(db: Db, today: string) {
   return db`id, question, answer, ease, interval_days, due_on is null as is_new,
-    coalesce(last_graded_on = ${today}::date, false) as was_graded_today`;
+    coalesce(last_graded_on = ${today}::date, false) as was_graded_today,
+    (due_on is null or due_on <= ${today}::date
+      or coalesce(last_graded_on = ${today}::date and last_grade = 'again', false)) as is_up_today`;
 }
 
 export type FlashcardCounts = { question_count: number; new_card_count: number; new_graded_today_count: number };
@@ -71,12 +74,13 @@ export async function lockFlashcardForUser(
 // Saves the graded schedule: due today + interval; first_graded_on only set once (T4.12).
 // null when this user has no question with that id.
 export async function saveFlashcardSchedule(
-  userId: string, questionId: string, today: string, ease: number, intervalDays: number, db: Db = sql,
+  userId: string, questionId: string, today: string, grade: NonNullable<Question["last_grade"]>,
+  ease: number, intervalDays: number, db: Db = sql,
 ): Promise<FlashcardRow | null> {
   const [card] = await db<FlashcardRow[]>`
     update questions
     set ease = ${ease}, interval_days = ${intervalDays}, due_on = ${today}::date + ${intervalDays}::int,
-        last_graded_on = ${today}::date, first_graded_on = coalesce(first_graded_on, ${today}::date)
+        last_graded_on = ${today}::date, last_grade = ${grade}, first_graded_on = coalesce(first_graded_on, ${today}::date)
     where id = ${questionId} and user_id = ${userId}
     returning ${flashcardColumns(db, today)}
   `;

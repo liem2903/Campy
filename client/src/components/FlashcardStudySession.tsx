@@ -17,6 +17,8 @@ function FlashcardStudySession({ cards, onBack }: { cards: Flashcard[]; onBack: 
   const [pressCountByGrade, setPressCountByGrade] = useState<Record<FlashcardGrade, number>>({ again: 0, hard: 0, good: 0, easy: 0 })
   const [saveErrorMessage, setSaveErrorMessage] = useState('')
   const shownCard = cardsLeftInQueue[0]
+  // On the summary too, or a failed last grade would go unseen.
+  const saveErrorAlert = saveErrorMessage && <p role="alert" className="m-0 text-[13px] text-muted">{saveErrorMessage}</p>
 
   function gradeShownCard(grade: FlashcardGrade) {
     const gradedCard = cardsLeftInQueue[0]
@@ -63,6 +65,7 @@ function FlashcardStudySession({ cards, onBack }: { cards: Flashcard[]; onBack: 
         <button type="button" autoFocus onClick={onBack} className="test-primary-button cursor-pointer border-0 [font-family:inherit]">
           Back
         </button>
+        {saveErrorAlert}
       </section>
     )
   }
@@ -74,9 +77,9 @@ function FlashcardStudySession({ cards, onBack }: { cards: Flashcard[]; onBack: 
         <span>{cardsLeftInQueue.length} left</span>
       </div>
       <div className="flex min-h-[260px] flex-col gap-4 rounded-xl border border-[var(--line)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-        <p className="m-0 text-[20px] leading-[1.3] whitespace-pre-wrap [font-family:var(--serif)]">{shownCard.question}</p>
+        <p className="m-0 text-[20px] leading-[1.3] break-words whitespace-pre-wrap [font-family:var(--serif)]">{shownCard.question}</p>
         {isAnswerShowing && (
-          <p className="m-0 border-t border-[var(--line)] pt-3 text-[14px] leading-[1.5] whitespace-pre-wrap">{shownCard.answer}</p>
+          <p className="m-0 border-t border-[var(--line)] pt-3 text-[14px] leading-[1.5] break-words whitespace-pre-wrap">{shownCard.answer}</p>
         )}
         <div className="flex-1" />
         {/* Show answer unmounts while the answer shows, so after each grade it mounts again and
@@ -105,7 +108,7 @@ function FlashcardStudySession({ cards, onBack }: { cards: Flashcard[]; onBack: 
           </button>
         )}
       </div>
-      {saveErrorMessage && <p role="alert" className="m-0 text-[13px] text-muted">{saveErrorMessage}</p>}
+      {saveErrorAlert}
     </section>
   )
 }

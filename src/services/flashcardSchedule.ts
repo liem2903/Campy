@@ -12,13 +12,15 @@ export type NextSchedule = { ease: number; intervalDays: number };
 const MIN_EASE = 1.3;
 const HARD_FACTOR = 1.2;
 const EASY_BONUS = 1.3;
+const MAX_INTERVAL_DAYS = 36500; // 100 years, Anki's default; keeps due_on far inside Postgres's date range
 const EASE_CHANGE: Record<FlashcardGrade, number> = { again: -0.2, hard: -0.15, good: 0, easy: 0.15 };
 
 // The card's ease and interval after this grade (T4.10, T4.11). Pure: no dates, no DB.
 export function scheduleAfterGrade(card: CardSchedule, grade: FlashcardGrade): NextSchedule {
   const skipsAgainPenalty = grade === "again" && card.wasGradedToday; // T4.3: once per day
   const changedEase = skipsAgainPenalty ? card.ease : Math.max(MIN_EASE, card.ease + EASE_CHANGE[grade]);
-  return { ease: Math.round(changedEase * 100) / 100, intervalDays: intervalDaysAfterGrade(card, grade) };
+  const intervalDays = Math.min(MAX_INTERVAL_DAYS, intervalDaysAfterGrade(card, grade));
+  return { ease: Math.round(changedEase * 100) / 100, intervalDays };
 }
 
 function intervalDaysAfterGrade(card: CardSchedule, grade: FlashcardGrade): number {

@@ -1,5 +1,5 @@
 import { sql } from "../db/client.js";
-import { QuestionNotFoundError } from "../errors.js";
+import { FlashcardNotUpTodayError, QuestionNotFoundError } from "../errors.js";
 import * as flashcardsRepository from "../repositories/flashcards.repository.js";
 import type { FlashcardRow } from "../repositories/flashcards.repository.js";
 import { nextIntervalDaysForEveryGrade, scheduleAfterGrade, type CardSchedule } from "./flashcardSchedule.js";
@@ -45,18 +45,26 @@ export async function getTodaysSession(userId: string, timeZone: string): Promis
 }
 
 // Grades the card and saves its new schedule. Throws QuestionNotFoundError when the question is
-// missing or another user's.
+// missing or another user's, and FlashcardNotUpTodayError when it was already passed or isn't due.
 export async function gradeFlashcard(
   userId: string, questionId: string, grade: FlashcardGrade, timeZone: string,
 ): Promise<Flashcard> {
   const today = studyDayIn(timeZone);
   return sql.begin(async (tx) => {
-    // Locked until commit, so a double-pressed grade waits and then sees this one's result.
+    // Locked until commit, so a double-pressed grade waits and then sees this one's result
+    // (and gets FlashcardNotUpTodayError unless this one was Again).
     const card = await flashcardsRepository.lockFlashcardForUser(userId, questionId, today, tx);
     if (!card) throw new QuestionNotFoundError();
+    if (!card.is_up_today) throw new FlashcardNotUpTodayError();
+    // A new card over today's cap is held back until tomorrow, so it isn't up today either (T4.12).
+    // Two parallel grades of different new cards can still reach 21; accepted.
+    if (card.is_new) {
+      const flashcardCounts = await flashcardsRepository.countFlashcardsForUser(userId, today, tx);
+      if (flashcardCounts.new_graded_today_count >= NEW_CARDS_PER_DAY) throw new FlashcardNotUpTodayError();
+    }
     const nextSchedule = scheduleAfterGrade(cardScheduleFromRow(card), grade);
     const gradedCard = await flashcardsRepository.saveFlashcardSchedule(
-      userId, questionId, today, nextSchedule.ease, nextSchedule.intervalDays, tx,
+      userId, questionId, today, grade, nextSchedule.ease, nextSchedule.intervalDays, tx,
     );
     if (!gradedCard) throw new QuestionNotFoundError();
     return flashcardFromRow(gradedCard);

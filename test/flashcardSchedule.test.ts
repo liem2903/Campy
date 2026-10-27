@@ -41,6 +41,10 @@ describe("flashcard schedule (SM-2)", () => {
     expect(afterGood.intervalDays).toBe(6);
   });
 
+  it("never schedules a card more than 100 years out", () => {
+    expect(scheduleAfterGrade({ ...sixDayCard, intervalDays: 30000 }, "easy").intervalDays).toBe(36500);
+  });
+
   it("rounds the ease to 2 decimals", () => {
     expect(scheduleAfterGrade(sixDayCard, "hard").ease).toBe(2.35);
   });

@@ -54,6 +54,13 @@ export class QuestionNotFoundError extends Error {
   }
 }
 
+// The card isn't up for study today: it was already passed (e.g. in another tab) or isn't due yet.
+export class FlashcardNotUpTodayError extends Error {
+  constructor() {
+    super("That card isn't due today. It may have been graded in another tab");
+  }
+}
+
 // The user already has a tag with this name (names are compared trimmed and lowercased).
 export class TagNameTakenError extends Error {
   constructor(name: string) {

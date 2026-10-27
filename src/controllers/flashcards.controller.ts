@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { z } from "zod";
-import { QuestionNotFoundError } from "../errors.js";
+import { FlashcardNotUpTodayError, QuestionNotFoundError } from "../errors.js";
 import * as flashcardsService from "../services/flashcards.service.js";
 import { FLASHCARD_GRADES } from "../services/flashcards.service.js";
 import { uuidPattern } from "./validation.js";
@@ -33,7 +33,8 @@ export async function getTodaysSession(req: Request, res: Response, next: NextFu
   }
 }
 
-// POST /api/flashcards/:questionId/grade { grade, timeZone }: 200 OK with the card as it now is.
+// POST /api/flashcards/:questionId/grade { grade, timeZone }: 200 OK with the card as it now is;
+// 409 Conflict when the card isn't up today (already passed, e.g. in another tab).
 export async function gradeCard(req: Request, res: Response, next: NextFunction): Promise<void> {
   const body = req.body as { grade?: unknown; timeZone?: unknown };
   const parsedGrade = gradeSchema.safeParse(body.grade);
@@ -54,6 +55,7 @@ export async function gradeCard(req: Request, res: Response, next: NextFunction)
     res.json(gradedCard);
   } catch (err) {
     if (err instanceof QuestionNotFoundError) res.status(404).json({ error: err.message });
+    else if (err instanceof FlashcardNotUpTodayError) res.status(409).json({ error: err.message });
     else next(err);
   }
 }
