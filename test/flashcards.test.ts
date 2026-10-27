@@ -29,13 +29,27 @@ async function createdNote(app: App, cookie: string) {
   await request(app).post("/api/notes").set("Cookie", cookie).send({ id: noteId }).expect(201);
   return noteId;
 }
-async function addedQuestionId(app: App, noteId: string, question: string, cookie: string): Promise<string> {
+async function addedQuestionId(
+  app: App, noteId: string, question: string, cookie: string, tagNames: string[] = [],
+): Promise<string> {
   const res = await request(app)
     .post(`/api/notes/${noteId}/questions`)
     .set("Cookie", cookie)
-    .send({ question, answer: `Answer to ${question}`, tags: [] })
+    .send({ question, answer: `Answer to ${question}`, tags: tagNames })
     .expect(201);
   return res.body.id;
+}
+// GET /api/flashcards with ?tag=…&tag=…, the way the client sends several tags.
+async function todaysSessionForTags(app: App, cookie: string, tagIds: string[]) {
+  const tagQuery = tagIds.map((tagId) => `&tag=${tagId}`).join("");
+  const res = await request(app).get(`/api/flashcards?timeZone=${timeZone}${tagQuery}`).set("Cookie", cookie).expect(200);
+  return res.body;
+}
+async function tagIdNamed(app: App, name: string, cookie: string): Promise<string> {
+  const res = await request(app).get("/api/tags").set("Cookie", cookie).expect(200);
+  const tag = res.body.find((tagRow: { name: string }) => tagRow.name === name);
+  expect(tag).toBeDefined();
+  return tag.id;
 }
 function questionIdsOf(cards: { questionId: string }[]) {
   return cards.map((card) => card.questionId);
@@ -61,6 +75,7 @@ afterEach(() => {
 });
 
 const badTimeZone = { error: "timeZone must be a time zone like Australia/Sydney" };
+const badTagFilter = { error: "tag must be up to 50 lowercase tag ids" };
 const badGrade = { error: "grade must be again, hard, good or easy" };
 const questionNotFound = { error: "Question not found" };
 const notUpToday = { error: "That card isn't due today. It may have been graded in another tab" };
@@ -165,6 +180,71 @@ describe("GET /api/flashcards", () => {
 
   it("401 Unauthorized without a session", async () => {
     await request(makeApp()).get("/api/flashcards").query({ timeZone }).expect(401);
+  });
+});
+
+describe("GET /api/flashcards?tag=… (T4b)", () => {
+  it("only cards whose question has any of the tags, counts and nextDue included", async () => {
+    setNow("2027-03-10T12:00:00Z");
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const queueId = await addedQuestionId(app, noteId, "Queue?", user.cookie, ["queue"]);
+    const stackId = await addedQuestionId(app, noteId, "Stack?", user.cookie, ["stack"]);
+    const untaggedId = await addedQuestionId(app, noteId, "Untagged?", user.cookie);
+    const queueTagId = await tagIdNamed(app, "queue", user.cookie);
+    const stackTagId = await tagIdNamed(app, "stack", user.cookie);
+
+    expect(questionIdsOf((await todaysSessionForTags(app, user.cookie, [queueTagId])).cards)).toEqual([queueId]);
+    expect(questionIdsOf((await todaysSessionForTags(app, user.cookie, [queueTagId, stackTagId])).cards))
+      .toEqual([queueId, stackId]);
+    expect(questionIdsOf((await todaysSessionForTags(app, user.cookie, [])).cards))
+      .toEqual([queueId, stackId, untaggedId]);
+
+    await gradedCard(app, stackId, "easy", user.cookie);
+    expect(await todaysSessionForTags(app, user.cookie, [queueTagId]))
+      .toMatchObject({ nextDue: null, hasAnyQuestions: true });
+    expect(await todaysSessionForTags(app, user.cookie, [stackTagId]))
+      .toEqual({ cards: [], nextDue: { daysFromToday: 4, cardCount: 1 }, hasAnyQuestions: true });
+  });
+
+  it("hasAnyQuestions is false when no question has the tags, including another user's tag", async () => {
+    const app = makeApp();
+    const owner = await signedUp(app);
+    const otherUser = await signedUp(app);
+    const noteId = await createdNote(app, owner.cookie);
+    await addedQuestionId(app, noteId, "Mine", owner.cookie, ["queue"]);
+    const ownersTagId = await tagIdNamed(app, "queue", owner.cookie);
+
+    expect(await todaysSessionForTags(app, otherUser.cookie, [ownersTagId]))
+      .toEqual({ cards: [], nextDue: null, hasAnyQuestions: false });
+    expect(await todaysSessionForTags(app, owner.cookie, [randomUUID()]))
+      .toEqual({ cards: [], nextDue: null, hasAnyQuestions: false });
+  });
+
+  it("the cap of 20 new cards a day counts grades from every session, filtered or not", async () => {
+    setNow("2027-03-10T12:00:00Z");
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    for (let i = 1; i <= 20; i++) {
+      await gradedCard(app, await addedQuestionId(app, noteId, `Untagged ${i}`, user.cookie), "good", user.cookie);
+    }
+    const queueId = await addedQuestionId(app, noteId, "Queue?", user.cookie, ["queue"]);
+    const queueTagId = await tagIdNamed(app, "queue", user.cookie);
+
+    expect(await todaysSessionForTags(app, user.cookie, [queueTagId]))
+      .toEqual({ cards: [], nextDue: { daysFromToday: 1, cardCount: 1 }, hasAnyQuestions: true });
+    await gradeCard(app, queueId, { grade: "good", timeZone }, user.cookie).expect(409, notUpToday);
+  });
+
+  it("400 Bad Request for a malformed tag id or more than 50 tags", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    await getSession(app, user.cookie, { timeZone, tag: "not-a-uuid" }).expect(400, badTagFilter);
+    const tooManyTags = Array.from({ length: 51 }, () => `&tag=${randomUUID()}`).join("");
+    await request(app).get(`/api/flashcards?timeZone=${timeZone}${tooManyTags}`).set("Cookie", user.cookie)
+      .expect(400, badTagFilter);
   });
 });
 

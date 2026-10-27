@@ -15,46 +15,62 @@ function flashcardColumns(db: Db, today: string) {
       or coalesce(last_graded_on = ${today}::date and last_grade = 'again', false)) as is_up_today`;
 }
 
+// A question carrying any of these tags (T4.7). An empty list means no filter: every question.
+// Only tag links on this user's questions can match, so another user's tag id finds nothing.
+function hasAnyOfTags(db: Db, tagIds: string[]) {
+  if (tagIds.length === 0) return db`true`;
+  return db`exists (
+    select 1 from question_tags
+    where question_tags.question_id = questions.id and question_tags.tag_id = any(${tagIds}::uuid[])
+  )`;
+}
+
 export type FlashcardCounts = { question_count: number; new_card_count: number; new_graded_today_count: number };
 
 // One pass over the user's questions: everything the start screen counts (T4.12, T4.16).
-export async function countFlashcardsForUser(userId: string, today: string, db: Db = sql): Promise<FlashcardCounts> {
+// question_count and new_card_count are within the tag filter; new_graded_today_count is not,
+// because the daily new-card cap covers every session that day.
+export async function countFlashcardsForUser(
+  userId: string, today: string, tagIds: string[], db: Db = sql,
+): Promise<FlashcardCounts> {
   const [counts] = await db<FlashcardCounts[]>`
-    select count(*)::int as question_count,
-           count(*) filter (where due_on is null)::int as new_card_count,
+    select count(*) filter (where ${hasAnyOfTags(db, tagIds)})::int as question_count,
+           count(*) filter (where due_on is null and ${hasAnyOfTags(db, tagIds)})::int as new_card_count,
            count(*) filter (where first_graded_on = ${today}::date)::int as new_graded_today_count
     from questions where user_id = ${userId}
   `;
   return counts;
 }
 
-// The oldest `limit` new cards (T4.14).
+// The oldest `limit` new cards with any of the tags (T4.14).
 export async function findNewFlashcardsForUser(
-  userId: string, today: string, limit: number, db: Db = sql,
+  userId: string, today: string, tagIds: string[], limit: number, db: Db = sql,
 ): Promise<FlashcardRow[]> {
   return db<FlashcardRow[]>`
     select ${flashcardColumns(db, today)} from questions
-    where user_id = ${userId} and due_on is null
+    where user_id = ${userId} and due_on is null and ${hasAnyOfTags(db, tagIds)}
     order by created_at, id limit ${limit}
   `;
 }
 
-// Cards due today or overdue, oldest due_on first (T4.14).
-export async function findDueFlashcardsForUser(userId: string, today: string, db: Db = sql): Promise<FlashcardRow[]> {
+// Cards with any of the tags due today or overdue, oldest due_on first (T4.14).
+export async function findDueFlashcardsForUser(
+  userId: string, today: string, tagIds: string[], db: Db = sql,
+): Promise<FlashcardRow[]> {
   return db<FlashcardRow[]>`
     select ${flashcardColumns(db, today)} from questions
-    where user_id = ${userId} and due_on <= ${today}::date
+    where user_id = ${userId} and due_on <= ${today}::date and ${hasAnyOfTags(db, tagIds)}
     order by due_on, created_at, id
   `;
 }
 
-// The first day after today with due cards, and how many; null when there is none.
+// The first day after today with due cards with any of the tags, and how many; null when there is none.
 export async function findEarliestDueDayAfterTodayForUser(
-  userId: string, today: string, db: Db = sql,
+  userId: string, today: string, tagIds: string[], db: Db = sql,
 ): Promise<{ days_from_today: number; card_count: number } | null> {
   const [earliestDay] = await db<{ days_from_today: number; card_count: number }[]>`
     select due_on - ${today}::date as days_from_today, count(*)::int as card_count
-    from questions where user_id = ${userId} and due_on > ${today}::date
+    from questions where user_id = ${userId} and due_on > ${today}::date and ${hasAnyOfTags(db, tagIds)}
     group by due_on order by due_on limit 1
   `;
   return earliestDay ?? null;

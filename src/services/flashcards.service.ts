@@ -26,16 +26,17 @@ const NEW_CARDS_PER_DAY = 20; // T4.9: fixed until T4c adds the setting
 const STUDY_DAY_START_HOUR = 4; // a study day runs 4 am to 4 am, so a late-night session is still "today"
 
 // Today's cards: new ones up to the daily cap, then due ones. "Today" starts at 4 am in timeZone.
-export async function getTodaysSession(userId: string, timeZone: string): Promise<FlashcardSession> {
+// With tagIds, only questions carrying any of those tags; empty = every question (T4.7).
+export async function getTodaysSession(userId: string, timeZone: string, tagIds: string[]): Promise<FlashcardSession> {
   const today = studyDayIn(timeZone);
   // One snapshot for all four reads, so a grade from another tab can't land between the cap count
   // and the new-card query and let a 21st new card through.
   return sql.begin("isolation level repeatable read read only", async (tx) => {
-    const counts = await flashcardsRepository.countFlashcardsForUser(userId, today, tx);
+    const counts = await flashcardsRepository.countFlashcardsForUser(userId, today, tagIds, tx);
     const newCardsLeftToday = Math.max(0, NEW_CARDS_PER_DAY - counts.new_graded_today_count);
-    const newCards = await flashcardsRepository.findNewFlashcardsForUser(userId, today, newCardsLeftToday, tx);
-    const dueCards = await flashcardsRepository.findDueFlashcardsForUser(userId, today, tx);
-    const earliestDueDay = await flashcardsRepository.findEarliestDueDayAfterTodayForUser(userId, today, tx);
+    const newCards = await flashcardsRepository.findNewFlashcardsForUser(userId, today, tagIds, newCardsLeftToday, tx);
+    const dueCards = await flashcardsRepository.findDueFlashcardsForUser(userId, today, tagIds, tx);
+    const earliestDueDay = await flashcardsRepository.findEarliestDueDayAfterTodayForUser(userId, today, tagIds, tx);
     return {
       cards: [...newCards, ...dueCards].map(flashcardFromRow),
       nextDue: nextDueWithHeldBackNewCards(earliestDueDay, counts.new_card_count - newCards.length),
@@ -59,7 +60,8 @@ export async function gradeFlashcard(
     // A new card over today's cap is held back until tomorrow, so it isn't up today either (T4.12).
     // Two parallel grades of different new cards can still reach 21; accepted.
     if (card.is_new) {
-      const flashcardCounts = await flashcardsRepository.countFlashcardsForUser(userId, today, tx);
+      // The cap covers every question, whatever tag filter the session was started with.
+      const flashcardCounts = await flashcardsRepository.countFlashcardsForUser(userId, today, [], tx);
       if (flashcardCounts.new_graded_today_count >= NEW_CARDS_PER_DAY) throw new FlashcardNotUpTodayError();
     }
     const nextSchedule = scheduleAfterGrade(cardScheduleFromRow(card), grade);

@@ -7,6 +7,8 @@ import { uuidPattern } from "./validation.js";
 
 const INVALID_TIME_ZONE = "timeZone must be a time zone like Australia/Sydney";
 const INVALID_GRADE = "grade must be again, hard, good or easy";
+const INVALID_TAG_FILTER = "tag must be up to 50 lowercase tag ids";
+const MAX_TAGS_IN_FILTER = 50;
 
 // A zone Intl knows. Intl throws a RangeError for anything else.
 const timeZoneSchema = z.string().max(100).refine((timeZone) => {
@@ -18,16 +20,31 @@ const timeZoneSchema = z.string().max(100).refine((timeZone) => {
   }
 });
 const gradeSchema = z.enum(FLASHCARD_GRADES);
+// ?tag=…&tag=…: Express gives a string for one tag and an array for several; none = no filter.
+const tagIdsFilterSchema = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((tagQuery) => (tagQuery === undefined ? [] : [tagQuery].flat()))
+  .pipe(z.array(z.string().regex(uuidPattern)).max(MAX_TAGS_IN_FILTER));
 
-// GET /api/flashcards?timeZone=…: today's cards, the next due day, and whether the user has any questions.
+// GET /api/flashcards?timeZone=…&tag=…: today's cards, the next due day, and whether there are any
+// questions, all limited to questions with any of the tags when tags are given.
 export async function getTodaysSession(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsedTimeZone = timeZoneSchema.safeParse(req.query.timeZone);
   if (!parsedTimeZone.success) {
     res.status(400).json({ error: INVALID_TIME_ZONE });
     return;
   }
+  const parsedTagIds = tagIdsFilterSchema.safeParse(req.query.tag);
+  if (!parsedTagIds.success) {
+    res.status(400).json({ error: INVALID_TAG_FILTER });
+    return;
+  }
   try {
-    res.json(await flashcardsService.getTodaysSession(req.user!.id, parsedTimeZone.data)); // requireSession set it
+    const session = await flashcardsService.getTodaysSession(
+      req.user!.id, parsedTimeZone.data, parsedTagIds.data, // requireSession set it
+    );
+    res.json(session);
   } catch (err) {
     next(err);
   }

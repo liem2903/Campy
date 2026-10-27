@@ -170,8 +170,12 @@ export async function deleteQuestionOnServer(questionId: string): Promise<void> 
 
 // Today's flashcards: new cards (up to the daily cap) first, then due ones. The time zone decides
 // when "today" starts (4 am there).
-export async function getFlashcardSessionFromServer(timeZone: string): Promise<FlashcardSession> {
-  const { data } = await api.get<FlashcardSession>('/flashcards', { params: { timeZone } })
+// tagIds empty = every card. Several tags go as ?tag=a&tag=b (indexes: null drops axios's tag[]=).
+export async function getFlashcardSessionFromServer(timeZone: string, tagIds: string[]): Promise<FlashcardSession> {
+  const { data } = await api.get<FlashcardSession>('/flashcards', {
+    params: { timeZone, tag: tagIds },
+    paramsSerializer: { indexes: null },
+  })
   return data
 }
 

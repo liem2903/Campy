@@ -1272,6 +1272,46 @@
   color: var(--muted);
 }
 
+/* Tag filter above All Notes and Flashcards: outlined grey when off, filled brand when on. */
+.tag-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px;
+}
+
+/* max-width + overflow-wrap: a 50-character name with no spaces wraps inside its chip on a phone. */
+.tag-filter-chip {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.tag-filter-chip[aria-pressed='false'] {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.tag-filter-chip[aria-pressed='false']:hover {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+.tag-filter-chip[aria-pressed='true'] {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--bg);
+}
+
+.tag-filter-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 .tag-error {
   flex-basis: 100%;
   margin: 4px 0 0;
@@ -1317,22 +1357,26 @@
 
 .tag-card-actions {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 0 4px;
   margin-left: -6px;
 }
 
-.tag-card-actions button {
+.tag-card-actions button,
+.tag-card-actions a {
   padding: 4px 6px;
   border: none;
   background: none;
   color: var(--muted);
   font: inherit;
   font-size: 13px;
+  text-decoration: none;
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
-.tag-card-actions button:hover {
+.tag-card-actions button:hover,
+.tag-card-actions a:hover {
   color: var(--text);
 }
 

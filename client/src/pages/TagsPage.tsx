@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
 import { createTagOnServer, deleteTagOnServer, listTagsFromServer, renameTagOnServer } from '../api.ts'
 import { noteCountText, type TagWithNoteCount } from '../tags.ts'
 
@@ -107,6 +108,8 @@ function TagsPage() {
               <small>{tag.noteCount === 1 ? 'note' : 'notes'}</small>
             </span>
             <span className="tag-card-actions">
+              <Link to={`/notes?tag=${tag.id}`}>Notes</Link>
+              <Link to={`/flashcards?tag=${tag.id}`}>Study</Link>
               <button type="button" onClick={() => setTagBeingRenamed({ id: tag.id, typedName: tag.name })}>
                 Rename
               </button>

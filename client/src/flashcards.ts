@@ -17,7 +17,7 @@ export type FlashcardSession = {
   cards: Flashcard[]
   // null = nothing scheduled after today.
   nextDue: { daysFromToday: number; cardCount: number } | null
-  // false = the user has never written a question, so "All done" would be misleading.
+  // false = no questions (with the chosen tags, if any), so "All done" would be misleading.
   hasAnyQuestions: boolean
 }
 
