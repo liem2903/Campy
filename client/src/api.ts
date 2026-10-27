@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { FlashcardSession } from './flashcards.ts'
+import type { Flashcard, FlashcardGrade, FlashcardSession } from './flashcards.ts'
 import type { NoteContent, NoteDetail, NoteSummary } from './notes.ts'
 import type { Question, QuestionFields } from './questions.ts'
 import type { Tag, TagWithNoteCount } from './tags.ts'
@@ -172,5 +172,12 @@ export async function deleteQuestionOnServer(questionId: string): Promise<void> 
 // when "today" starts (4 am there).
 export async function getFlashcardSessionFromServer(timeZone: string): Promise<FlashcardSession> {
   const { data } = await api.get<FlashcardSession>('/flashcards', { params: { timeZone } })
+  return data
+}
+
+// Grades a card. The server works out its new schedule (T4.3, T4.10–T4.11) and replies 200 OK with
+// the card as it now is, so a card sent back by Again shows its new intervals.
+export async function gradeFlashcardOnServer(questionId: string, grade: FlashcardGrade, timeZone: string): Promise<Flashcard> {
+  const { data } = await api.post<Flashcard>(`/flashcards/${questionId}/grade`, { grade, timeZone })
   return data
 }

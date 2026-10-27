@@ -124,7 +124,7 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 |---|---|---|
 | T4.1 | Storage | Schedule columns on `questions`: `ease` (default 2.5), `interval_days` (default 0), `due_on date` (null = new card), `last_graded_on date`. `users.new_cards_per_day` (default 20). |
 | T4.2 | Grades | **Again / Hard / Good / Easy** (keys 1–4), each showing its next interval. SM-2: interval 1 → 6 → `interval × ease`; Again → interval 1, ease −0.2 (min 1.3); Easy → ease +0.15. |
-| T4.3 | Again in session | The card goes to the end of the queue until passed. Only the **first** grade of the day changes the schedule. |
+| T4.3 | Again in session | The card goes to the end of the queue until passed. **Every grade counts** (Again then Good → 1 → 6 days), but Again lowers the ease only once per day (`last_graded_on` = today → no second −0.2). Changed 2026-10-27. |
 | T4.4 | Days | Calendar days in the user's time zone (browser sends it, e.g. `Australia/Sydney`); the day starts at **4 am**. |
 | T4.5 | New-card cap | Per day, set on a settings page (default 20). |
 | T4.6 | Edits | Editing a question keeps its schedule. |
@@ -143,6 +143,7 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 | T4.14 | Order | New cards first (oldest question first), then due cards (oldest `due_on` first). Again → end of the queue. |
 | T4.15 | Old `/quiz` page | Replaced: `QuizPage` deleted, `/quiz` redirects to `/flashcards`, the sidebar links to Flashcards. |
 | T4.16 | Session contract | `hasAnyQuestions` = the user has at least one question. `nextDue.daysFromToday` is a whole number ≥ 1; `nextDue` is null rather than a count of 0; held-back new cards (over the cap) count toward `nextDue`. Invalid or missing `timeZone` → 400 Bad Request. The GET never writes. |
+| T4.17 | Grade endpoint | `POST /api/flashcards/:questionId/grade { grade, timeZone }` → 200 OK with the updated card (same shape as in the GET). Unknown grade or bad `timeZone` → 400 Bad Request; not your question → 404 Not Found. |
 
 ---
 
