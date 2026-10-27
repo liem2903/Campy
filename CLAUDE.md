@@ -43,7 +43,7 @@ Campi is a note-taking app with AI study tools: blurting practice, active-recall
   - 🟢: new code in one place that nothing existing calls yet (a new file, a stub). No existing signatures or behavior change. A mistake can't spread.
   - 🟡: wires a few files together (typically 2–3 adjacent layers, e.g. route → controller). Edits existing files only additively; no shared contract changes.
   - 🔴: touches many files or changes something shared: types used across layers, `src/errors.ts`, middleware, the axios instance in `client/src/api.ts`, DB schema/migrations, config, or folder structure. List every affected file in the plan, and run the full build before committing.
-- Design before reveal (so the user gets to design it themselves first): describe what the checkpoint needs to do, without code. Then ask the user, in one plain sentence, how they would build it, and wait for their attempt. Don't add hint bullets or leading questions (where code should go, which options to consider, edge cases to think about); those design it for them. Only then reveal all of the checkpoint's code at once, in the plan format below, pointing out where it matches or differs from their approach and why. Still get their OK before writing files.
+- Present the checkpoint plan directly (no "how would you build it" step first), and get the user's OK before writing files.
 - Present each checkpoint plan in this order:
   1. **What it achieves**, in plain words, including what's stubbed. Start with the blast-radius tag and one line on why it gets that tag.
   2. **Flow**: a small diagram of what calls what.
