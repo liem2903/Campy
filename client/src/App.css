@@ -286,6 +286,13 @@
 .save-status {
   float: right;
   margin-left: 12px;
+  transition: opacity 0.15s ease;
+}
+
+/* "Saved" fades out a second after a save; "Saving…" and errors stay put. */
+.save-status[data-saved] {
+  opacity: 0;
+  transition: opacity 0.4s ease 1s;
 }
 
 .crumbs-blurt {
@@ -993,6 +1000,11 @@
 
 /* Reduced motion: drop movement, keep the fades (they still show what changed). */
 @media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    .cue-answer {
+      transform: none;
+    }
+  }
   @keyframes rise {
     from { opacity: 0; }
   }
@@ -1256,6 +1268,7 @@
 
 .cornell-grid .note-body {
   min-width: 0;
+  max-width: 68ch; /* about 70 characters a line: longer lines are tiring to read */
   padding-left: 28px;
 }
 
@@ -1294,6 +1307,18 @@
 .test-card-button:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+
+/* A shown answer drops in from just above the question. */
+.cue-answer {
+  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+@starting-style {
+  .cue-answer {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 
 /* The cue column's one header row: "2 questions" on the left, Test and + on the right. */

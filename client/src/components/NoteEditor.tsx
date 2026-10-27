@@ -150,7 +150,12 @@ function NoteEditor(
           <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter" title="Blurt (Ctrl + Shift + Enter)">
             Blurt
           </Link>
-          <span className="save-status" data-failed={saveFailed || undefined} role="status">
+          <span
+            className="save-status"
+            data-failed={saveFailed || undefined}
+            data-saved={saveStatus.kind === 'saved' || undefined}
+            role="status"
+          >
             {saveStatusText}
           </span>
         </p>

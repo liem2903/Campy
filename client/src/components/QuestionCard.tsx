@@ -46,7 +46,7 @@ function QuestionCard({ question, noteTags, isAboutDeletedBlock, isAnswerShowing
         </div>
       </div>
       {isAnswerShowing && (
-        <p className="mt-2 mb-0 rounded bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] px-2.5 py-2 text-[13px] leading-[1.5] whitespace-pre-wrap text-text">
+        <p className="cue-answer mt-2 mb-0 rounded bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] px-2.5 py-2 text-[13px] leading-[1.5] whitespace-pre-wrap text-text">
           {question.answer}
         </p>
       )}

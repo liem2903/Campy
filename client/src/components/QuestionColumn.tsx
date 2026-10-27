@@ -244,7 +244,8 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
   }
 
   const blockTexts = noteBody.readBlockTexts()
-  const questionCountLabel = questions === null ? 'Questions' : questionCountText(questions.length)
+  // "0 questions" reads like a counter waiting for something, so an empty column just says Questions.
+  const questionCountLabel = questions === null || questions.length === 0 ? 'Questions' : questionCountText(questions.length)
   // Not while a card is open, so starting a test can't drop an unsaved edit.
   const canStartTest = questions !== null && questions.length > 0 && cardBeingEdited === null
 
