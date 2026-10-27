@@ -6,11 +6,11 @@ import BrainMark from './components/BrainMark.tsx'
 import Sidebar from './components/Sidebar.tsx'
 import AllNotesPage from './pages/AllNotesPage.tsx'
 import BlurtPage from './pages/BlurtPage.tsx'
+import FlashcardsPage from './pages/FlashcardsPage.tsx'
 import HomePage from './pages/HomePage.tsx'
 import LoginPage from './pages/LoginPage.tsx'
 import NotePage from './pages/NotePage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
-import QuizPage from './pages/QuizPage.tsx'
 import SignupPage from './pages/SignupPage.tsx'
 import TagsPage from './pages/TagsPage.tsx'
 
@@ -79,7 +79,9 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="notes" element={<AllNotesPage />} />
         <Route path="tags" element={<TagsPage />} />
-        <Route path="quiz" element={<QuizPage />} />
+        <Route path="flashcards" element={<FlashcardsPage />} />
+        {/* The old placeholder's address, kept so saved links still land somewhere (T4.15). */}
+        <Route path="quiz" element={<Navigate to="/flashcards" replace />} />
         <Route path="notes/:noteId" element={<NotePage />} />
         <Route path="notes/:noteId/blurt" element={<BlurtPage />} />
       </Route>

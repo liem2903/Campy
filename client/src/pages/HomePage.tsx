@@ -24,10 +24,10 @@ function HomePage() {
       <p className="auth-lede">Test what you remember, or go back to your notes.</p>
 
       <div className="home-choices">
-        <Link to="/quiz" className="home-card home-card-quiz">
+        <Link to="/flashcards" className="home-card home-card-quiz">
           <span className="home-card-kicker">Practice</span>
-          <span className="home-card-title">Quiz me</span>
-          <span className="home-card-text">Active-recall questions drawn from your notes.</span>
+          <span className="home-card-title">Flashcards</span>
+          <span className="home-card-text">Review your questions, spaced out so they stick.</span>
           <span className="home-card-go">
             Start <span aria-hidden="true">→</span>
           </span>

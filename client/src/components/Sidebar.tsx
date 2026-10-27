@@ -77,8 +77,8 @@ function Sidebar() {
         <NavLink to="/" end className="sidebar-item">
           Home
         </NavLink>
-        <NavLink to="/quiz" className="sidebar-item">
-          Quiz
+        <NavLink to="/flashcards" className="sidebar-item">
+          Flashcards
         </NavLink>
         <NavLink to="/notes" end className="sidebar-item">
           All notes

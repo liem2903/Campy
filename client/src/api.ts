@@ -1,4 +1,5 @@
 import axios from 'axios'
+import type { FlashcardSession } from './flashcards.ts'
 import type { NoteContent, NoteDetail, NoteSummary } from './notes.ts'
 import type { Question, QuestionFields } from './questions.ts'
 import type { Tag, TagWithNoteCount } from './tags.ts'
@@ -165,4 +166,11 @@ export async function deleteQuestionOnServer(questionId: string): Promise<void> 
     data: {},
     validateStatus: (s) => (s >= 200 && s < 300) || s === 404,
   })
+}
+
+// Today's flashcards: new cards (up to the daily cap) first, then due ones. The time zone decides
+// when "today" starts (4 am there).
+export async function getFlashcardSessionFromServer(timeZone: string): Promise<FlashcardSession> {
+  const { data } = await api.get<FlashcardSession>('/flashcards', { params: { timeZone } })
+  return data
 }
