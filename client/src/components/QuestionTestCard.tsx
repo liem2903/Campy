@@ -113,7 +113,7 @@ function QuestionTestCard({ noteId, questions, onStop }: { noteId: string; quest
                 <span className="test-mark-icon" aria-hidden="true">✓</span> Right
               </button>
             </div>
-            <p className="keyboard-only m-0 text-center text-[11px] text-muted">Press 1 for Wrong, 2 for Right</p>
+            <p className="keyboard-only m-0 text-center text-[11px] text-muted">Press 1 or 2</p>
           </div>
         ) : (
           <button key={`show-${shownQuestionIndex}`} type="button" autoFocus onClick={() => setIsAnswerShowing(true)} className="test-card-button">
