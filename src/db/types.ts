@@ -71,6 +71,13 @@ export type Question = {
   block_was_deleted: boolean;
   question: string;
   answer: string;
+  // SM-2 schedule (T4.1). due_on null = new card. postgres.js returns dates as Date at UTC midnight
+  // of the study day; flashcard queries compare them in SQL instead.
+  ease: number;
+  interval_days: number;
+  due_on: Date | null;
+  last_graded_on: Date | null;
+  first_graded_on: Date | null;
   created_at: Date;
   updated_at: Date;
 };
