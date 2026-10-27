@@ -1455,6 +1455,42 @@
   }
 }
 
+/* "Your answer" while testing: a quiet box that grows with what you type. */
+.test-typed-answer {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+  field-sizing: content;
+  transition: border-color 0.15s ease;
+}
+
+.test-typed-answer::placeholder {
+  color: var(--muted);
+}
+
+.test-typed-answer:focus {
+  border-color: color-mix(in srgb, var(--brand) 60%, transparent);
+  outline: none;
+}
+
+/* "Your answer" / "Answer" above each text once you've typed one, so the two read apart. */
+.test-answer-label {
+  margin: 0 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 /* The score screen shows once per test, so it can rise in gently. */
 .test-score {
   transition: opacity 0.2s ease, transform 0.25s var(--ease);

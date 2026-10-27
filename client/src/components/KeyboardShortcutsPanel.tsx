@@ -6,6 +6,7 @@ const shortcuts = [
   { keys: 'Ctrl + Enter', action: 'Save the question being edited' },
   { keys: 'Esc', action: 'Cancel the question being edited, or stop testing' },
   { keys: 'Space', action: 'Show the answer while testing' },
+  { keys: 'Enter', action: 'Show the answer from the "Your answer" box' },
   { keys: '1 / 2', action: 'Mark the answer Wrong or Right while testing' },
   { keys: 'Ctrl + Shift + Enter', action: 'Blurt this note' },
   { keys: 'Tab', action: 'Insert 4 spaces (outside a list)' },

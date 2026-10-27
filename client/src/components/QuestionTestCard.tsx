@@ -3,13 +3,16 @@ import { Link } from 'react-router'
 import type { Question } from '../questions.ts'
 
 // Test mode: the note's questions one at a time, each answer hidden until "Show answer" (focused,
-// so Space shows it). Each answer is then marked Wrong (1) or Right (2); after the last one, a score
-// with Blurt or Review notes. Esc anywhere on the page stops. Nothing is saved.
+// so Space shows it). You can type your own answer first; it then sits above the real one to
+// compare. Each answer is then marked Wrong (1) or Right (2); after the last one, a score with Blurt
+// or Review notes. Esc anywhere on the page stops. Nothing is saved.
 type QuestionMark = 'wrong' | 'right'
 
 function QuestionTestCard({ noteId, questions, onStop }: { noteId: string; questions: Question[]; onStop: () => void }) {
   const [shownQuestionIndex, setShownQuestionIndex] = useState(0)
   const [isAnswerShowing, setIsAnswerShowing] = useState(false)
+  // Optional, and only for the shown question: cleared on every move.
+  const [typedAnswer, setTypedAnswer] = useState('')
   // Keyed by id, so marking again after "Previous" replaces the old mark instead of counting twice.
   const [markByQuestionId, setMarkByQuestionId] = useState<Record<string, QuestionMark>>({})
   const shownQuestion = questions[shownQuestionIndex]
@@ -20,6 +23,7 @@ function QuestionTestCard({ noteId, questions, onStop }: { noteId: string; quest
   function showQuestionAt(questionIndex: number) {
     setShownQuestionIndex(questionIndex)
     setIsAnswerShowing(false)
+    setTypedAnswer('')
   }
 
   function markShownQuestion(mark: QuestionMark) {
@@ -97,8 +101,36 @@ function QuestionTestCard({ noteId, questions, onStop }: { noteId: string; quest
       </div>
       <div className="flex min-h-[220px] flex-col gap-4 rounded-xl border border-[var(--line)] p-4 shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
         <p className="m-0 text-[20px] leading-[1.3] whitespace-pre-wrap [font-family:var(--serif)]">{shownQuestion.question}</p>
+        {!isAnswerShowing && (
+          // Enter shows the answer (Shift + Enter for a new line); Space, 1 and 2 just type here.
+          <textarea
+            value={typedAnswer}
+            onChange={(event) => setTypedAnswer(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+              event.preventDefault()
+              setIsAnswerShowing(true)
+            }}
+            rows={2}
+            placeholder="Your answer (optional)"
+            aria-label="Your answer (optional)"
+            className="test-typed-answer"
+          />
+        )}
         {isAnswerShowing && (
-          <p className="m-0 border-t border-[var(--line)] pt-3 text-[14px] leading-[1.5] whitespace-pre-wrap">{shownQuestion.answer}</p>
+          <div className="flex flex-col gap-3 border-t border-[var(--line)] pt-3 text-[14px] leading-[1.5]">
+            {/* An empty box isn't shown, so skipping it looks the same as before. */}
+            {typedAnswer.trim() !== '' && (
+              <div>
+                <p className="test-answer-label">Your answer</p>
+                <p className="m-0 whitespace-pre-wrap text-muted">{typedAnswer}</p>
+              </div>
+            )}
+            <div>
+              {typedAnswer.trim() !== '' && <p className="test-answer-label">Answer</p>}
+              <p className="m-0 whitespace-pre-wrap">{shownQuestion.answer}</p>
+            </div>
+          </div>
         )}
         <div className="flex-1" />
         {/* A new key on every question mounts "Show answer" fresh, so autoFocus moves focus to it,
