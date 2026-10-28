@@ -129,7 +129,7 @@ function QuestionCardEditor({ fields, aboutText, onAttachToCursorBlock, onFields
         <button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer rounded-md border-0 bg-transparent px-3 py-1 text-[13px] text-muted [font-family:inherit] hover:text-text"
+          className="cursor-pointer rounded-md border border-[var(--line)] bg-transparent px-3 py-1 text-[13px] text-muted [font-family:inherit] hover:border-muted hover:text-text"
         >
           Cancel
         </button>

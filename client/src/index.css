@@ -22,7 +22,8 @@
   color-scheme: light dark;
   --bg: #ffffff;
   --text: #37352f;
-  --muted: #9b9a97;
+  /* Readable grey: 5.1:1 on --bg, 4.8:1 on --sidebar-bg (AA needs 4.5:1). */
+  --muted: #6f6e6a;
   --sidebar-bg: #f7f7f5;
   --hover: rgba(55, 53, 47, 0.08);
   --active: rgba(55, 53, 47, 0.12);
@@ -42,7 +43,7 @@
     color-scheme: dark;
     --bg: #191919;
     --text: #e6e6e4;
-    --muted: #7f7f7c;
+    --muted: #9b9b98;
     --sidebar-bg: #202020;
     --hover: rgba(255, 255, 255, 0.06);
     --active: rgba(255, 255, 255, 0.1);
@@ -55,7 +56,7 @@
   color-scheme: dark;
   --bg: #191919;
   --text: #e6e6e4;
-  --muted: #7f7f7c;
+  --muted: #9b9b98;
   --sidebar-bg: #202020;
   --hover: rgba(255, 255, 255, 0.06);
   --active: rgba(255, 255, 255, 0.1);

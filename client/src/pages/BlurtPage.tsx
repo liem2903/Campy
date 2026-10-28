@@ -72,7 +72,7 @@ function BlurtPage() {
             onClick={(event) => {
               if (isWriting && !blurtIsEmpty && !window.confirm("Leave? Your blurt won't be kept.")) event.preventDefault()
             }}
-            className="text-muted no-underline transition-colors duration-150 hover:text-text"
+            className="-my-[3px] rounded-md border border-[var(--line)] px-2 py-0.5 text-muted no-underline transition-colors duration-150 hover:border-muted hover:text-text"
           >
             Close ✕
           </Link>

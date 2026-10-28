@@ -243,11 +243,12 @@
 
 .sidebar-actions {
   display: flex;
-  gap: 2px;
+  gap: 6px;
 }
 
 .sidebar-actions .sidebar-item {
   width: auto;
+  background: var(--hover);
   color: var(--muted);
   font-size: 13px;
   transition: background 0.15s, color 0.15s, transform 0.12s var(--ease);
@@ -258,6 +259,7 @@
 }
 
 .sidebar-actions .sidebar-item:hover {
+  background: var(--active);
   color: var(--text);
 }
 
@@ -330,7 +332,10 @@
 }
 
 .paper-crumbs {
-  margin: 0 0 36px;
+  /* 3px padding (taken off the margin) leaves room for the Blurt button's outline, which
+     overflow: hidden would otherwise clip. */
+  margin: 0 0 30px;
+  padding: 3px 0;
   overflow: hidden;
   color: var(--muted);
   font-size: 12px;
@@ -353,13 +358,18 @@
 
 .crumbs-blurt {
   float: right;
-  margin-left: 12px;
+  /* The negative margin cancels the padding and border, so the outline doesn't push the title down. */
+  margin: -3px 0 -3px 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   color: var(--muted);
   text-decoration: none;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .crumbs-blurt:hover {
+  border-color: var(--muted);
   color: var(--text);
 }
 
@@ -1217,10 +1227,10 @@
   opacity: 1;
 }
 
-/* No outline until hovered, so "+ Tag" reads as a quiet link next to the real tags. */
+/* A dashed outline, so "+ Tag" reads as a button but stays quieter than the real tags. */
 .tag-stamp-add {
   padding: 4px 9px;
-  border: 1px dashed transparent;
+  border: 1px dashed var(--line);
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -1670,6 +1680,7 @@
 
 .cue-header-action {
   padding: 4px 8px;
+  border: 1px solid var(--line);
   font-size: 13px;
 }
 
@@ -1677,7 +1688,7 @@
   width: 26px;
   padding: 0;
   font-size: 18px;
-  line-height: 26px;
+  line-height: 24px;
 }
 
 @media (hover: hover) and (pointer: fine) {
