@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Body Wins</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+
+<h1>Which body wins?</h1>
+<p class="subtitle">FEAT-002 Ticket 3 · Checkpoint 1 · final pass · <code>client/src/pages/NotePage.tsx</code></p>
+
+<p><strong>The win:</strong> for any situation, you can say what <code>shownBody</code> is and what the page renders.
+This is the last line of CP1 you haven't been tested on. After this you've covered every line.</p>
+
+<h2><span class="step">Step 1</span>The two lines</h2>
+<pre><code>const serverBody = serverReply &amp;&amp; serverReply.id === noteIdFromUrl ? serverReply.body : undefined   // Lesson 1
+<span class="hl">const shownBody = (noteIdFromUrl &amp;&amp; localBodies[noteIdFromUrl]) ?? serverBody</span>
+...
+<span class="hl">if (shownBody === undefined) return null</span></code></pre>
+<p><code>localBodies</code> comes from <code>useNotes()</code>. It's your <em>local copy</em>: whatever you typed on this device, kept in localStorage by note id until autosave arrives in Ticket 4.
+If you've never typed in this note here, <code>localBodies[noteIdFromUrl]</code> is <code>undefined</code>.</p>
+
+<h2><span class="step">Step 2</span><code>??</code> is not <code>||</code></h2>
+<p><code>a ?? b</code> gives <code>b</code> only when <code>a</code> is <code>null</code> or <code>undefined</code>
+(<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing">MDN</a>).
+<code>a || b</code> gives <code>b</code> whenever <code>a</code> is <em>falsy</em>, and that includes the empty string <code>''</code>.</p>
+<div class="box">
+  <h3>Tiny example</h3>
+  <p style="margin:0">You delete every word in note B. Your local copy is now <code>''</code>. The server still has <code>'Cells'</code>.<br>
+  <code>'' ?? 'Cells'</code> → <code>''</code>. Your empty note stays empty. ✓<br>
+  <code>'' || 'Cells'</code> → <code>'Cells'</code>. The text you deleted comes back. ✗</p>
+</div>
+
+<h2><span class="step">Step 3</span>Three outcomes</h2>
+<table>
+  <tr><th>Local copy?</th><th>Server reply for <em>this</em> note?</th><th><code>shownBody</code></th><th>Page shows</th></tr>
+  <tr><td>yes (even <code>''</code>)</td><td>doesn't matter</td><td>local copy</td><td>your text</td></tr>
+  <tr><td>no</td><td>yes</td><td>server's body</td><td>server text</td></tr>
+  <tr><td>no</td><td>not yet</td><td><code>undefined</code></td><td>nothing (<code>return null</code>)</td></tr>
+</table>
+<p>Why render <em>nothing</em> instead of an empty box while loading? If you could type into an empty box, your typing would become the local copy.
+Then, by row 1, the local copy wins, and the server's body would never show.</p>
+
+<h2><span class="step">Step 4</span>Predict <code>shownBody</code></h2>
+<p>You're on note B. The server has <code>'Cells'</code> for B. Answer from memory, without scrolling up.</p>
+
+<div class="quiz-q" data-answer="1" data-why="A local copy exists, so <code>??</code> never looks at the server's body. Until Ticket 4, local always wins.">
+  <p>1. Earlier you typed <code>'draft'</code> into B. B's reply has arrived.</p>
+  <div class="quiz-opts"><button><code>''</code></button><button><code>'draft'</code></button><button><code>undefined</code></button><button><code>'Cells'</code></button></div>
+</div>
+
+<div class="quiz-q" data-answer="3" data-why="<code>''</code> isn't null or undefined, so <code>??</code> keeps it. With <code>||</code> you'd get 'Cells' back.">
+  <p>2. You deleted all of B's text, so its local copy is <code>''</code>. B's reply has arrived.</p>
+  <div class="quiz-opts"><button><code>'Cells'</code></button><button><code>undefined</code></button><button><code>'draft'</code></button><button><code>''</code></button></div>
+</div>
+
+<div class="quiz-q" data-answer="0" data-why="No local copy, so we fall back to <code>serverBody</code>. But <code>serverReply.id</code> is 'A', not 'B', so the ID tag makes <code>serverBody</code> undefined. The page renders nothing.">
+  <p>3. No local copy for B. You just came from A, so <code>serverReply</code> is <code>{ id: 'A', body: 'Atoms' }</code>. B's reply hasn't arrived.</p>
+  <div class="quiz-opts"><button><code>undefined</code></button><button><code>''</code></button><button><code>'Cells'</code></button><button><code>'draft'</code></button></div>
+</div>
+
+<div class="quiz-q" data-answer="2" data-why="404 Not Found resolves to <code>null</code>, so <code>noteDetailOrNull?.body ?? ''</code> stores <code>''</code> tagged with B. B is a new note whose create hasn't reached the server yet.">
+  <p>4. B was just created. No local copy yet. B's reply arrives as 404 Not Found.</p>
+  <div class="quiz-opts"><button><code>'draft'</code></button><button><code>'Cells'</code></button><button><code>''</code></button><button><code>undefined</code></button></div>
+</div>
+
+<div class="quiz-q" data-answer="2" data-why="<code>if (shownBody === undefined) return null</code>. An editable box would let your typing become a local copy that hides the server's body.">
+  <p>5. <code>shownBody</code> is <code>undefined</code>. What does the page render?</p>
+  <div class="quiz-opts"><button>An empty, editable textarea</button><button>The not-found empty state</button><button>Nothing until it loads</button><button>A loading error message</button></div>
+</div>
+
+<h2><span class="step">Step 5</span>Mixed review: the guards</h2>
+
+<div class="quiz-q" data-answer="1" data-why="Only <code>stale</code> can stop <code>setServerReply</code> from running. The ID tag only filters what's shown.">
+  <p>6. Which line stops a <em>late</em> reply for a note you left from writing state?</p>
+  <div class="quiz-opts"><button>The <code>serverReply.id</code> tag</button><button>The <code>stale</code> flag</button><button>The <code>loading</code> check</button><button>The <code>??</code> fallback</button></div>
+</div>
+
+<div class="quiz-q" data-answer="3" data-why="This is a <strong>closure</strong>: each run's callback and cleanup remember the <code>let stale</code> from the run that created them (<a href='https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Closures'>MDN: Closures</a>).">
+  <p>7. Why does A's cleanup flip only A's <code>stale</code>, never B's?</p>
+  <div class="quiz-opts"><button>React resets the flag every render</button><button>The server tags replies with runs</button><button>useState keeps one flag per note</button><button>Each closure captures its own variable</button></div>
+</div>
+
+<footer>
+  <p><strong>Read next:</strong> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing">MDN: Nullish coalescing operator (<code>??</code>)</a>, especially the part comparing it with <code>||</code>.</p>
+  <p><strong>Before this:</strong> <a href="0001-two-guards-on-a-late-fetch.html">Lesson 1: Two guards, one fetch</a> · <strong>Cheat sheet:</strong> <a href="../reference/fetch-in-an-effect.html">Fetch in an effect</a>.</p>
+  <p>Stuck on anything? Ask me (Claude) in the terminal. I'm your teacher for this, and no question is too small.</p>
+</footer>
+
+</main>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Guards, One Fetch</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+<style>
+  .sim { display: grid; gap: .8rem; }
+  .sim-row { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  .sim-row label { font-size: .9rem; margin-right: .8rem; }
+  .screen { border: 1px solid var(--rule); border-radius: 6px; padding: .8rem 1rem; background: var(--bg); min-height: 4.5rem; }
+  .screen .url { font: 13px ui-monospace, Menlo, monospace; color: var(--muted); }
+  .screen .content { margin-top: .3rem; }
+  .screen.wrong { border-color: var(--bad); }
+  .log { font: 13px/1.5 ui-monospace, Menlo, monospace; color: var(--muted); max-height: 9rem; overflow-y: auto; margin: 0; padding-left: 1.2rem; }
+  .tasks li { margin: .3rem 0; }
+  .tasks li.done::marker { content: "✓  "; color: var(--ok); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Two guards, one fetch</h1>
+<p class="subtitle">FEAT-002 Ticket 3 · Checkpoint 1 · <code>client/src/pages/NotePage.tsx</code></p>
+
+<p><strong>The win:</strong> by the end you can explain why CP1 needs <em>two</em> separate guards
+(the <code>stale</code> flag and the <code>serverReply.id</code> tag), and what breaks if you delete either one.</p>
+
+<h2><span class="step">Step 1</span>What CP1 does</h2>
+<p>When you open <code>/notes/:id</code>, the page asks the server for that note's body and shows it.
+That's the whole job. The hard part is that <strong>you can switch notes while a request is still in flight</strong>,
+so replies can arrive late, or out of order.</p>
+
+<pre><code>  const [serverReply, setServerReply] = useState&lt;{ id: string; body: string }&gt;()
+  useEffect(() =&gt; {
+    if (!noteIdFromUrl) return
+<span class="hl">    let stale = false                                  // guard 1</span>
+    void getNoteFromServer(noteIdFromUrl).then(
+<span class="hl">      (noteDetailOrNull) =&gt; !stale &amp;&amp; setServerReply({ id: noteIdFromUrl, body: noteDetailOrNull?.body ?? '' }),</span>
+      () =&gt; {},
+    )
+<span class="hl">    return () =&gt; { stale = true }                      // cleanup</span>
+  }, [noteIdFromUrl])
+
+<span class="hl">  const serverBody = serverReply &amp;&amp; serverReply.id === noteIdFromUrl ? serverReply.body : undefined   // guard 2</span>
+  const shownBody = (noteIdFromUrl &amp;&amp; localBodies[noteIdFromUrl]) ?? serverBody
+  ...
+  if (shownBody === undefined) return null</code></pre>
+
+<h2><span class="step">Step 2</span>When the effect and its cleanup run</h2>
+<p>The effect runs after the first render, and again every time <code>noteIdFromUrl</code> changes.
+React calls the cleanup <em>before</em> it runs the effect again, and once more when the page goes away
+(<a href="https://react.dev/learn/synchronizing-with-effects#step-3-add-cleanup-if-needed">react.dev</a>).</p>
+<p>Each run gets its <strong>own</strong> <code>stale</code> variable. So opening note A, then note B, gives you:</p>
+<table>
+  <tr><th>You do</th><th>React runs</th><th>A's <code>stale</code></th><th>B's <code>stale</code></th></tr>
+  <tr><td>open A</td><td>effect (A): request A</td><td>false</td><td></td></tr>
+  <tr><td>open B</td><td>cleanup (A), then effect (B): request B</td><td><strong>true</strong></td><td>false</td></tr>
+</table>
+<p>From now on, A's reply is ignored whenever it arrives, because the callback checks <code>!stale</code>.
+This is the exact pattern react.dev uses, with the flag named <code>ignore</code>:
+<em>“If the <code>userId</code> changes from 'Alice' to 'Bob', cleanup ensures that the 'Alice' response is ignored even if it arrives after 'Bob'”</em>
+(<a href="https://react.dev/learn/synchronizing-with-effects#fetching-data">Fetching data</a>).</p>
+
+<h2><span class="step">Step 3</span>Why one guard isn't enough</h2>
+<p><code>stale</code> stops a <em>future</em> <code>setServerReply</code> from running. It can't undo state that's <em>already set</em>.
+Right after you switch from A to B, <code>serverReply</code> still holds A's body from earlier.
+B's request hasn't answered yet, so nothing has replaced it.</p>
+<p>That's what guard 2 is for. The body is stored with the ID it belongs to, and the page uses it only if
+<code>serverReply.id === noteIdFromUrl</code>. Otherwise <code>serverBody</code> is <code>undefined</code>, which means “still loading”, and the page renders nothing for a moment.</p>
+<div class="box">
+  <h3>The two bugs</h3>
+  <p style="margin:0"><strong>No <code>stale</code> flag:</strong> a <em>late</em> reply for an old note overwrites the new one.<br>
+  <strong>No ID tag:</strong> in the <em>gap</em> before the new reply arrives, the old body shows on the new page.</p>
+</div>
+
+<h2><span class="step">Step 4</span>Break it yourself</h2>
+<p>Turn the guards off and on, open notes, and deliver the replies in any order. Try to finish both tasks.</p>
+
+<div class="box sim no-print" id="sim">
+  <div class="sim-row">
+    <label><input type="checkbox" id="g-stale" checked> <code>stale</code> flag</label>
+    <label><input type="checkbox" id="g-tag" checked> <code>serverReply.id === noteIdFromUrl</code></label>
+  </div>
+  <div class="sim-row">
+    <button data-open="A">Open Chem (A)</button>
+    <button data-open="B">Open Bio (B)</button>
+    <span style="width:1rem"></span>
+    <button data-arrive="A">A's reply arrives</button>
+    <button data-arrive="B">B's reply arrives</button>
+    <button id="reset">Reset</button>
+  </div>
+  <div class="screen" id="screen"></div>
+  <ol class="log" id="log"></ol>
+  <ul class="tasks">
+    <li id="t1">Turn off <strong>only the ID tag</strong>. Make Bio's page show Chem's body.</li>
+    <li id="t2">Turn off <strong>only the <code>stale</code> flag</strong>. Make Bio's page lose its own body after it showed it.</li>
+  </ul>
+</div>
+
+<h2><span class="step">Step 5</span>The other lines</h2>
+<table>
+  <tr><th>Line</th><th>Why it's there</th></tr>
+  <tr><td><code>if (!noteIdFromUrl) return</code></td><td><code>useParams</code> types it as possibly undefined. With no ID, there's nothing to fetch.</td></tr>
+  <tr><td><code>void getNoteFromServer(…)</code></td><td>Starts the request without awaiting it. An effect can't be <code>async</code>, because it must return its cleanup, not a promise.</td></tr>
+  <tr><td><code>noteDetailOrNull?.body ?? ''</code></td><td><code>null</code> means 404 Not Found. The note is in your list, so its create (POST) just hasn't reached the server yet. Show an empty body.</td></tr>
+  <tr><td><code>() =&gt; {}</code></td><td>Any other failure is swallowed, so the page stays blank. Ticket 4 adds retries.</td></tr>
+  <tr><td><code>localBodies[noteIdFromUrl] ?? serverBody</code></td><td>Until autosave (Ticket 4), your unsaved local copy wins over the server's.</td></tr>
+  <tr><td><code>shownBody === undefined</code> → <code>null</code></td><td>Renders nothing while loading. An empty box would let you type into it, and your typing would become the local copy that hides the server's body forever.</td></tr>
+</table>
+
+<h2><span class="step">Step 6</span>Check yourself</h2>
+<p>Answer from memory, without scrolling up.</p>
+
+<div class="quiz-q" data-answer="1" data-why="Each effect run has its own variable, and React runs the old run's cleanup before the new effect. That cleanup is the only place <code>stale = true</code> is written.">
+  <p>1. What sets A's <code>stale</code> to <code>true</code>?</p>
+  <div class="quiz-opts">
+    <button>getNoteFromServer rejecting with an error</button>
+    <button>React running A's cleanup function</button>
+    <button>The server answering with 404</button>
+    <button>B's reply arriving at the page</button>
+  </div>
+</div>
+
+<div class="quiz-q" data-answer="2" data-why="With the tag still on, A's late reply sets <code>serverReply</code> to <code>{ id: 'A', … }</code>. That doesn't match B, so <code>serverBody</code> becomes undefined and B's body disappears. That's task 2 in the simulator.">
+  <p>2. The <code>stale</code> flag is deleted but the ID tag stays. You open A, then B. B's reply arrives, then A's. What does B's page end up showing?</p>
+  <div class="quiz-opts">
+    <button>B's body, and it stays put</button>
+    <button>A's body under B's title</button>
+    <button>Nothing; B's body disappears</button>
+    <button>The "doesn't exist" page instead</button>
+  </div>
+</div>
+
+<div class="quiz-q" data-answer="0" data-why="In that gap no reply is pending for B, so <code>stale</code> has nothing to block. <code>serverReply</code> still holds A's body, and only the ID check stops it from showing.">
+  <p>3. You switch from A to B. No reply has arrived for B yet. Which line keeps A's body off B's page?</p>
+  <div class="quiz-opts">
+    <button><code>serverReply.id === noteIdFromUrl</code></button>
+    <button><code>!stale &amp;&amp; setServerReply(…)</code></button>
+    <button><code>if (loading) return null</code></button>
+    <button><code>if (!noteIdFromUrl) return</code></button>
+  </div>
+</div>
+
+<div class="quiz-q" data-answer="3" data-why="A 404 Not Found for a note in your list means its POST hasn't landed yet, so <code>noteDetailOrNull</code> is null and <code>?? ''</code> gives an empty body. The 'doesn't exist' page is decided by the local list.">
+  <p>4. A note is in your sidebar list, but the server answers 404 Not Found. What do you see?</p>
+  <div class="quiz-opts">
+    <button>The not-found page</button>
+    <button>A blank screen</button>
+    <button>An error message</button>
+    <button>An empty textarea</button>
+  </div>
+</div>
+
+<footer>
+  <p><strong>Read next:</strong> <a href="https://react.dev/learn/synchronizing-with-effects#fetching-data">react.dev: Synchronizing with Effects, “Fetching data”</a>.
+  It's the primary source for this pattern. The challenge at the bottom, “Fix fetching inside an Effect”, is this exact bug.</p>
+  <p><strong>Cheat sheet:</strong> <a href="../reference/fetch-in-an-effect.html">Fetch in an effect</a>.</p>
+  <p>Stuck on anything? Ask me (Claude) in the terminal. I'm your teacher for this, and no question is too small.</p>
+</footer>
+
+</main>
+<script src="../assets/quiz.js"></script>
+<script>
+const BODY = { A: 'Atoms: protons, neutrons, electrons', B: 'Cells: the unit of life' }
+const NAME = { A: 'Chem', B: 'Bio' }
+let url, requests, serverReply, log, seenB
+const $ = (id) => document.getElementById(id)
+
+function reset() {
+  url = undefined; requests = []; serverReply = undefined; log = []; seenB = false
+  render()
+}
+function shown() {
+  if (!serverReply) return undefined
+  if ($('g-tag').checked) return serverReply.id === url ? serverReply.body : undefined
+  return serverReply.body
+}
+function open(x) {
+  if (url === x) return
+  const current = requests.findLast((r) => !r.cleaned)
+  if (current) { current.stale = true; current.cleaned = true; log.push(`cleanup (${current.note}): its stale = true`) }
+  requests.push({ note: x, stale: false, done: false, cleaned: false })
+  url = x
+  log.push(`open ${NAME[x]}: effect (${x}) sends request ${x}`)
+  render()
+}
+function arrive(x) {
+  const req = requests.find((r) => r.note === x && !r.done)
+  if (!req) { log.push(`no request for ${x} is in flight`); return render() }
+  req.done = true
+  if ($('g-stale').checked && req.stale) {
+    log.push(`${x}'s reply arrives, but stale is true: ignored`)
+  } else {
+    serverReply = { id: x, body: BODY[x] }
+    log.push(`${x}'s reply arrives: setServerReply({ id: '${x}', … })`)
+    // Task 2: B's body was showing, then an old reply for another note overwrote it.
+    if (seenB && url === 'B' && x !== 'B' && $('g-tag').checked && !$('g-stale').checked) $('t2').classList.add('done')
+  }
+  render()
+}
+function render() {
+  const s = shown()
+  const wrong = url && s !== undefined && s !== BODY[url]
+  if (url === 'B' && s === BODY.B) seenB = true
+  if (wrong && url === 'B' && !$('g-tag').checked && $('g-stale').checked) $('t1').classList.add('done')
+  $('screen').className = 'screen' + (wrong ? ' wrong' : '')
+  $('screen').innerHTML = url
+    ? `<div class="url">/notes/${url} · ${NAME[url]}</div><div class="content">${
+        s === undefined ? '<em style="color:var(--muted)">(nothing: body is undefined, still loading)</em>'
+        : s + (wrong ? ` <strong class="bad">← ${NAME[url === 'A' ? 'B' : 'A']}'s body!</strong>` : '')}</div>`
+    : '<em style="color:var(--muted)">No note open</em>'
+  $('log').innerHTML = log.map((l) => `<li>${l}</li>`).join('')
+  $('log').scrollTop = 1e6
+}
+document.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => open(b.dataset.open))
+document.querySelectorAll('[data-arrive]').forEach((b) => b.onclick = () => arrive(b.dataset.arrive))
+$('reset').onclick = reset
+$('g-stale').onchange = $('g-tag').onchange = render
+reset()
+</script>
+</body>
+</html>

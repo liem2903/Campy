@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fetch in an Effect</title>
+<link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+<h1>Fetch in an effect</h1>
+<p class="subtitle">Cheat sheet · from <a href="../lessons/0001-two-guards-on-a-late-fetch.html">Lesson 1</a> · source: <a href="https://react.dev/learn/synchronizing-with-effects#fetching-data">react.dev</a></p>
+
+<h2>The pattern</h2>
+<pre><code>const [serverReply, setServerReply] = useState&lt;{ id: string; data: T }&gt;()
+
+useEffect(() =&gt; {
+  let stale = false                       // one per effect run
+  void load(id).then((data) =&gt; !stale &amp;&amp; setServerReply({ id, data }))
+  return () =&gt; { stale = true }           // runs before the next run, and on unmount
+}, [id])
+
+const data = serverReply?.id === id ? serverReply.data : undefined   // undefined = loading</code></pre>
+
+<h2>What each guard stops</h2>
+<table>
+  <tr><th>Guard</th><th>Stops</th><th>When</th></tr>
+  <tr><td><code>stale</code> flag</td><td>an old reply <em>writing</em> state</td><td>a late reply arrives after you switched</td></tr>
+  <tr><td>ID tag on the state</td><td>old state being <em>shown</em></td><td>the gap between switching and the new reply</td></tr>
+</table>
+
+<h2>Which body wins (<a href="../lessons/0002-which-body-wins.html">Lesson 2</a>)</h2>
+<pre><code>const shownBody = (noteIdFromUrl &amp;&amp; localBodies[noteIdFromUrl]) ?? serverBody
+if (shownBody === undefined) return null      // loading: no box to type into yet</code></pre>
+<table>
+  <tr><th>Local copy</th><th>Server reply for this note</th><th>Shows</th></tr>
+  <tr><td>yes (even <code>''</code>)</td><td>any</td><td>local copy</td></tr>
+  <tr><td>no</td><td>yes</td><td>server body</td></tr>
+  <tr><td>no</td><td>not yet</td><td>nothing</td></tr>
+</table>
+<p><code>??</code> falls back only on <code>null</code>/<code>undefined</code>; <code>||</code> also on <code>''</code>, which would bring deleted text back.</p>
+
+<h2>Rules</h2>
+<ul>
+  <li>An effect can't be <code>async</code>: it must return its cleanup, not a promise. Use <code>void promise.then(…)</code> or an inner async function.</li>
+  <li>Cleanup runs before the effect runs again, and once on unmount.</li>
+  <li>In development, Strict Mode runs every effect twice, so you'll see two requests. The flag makes the first one harmless.</li>
+  <li>Alternative: cancel the request with an <a href="https://developer.mozilla.org/en-US/docs/Web/API/AbortController">AbortController</a> instead of ignoring its reply.</li>
+</ul>
+</main>
+</body>
+</html>

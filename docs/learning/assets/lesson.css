@@ -1,0 +1,72 @@
+/* Shared stylesheet for every lesson and reference page. */
+:root {
+  --bg: #fffdf8;
+  --ink: #1f1d1a;
+  --muted: #6b665e;
+  --rule: #e4ded2;
+  --accent: #a4462b;
+  --ok: #2f6b3a;
+  --bad: #a42b2b;
+  --code-bg: #f4efe5;
+  --panel: #faf6ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1a18;
+    --ink: #ece8e1;
+    --muted: #a39d93;
+    --rule: #38352f;
+    --accent: #e08a6c;
+    --ok: #7fc28b;
+    --bad: #e88a8a;
+    --code-bg: #26241f;
+    --panel: #22201c;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 18px/1.6 Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+}
+main { max-width: 42rem; margin: 0 auto; padding: 3rem 1rem 5rem; }
+h1 { font-weight: normal; font-size: 2.1rem; line-height: 1.2; margin: 0 0 .25rem; }
+h2 { font-weight: normal; font-style: italic; font-size: 1.4rem; margin: 2.5rem 0 .5rem; }
+.subtitle { color: var(--muted); margin: 0 0 2rem; }
+.step { color: var(--accent); font-style: normal; font-variant: small-caps; letter-spacing: .05em; margin-right: .4em; }
+a { color: var(--accent); }
+code, pre { font: 14.5px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+code { background: var(--code-bg); padding: .05em .3em; border-radius: 3px; }
+pre { background: var(--code-bg); padding: .9rem 1rem; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+pre .hl { background: color-mix(in srgb, var(--accent) 18%, transparent); display: inline-block; width: 100%; }
+.sidenote { color: var(--muted); font-size: .85rem; border-left: 2px solid var(--rule); padding-left: .8rem; margin: 1rem 0; }
+.box { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+.box h3 { margin: 0 0 .5rem; font-size: 1rem; font-variant: small-caps; letter-spacing: .05em; color: var(--muted); font-weight: normal; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; margin: 1rem 0; }
+th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: normal; color: var(--muted); font-variant: small-caps; }
+button {
+  font: inherit; font-size: .9rem; cursor: pointer;
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 6px; padding: .35rem .7rem;
+}
+button:hover { border-color: var(--accent); }
+.ok { color: var(--ok); }
+.bad { color: var(--bad); }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: .9rem; }
+@media print {
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .no-print, button { display: none !important; }
+  pre { white-space: pre-wrap; }
+}
+
+/* Quiz component (assets/quiz.js) */
+.quiz-q { margin: 1.5rem 0; }
+.quiz-q p { margin: 0 0 .5rem; }
+.quiz-opts { display: grid; gap: .4rem; }
+.quiz-opts button { text-align: left; }
+.quiz-opts button.right { border-color: var(--ok); color: var(--ok); }
+.quiz-opts button.wrong { border-color: var(--bad); color: var(--bad); }
+.quiz-why { font-size: .9rem; margin-top: .4rem; }
