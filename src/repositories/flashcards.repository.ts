@@ -25,6 +25,11 @@ function hasAnyOfTags(db: Db, tagIds: string[]) {
   )`;
 }
 
+// A new card graded for the first time today: what the daily new-card cap counts (T4.12).
+function wasFirstGradedOn(db: Db, today: string) {
+  return db`first_graded_on = ${today}::date`;
+}
+
 export type FlashcardCounts = { question_count: number; new_card_count: number; new_graded_today_count: number };
 
 // One pass over the user's questions: everything the start screen counts (T4.12, T4.16).
@@ -36,20 +41,26 @@ export async function countFlashcardsForUser(
   const [counts] = await db<FlashcardCounts[]>`
     select count(*) filter (where ${hasAnyOfTags(db, tagIds)})::int as question_count,
            count(*) filter (where due_on is null and ${hasAnyOfTags(db, tagIds)})::int as new_card_count,
-           count(*) filter (where first_graded_on = ${today}::date)::int as new_graded_today_count
+           count(*) filter (where ${wasFirstGradedOn(db, today)})::int as new_graded_today_count
     from questions where user_id = ${userId}
   `;
   return counts;
 }
 
-// The oldest `limit` new cards with any of the tags (T4.14).
-export async function findNewFlashcardsForUser(
-  userId: string, today: string, tagIds: string[], limit: number, db: Db = sql,
+// The oldest new cards with any of the tags, up to what's left of today's cap (T4.14). The cap
+// counts every question, whatever the tags. One statement, so a grade from another tab can't land
+// between the count and the select and let one card too many through.
+export async function findNewFlashcardsLeftTodayForUser(
+  userId: string, today: string, tagIds: string[], newCardsPerDay: number, db: Db = sql,
 ): Promise<FlashcardRow[]> {
   return db<FlashcardRow[]>`
     select ${flashcardColumns(db, today)} from questions
     where user_id = ${userId} and due_on is null and ${hasAnyOfTags(db, tagIds)}
-    order by created_at, id limit ${limit}
+    order by created_at, id
+    limit greatest(0, ${newCardsPerDay}::int - (
+      select count(*) from questions as graded_today_questions
+      where graded_today_questions.user_id = ${userId} and ${wasFirstGradedOn(db, today)}
+    ))
   `;
 }
 

@@ -29,20 +29,20 @@ const STUDY_DAY_START_HOUR = 4; // a study day runs 4 am to 4 am, so a late-nigh
 // With tagIds, only questions carrying any of those tags; empty = every question (T4.7).
 export async function getTodaysSession(userId: string, timeZone: string, tagIds: string[]): Promise<FlashcardSession> {
   const today = studyDayIn(timeZone);
-  // One snapshot for all four reads, so a grade from another tab can't land between the cap count
-  // and the new-card query and let a 21st new card through.
-  return sql.begin("isolation level repeatable read read only", async (tx) => {
-    const counts = await flashcardsRepository.countFlashcardsForUser(userId, today, tagIds, tx);
-    const newCardsLeftToday = Math.max(0, NEW_CARDS_PER_DAY - counts.new_graded_today_count);
-    const newCards = await flashcardsRepository.findNewFlashcardsForUser(userId, today, tagIds, newCardsLeftToday, tx);
-    const dueCards = await flashcardsRepository.findDueFlashcardsForUser(userId, today, tagIds, tx);
-    const earliestDueDay = await flashcardsRepository.findEarliestDueDayAfterTodayForUser(userId, today, tagIds, tx);
-    return {
-      cards: [...newCards, ...dueCards].map(flashcardFromRow),
-      nextDue: nextDueWithHeldBackNewCards(earliestDueDay, counts.new_card_count - newCards.length),
-      hasAnyQuestions: counts.question_count > 0,
-    };
-  });
+  // The four reads run at once: one database round trip instead of four in a row. The cap check
+  // lives inside the new-card query, so no transaction is needed to keep it exact. A grade from
+  // another tab mid-load can leave nextDue off by a card until the next load; accepted.
+  const [counts, newCards, dueCards, earliestDueDay] = await Promise.all([
+    flashcardsRepository.countFlashcardsForUser(userId, today, tagIds),
+    flashcardsRepository.findNewFlashcardsLeftTodayForUser(userId, today, tagIds, NEW_CARDS_PER_DAY),
+    flashcardsRepository.findDueFlashcardsForUser(userId, today, tagIds),
+    flashcardsRepository.findEarliestDueDayAfterTodayForUser(userId, today, tagIds),
+  ]);
+  return {
+    cards: [...newCards, ...dueCards].map(flashcardFromRow),
+    nextDue: nextDueWithHeldBackNewCards(earliestDueDay, Math.max(0, counts.new_card_count - newCards.length)),
+    hasAnyQuestions: counts.question_count > 0,
+  };
 }
 
 // Grades the card and saves its new schedule. Throws QuestionNotFoundError when the question is
