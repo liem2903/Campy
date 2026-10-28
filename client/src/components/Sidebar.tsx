@@ -14,7 +14,7 @@ const SIDEBAR_LIMIT = 8
 // How long logout waits for pending saves before going ahead without them.
 const FLUSH_LIMIT_MS = 5000
 
-function Sidebar() {
+function Sidebar({ onOpenGuide }: { onOpenGuide: () => void }) {
   const { notes, loading, loadFailed, createNote, deleteNote, flushAllSaves } = useNotes()
   const { noteId } = useParams()
   const navigate = useNavigate()
@@ -137,6 +137,9 @@ function Sidebar() {
           {user?.email}
         </div>
         <div className="sidebar-actions">
+          <button type="button" className="sidebar-item" onClick={onOpenGuide}>
+            Guide
+          </button>
           <button type="button" className="sidebar-item" onClick={toggleTheme}>
             {theme === 'dark' ? '☀ Light' : '☾ Dark'}
           </button>

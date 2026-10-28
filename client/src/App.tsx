@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react'
 import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import './App.css'
 import { useAuth } from './auth.ts'
+import { hasSeenGuide, rememberGuideSeen } from './guide.ts'
 import BrainMark from './components/BrainMark.tsx'
+import GuideDialog from './components/GuideDialog.tsx'
 import Sidebar from './components/Sidebar.tsx'
 import AllNotesPage from './pages/AllNotesPage.tsx'
 import BlurtPage from './pages/BlurtPage.tsx'
@@ -16,12 +18,18 @@ import TagsPage from './pages/TagsPage.tsx'
 
 // On a phone the sidebar is a drawer behind ☰. It remembers the path it was opened on, so
 // following any link in it (a different path) closes it without an effect. Esc or a tap on the
-// backdrop closes it too.
+// backdrop closes it too. The guide opens by itself the first time, and from the sidebar after.
 function Workspace() {
   const { pathname } = useLocation()
   const [drawerOpenedAtPath, setDrawerOpenedAtPath] = useState<string | null>(null)
+  const [isGuideOpen, setIsGuideOpen] = useState(() => !hasSeenGuide())
   const isDrawerOpen = drawerOpenedAtPath === pathname
   const closeDrawer = () => setDrawerOpenedAtPath(null)
+
+  function closeGuide() {
+    rememberGuideSeen()
+    setIsGuideOpen(false)
+  }
 
   return (
     <div
@@ -47,11 +55,12 @@ function Workspace() {
           Campi
         </Link>
       </header>
-      <Sidebar />
+      <Sidebar onOpenGuide={() => setIsGuideOpen(true)} />
       <button type="button" className="drawer-backdrop" aria-label="Close menu" tabIndex={-1} onClick={closeDrawer} />
       <main className="page">
         <Outlet />
       </main>
+      {isGuideOpen && <GuideDialog onClose={closeGuide} />}
     </div>
   )
 }

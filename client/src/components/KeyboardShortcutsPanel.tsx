@@ -55,6 +55,7 @@ function KeyboardShortcutsPanel() {
             </div>
           ))}
         </dl>
+        <p className="mt-4 mb-0 text-[13px] text-muted">New to Campi? Open <b>Guide</b> in the sidebar.</p>
       </div>
     </dialog>
   )
