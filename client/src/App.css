@@ -1034,6 +1034,9 @@
 .library-card-skeleton { height: 112px; border-radius: 12px; }
 .tag-card-skeleton { height: 118px; border-radius: 10px; }
 .flashcards-count-skeleton { width: 120px; margin: 18px 0; }
+/* Flashcards start-screen line while another tag's session loads. Delayed 150ms so a fast reply never flickers. */
+.flashcards-session-line { transition: opacity 150ms 150ms; }
+.flashcards-session-line.is-reloading { opacity: 0.45; }
 
 .sidebar-status {
   margin: 4px 10px;

@@ -21,6 +21,8 @@ function FlashcardsPage() {
   // Empty until loaded; if loading fails the filter just doesn't show.
   const [tags, setTags] = useState<Tag[]>([])
   const [selectedTagIds, setSelectedTagIds] = useTagFilterInUrl()
+  // True while a newer session is on its way; the old counts stay up, dimmed, and Start waits.
+  const [isReloadingSession, setIsReloadingSession] = useState(false)
 
   useEffect(() => {
     listTagsFromServer().then(setTags, () => {})
@@ -31,13 +33,19 @@ function FlashcardsPage() {
   // A success clears an earlier error, e.g. after Clear on a bad ?tag= link.
   useEffect(() => {
     let stale = false
+    setIsReloadingSession(true)
     getFlashcardSessionFromServer(browserTimeZone(), selectedTagIds).then(
       (loadedSession) => {
         if (stale) return
         setSession(loadedSession)
         setErrorMessage('')
+        setIsReloadingSession(false)
       },
-      () => !stale && setErrorMessage("Couldn't load your flashcards. Try reloading the page."),
+      () => {
+        if (stale) return
+        setErrorMessage("Couldn't load your flashcards. Try reloading the page.")
+        setIsReloadingSession(false)
+      },
     )
     return () => {
       stale = true
@@ -70,6 +78,8 @@ function FlashcardsPage() {
   const newCardCount = session?.cards.filter((card) => card.isNew).length ?? 0
   const dueCardCount = (session?.cards.length ?? 0) - newCardCount
   const isFiltered = selectedTagIds.length > 0
+  // Dimmed while another tag's session loads, since the line still describes the previous tags.
+  const sessionLineClassName = isReloadingSession ? 'auth-lede flashcards-session-line is-reloading' : 'auth-lede flashcards-session-line'
   return (
     <div className="page-content empty-state">
       <h1 className="auth-title">
@@ -81,8 +91,16 @@ function FlashcardsPage() {
       {errorMessage && <p className="auth-lede">{errorMessage}</p>}
       {session && session.cards.length > 0 && (
         <>
-          <p className="auth-lede">{newCardCount} new · {dueCardCount} due</p>
-          <button type="button" autoFocus onClick={() => setIsStudying(true)} className="auth-submit">
+          <p className={sessionLineClassName} aria-busy={isReloadingSession}>
+            {newCardCount} new · {dueCardCount} due
+          </p>
+          <button
+            type="button"
+            autoFocus
+            disabled={isReloadingSession}
+            onClick={() => setIsStudying(true)}
+            className="auth-submit"
+          >
             Start
             <span className="auth-submit-arrow" aria-hidden="true">
               →
@@ -91,7 +109,7 @@ function FlashcardsPage() {
         </>
       )}
       {session && session.cards.length === 0 && !session.hasAnyQuestions && isFiltered && (
-        <p className="auth-lede">
+        <p className={sessionLineClassName} aria-busy={isReloadingSession}>
           No questions tagged {selectedTagNamesText(tags, selectedTagIds) || 'with that tag'} yet.
         </p>
       )}
@@ -107,7 +125,7 @@ function FlashcardsPage() {
         </>
       )}
       {session && session.cards.length === 0 && session.hasAnyQuestions && (
-        <p className="auth-lede">All done for today. {session.nextDue && nextDueText(session.nextDue)}</p>
+        <p className={sessionLineClassName} aria-busy={isReloadingSession}>All done for today. {session.nextDue && nextDueText(session.nextDue)}</p>
       )}
     </div>
   )
