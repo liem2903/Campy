@@ -7,6 +7,7 @@ import { EditorContent, Extension, useEditor } from '@tiptap/react'
 import { Link, useNavigate } from 'react-router'
 import { blockIdAtSelectionStart, blocksToEditorDoc, blockTextsInReadingOrder, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
+import { commandKey } from '../keyboardLabels.ts'
 import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import type { NoteBodyForQuestions } from '../questions.ts'
@@ -151,7 +152,7 @@ function NoteEditor(
       <article className="paper">
         <p className="paper-crumbs">
           Notes / {content.title || 'Untitled'}
-          <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter" title="Blurt (Ctrl + Shift + Enter)">
+          <Link to={blurtPagePath} className="crumbs-blurt" aria-keyshortcuts="Control+Shift+Enter" title={`Blurt (${commandKey} + Shift + Enter)`}>
             Blurt
           </Link>
           <span

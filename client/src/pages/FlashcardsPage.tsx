@@ -4,6 +4,7 @@ import { getFlashcardSessionFromServer, listTagsFromServer } from '../api.ts'
 import FlashcardStudySession from '../components/FlashcardStudySession.tsx'
 import TagFilterChips from '../components/TagFilterChips.tsx'
 import { browserTimeZone, nextDueText, type FlashcardSession } from '../flashcards.ts'
+import { addQuestionKeys } from '../keyboardLabels.ts'
 import { selectedTagNamesText, type Tag } from '../tags.ts'
 import { useTagFilterInUrl } from '../useTagFilterInUrl.ts'
 
@@ -96,7 +97,7 @@ function FlashcardsPage() {
       )}
       {session && session.cards.length === 0 && !session.hasAnyQuestions && !isFiltered && (
         <>
-          <p className="auth-lede">No questions yet. Press Ctrl+Alt+M in a note to write one.</p>
+          <p className="auth-lede">No questions yet. Press {addQuestionKeys} in a note to write one.</p>
           <Link to="/notes" className="auth-submit">
             Go to your notes
             <span className="auth-submit-arrow" aria-hidden="true">

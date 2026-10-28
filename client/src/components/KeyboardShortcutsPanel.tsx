@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react'
+import { addQuestionKeys, commandKey } from '../keyboardLabels.ts'
 
-// On a Mac, ⌘ stands in for Ctrl and Option for Alt.
 const shortcuts = [
-  { keys: 'Ctrl + Alt + M', action: 'Add a question' },
-  { keys: 'Ctrl + Enter', action: 'Save the question being edited' },
+  { keys: addQuestionKeys, action: 'Add a question' },
+  { keys: `${commandKey} + Enter`, action: 'Save the question being edited' },
   { keys: 'Esc', action: 'Cancel the question being edited, or stop testing' },
   { keys: 'Space', action: 'Show the answer while testing' },
   { keys: 'Enter', action: 'Show the answer from the "Your answer" box' },
   { keys: '1 / 2', action: 'Mark the answer Wrong or Right while testing' },
-  { keys: 'Ctrl + Shift + Enter', action: 'Blurt this note' },
+  { keys: `${commandKey} + Shift + Enter`, action: 'Blurt this note' },
   { keys: 'Tab', action: 'Insert 4 spaces (outside a list)' },
   { keys: '- or 1. then Space', action: 'Start a dot or numbered list' },
   { keys: 'Tab / Shift + Tab', action: 'Indent or outdent a list item' },
@@ -55,7 +55,6 @@ function KeyboardShortcutsPanel() {
             </div>
           ))}
         </dl>
-        <p className="mt-5 mb-0 text-[12px] text-muted">On a Mac, use ⌘ for Ctrl and Option for Alt.</p>
       </div>
     </dialog>
   )

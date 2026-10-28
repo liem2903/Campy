@@ -4,6 +4,7 @@ import { getNoteFromServer } from '../api.ts'
 import BlurtReveal, { type RevealedNote } from '../components/BlurtReveal.tsx'
 import IconPillButton from '../components/IconPillButton.tsx'
 import NoteNotFound from '../components/NoteNotFound.tsx'
+import { commandKey } from '../keyboardLabels.ts'
 import { useNotes } from '../notes.ts'
 import { useAskBeforeClosingTab } from '../useAskBeforeClosingTab.ts'
 import { useElapsedSeconds } from '../useElapsedSeconds.ts'
@@ -105,7 +106,7 @@ function BlurtPage() {
             </IconPillButton>
             <span className="text-[12px] text-muted">
               <span className="keyboard-only">
-                or <kbd className={keyHint}>Ctrl</kbd> + <kbd className={keyHint}>Enter</kbd> ·{' '}
+                or <kbd className={keyHint}>{commandKey}</kbd> + <kbd className={keyHint}>Enter</kbd> ·{' '}
               </span>
               not saved, leaving deletes it
             </span>

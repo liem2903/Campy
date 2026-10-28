@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import { createQuestionOnServer, deleteQuestionOnServer, listQuestionsFromServer, updateQuestionOnServer } from '../api.ts'
+import { addQuestionKeys } from '../keyboardLabels.ts'
 import { useNotes } from '../notes.ts'
 import { aboutText, isAboutDeletedBlock, questionCountText, type NoteBodyForQuestions, type Question, type QuestionFields } from '../questions.ts'
 import { RETRY_MS, wait } from '../retry.ts'
@@ -51,7 +52,7 @@ function inCueOrder(questions: Question[], blockTexts: Map<string, string>): Que
 
 // The Cornell cue column left of a note's body. Each question sits level with the block it's
 // about (pushed down if the cue above reaches past it); General ones sit at the top. Answers stay
-// hidden until clicked. "+ Question" or Ctrl/⌘ + Alt/Option + M adds one about the block the
+// hidden until clicked. "+ Question" or Ctrl + Alt + M (Control + Option + M on a Mac) adds one about the block the
 // cursor was last in, pre-filled with the note's tags.
 // "Test yourself" swaps the list for one card at a time; NoteEditor covers the body meanwhile,
 // which is why it owns isTesting.
@@ -284,7 +285,7 @@ function QuestionColumn({ noteId, noteTags, noteBody, isTesting, onTestingChange
               onClick={openNewCard}
               aria-label="Add question"
               aria-keyshortcuts="Control+Alt+M"
-              title="Add question (Ctrl + Alt + M)"
+              title={`Add question (${addQuestionKeys})`}
             >
               +
             </button>
