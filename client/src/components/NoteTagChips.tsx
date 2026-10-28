@@ -1,12 +1,10 @@
-import { useState, type Dispatch, type FormEvent, type KeyboardEvent, type SetStateAction } from 'react'
-import { listTagsFromServer, tagNoteOnServer, untagNoteOnServer } from '../api.ts'
+import { useState, type Dispatch, type SetStateAction } from 'react'
+import { tagNoteOnServer, untagNoteOnServer } from '../api.ts'
 import { useNotes } from '../notes.ts'
-import { noteCountText, type Tag, type TagWithNoteCount } from '../tags.ts'
+import type { Tag } from '../tags.ts'
+import TagNameInput from './TagNameInput.tsx'
 
 const byName = (first: Tag, second: Tag) => first.name.localeCompare(second.name)
-
-// One row of the suggestion list: an existing tag, or creating the typed name.
-type Suggestion = { kind: 'existing'; tag: TagWithNoteCount } | { kind: 'create'; name: string }
 
 // The tag stamps under a note's title. Each add or remove saves straight away, on its own: tags
 // aren't part of the title and body autosave. NoteEditor holds the tags, so new questions can
@@ -19,27 +17,10 @@ function NoteTagChips({ noteId, noteTags, setNoteTags }: {
   const { waitForCreate } = useNotes()
   // null = the "+ Tag" button shows; a string = the input is open with this text in it.
   const [typedTagName, setTypedTagName] = useState<string | null>(null)
-  const [allTags, setAllTags] = useState<TagWithNoteCount[]>([])
-  const [highlightedIndex, setHighlightedIndex] = useState(0)
   const [errorMessage, setErrorMessage] = useState('')
-
-  // Your other tags whose name contains what's typed, then "Create" when the name is new.
-  // Matched the way the server stores names: trimmed and lowercased.
-  const cleanedTypedName = (typedTagName ?? '').trim().toLowerCase()
-  const suggestions: Suggestion[] = [
-    ...allTags
-      .filter((tag) => !noteTags.some((noteTag) => noteTag.id === tag.id) && tag.name.includes(cleanedTypedName))
-      .map((tag) => ({ kind: 'existing' as const, tag })),
-    ...(cleanedTypedName && !allTags.some((tag) => tag.name === cleanedTypedName)
-      ? [{ kind: 'create' as const, name: cleanedTypedName }]
-      : []),
-  ]
 
   function openInput() {
     setTypedTagName('')
-    setHighlightedIndex(0)
-    // Suggestions are a nicety: if they fail to load, typing a name still works.
-    listTagsFromServer().then(setAllTags, () => {})
   }
 
   function closeInput() {
@@ -67,7 +48,6 @@ function NoteTagChips({ noteId, noteTags, setNoteTags }: {
       setNoteTags((prev) => (prev.some((tag) => tag.id === addedTag.id) ? prev : [...prev, addedTag].sort(byName)))
       // Stays open, so several tags can be added in a row.
       setTypedTagName('')
-      setHighlightedIndex(0)
     })
   }
 
@@ -78,24 +58,8 @@ function NoteTagChips({ noteId, noteTags, setNoteTags }: {
     })
   }
 
-  // Enter adds the highlighted suggestion, or the typed name when nothing matches.
-  function addHighlightedOrTyped(event: FormEvent) {
-    event.preventDefault()
-    const highlighted = suggestions[highlightedIndex]
-    if (highlighted) void addTag(highlighted.kind === 'existing' ? highlighted.tag.name : highlighted.name)
-    else if (cleanedTypedName) void addTag(cleanedTypedName)
-  }
-
-  function moveHighlightOrClose(event: KeyboardEvent) {
-    if (event.key === 'Escape') closeInput()
-    if ((event.key !== 'ArrowDown' && event.key !== 'ArrowUp') || suggestions.length === 0) return
-    event.preventDefault()
-    const step = event.key === 'ArrowDown' ? 1 : -1
-    setHighlightedIndex((index) => (index + step + suggestions.length) % suggestions.length)
-  }
-
   return (
-    <div className="note-tags">
+    <div className="note-tags" onKeyDown={(e) => e.key === 'Escape' && closeInput()}>
       {noteTags.map((tag) => (
         <span key={tag.id} className="tag-stamp">
           {tag.name}
@@ -109,52 +73,16 @@ function NoteTagChips({ noteId, noteTags, setNoteTags }: {
           + Tag
         </button>
       ) : (
-        <form className="tag-stamp-form" onSubmit={addHighlightedOrTyped}>
-          <input
-            className="tag-stamp-input"
-            value={typedTagName}
-            onChange={(e) => {
-              setTypedTagName(e.target.value)
-              setHighlightedIndex(0)
-            }}
-            onKeyDown={moveHighlightOrClose}
-            onBlur={closeInput}
-            maxLength={50}
-            placeholder="Tag name"
-            aria-label="New tag"
-            aria-autocomplete="list"
-            autoFocus
-          />
-          {suggestions.length > 0 && (
-            <ul className="tag-suggestions" role="listbox">
-              {suggestions.map((suggestion, index) => (
-                <li
-                  key={suggestion.kind === 'existing' ? suggestion.tag.id : 'create'}
-                  role="option"
-                  aria-selected={index === highlightedIndex}
-                  // mousedown, not click: it runs before the input's blur closes the list.
-                  onMouseDown={(e) => {
-                    e.preventDefault()
-                    void addTag(suggestion.kind === 'existing' ? suggestion.tag.name : suggestion.name)
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                >
-                  {suggestion.kind === 'existing' ? (
-                    <>
-                      <span>{suggestion.tag.name}</span>
-                      <span className="tag-suggestion-hint">{noteCountText(suggestion.tag.noteCount)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Create “{suggestion.name}”</span>
-                      <span className="tag-suggestion-hint">Enter</span>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </form>
+        <TagNameInput
+          typedTagName={typedTagName}
+          onTypedTagNameChange={setTypedTagName}
+          takenTagNames={noteTags.map((tag) => tag.name)}
+          onPickTagName={(pickedTagName) => void addTag(pickedTagName)}
+          onBlur={closeInput}
+          placeholder="Tag name"
+          ariaLabel="New tag"
+          autoFocus
+        />
       )}
       {errorMessage && (
         <p className="tag-error" role="alert">

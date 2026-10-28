@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import { MAX_ANSWER_LENGTH, MAX_QUESTION_LENGTH, MAX_TAGS_PER_QUESTION, type QuestionFields } from '../questions.ts'
+import TagNameInput from './TagNameInput.tsx'
 
 const fieldClass =
   'box-border block w-full resize-y rounded-md border border-[var(--line)] bg-transparent px-2 py-1.5 text-[14px] leading-[1.5] text-text outline-none [font-family:inherit] focus:border-[var(--brand)]'
@@ -40,10 +41,8 @@ function QuestionCardEditor({ fields, aboutText, onAttachToCursorBlock, onFields
     onSave(fieldsWithTypedTag())
   }
 
-  function addTypedTagOnEnter(event: KeyboardEvent) {
-    if (event.key !== 'Enter' || event.ctrlKey || event.metaKey) return
-    event.preventDefault()
-    onFieldsChange(fieldsWithTypedTag())
+  function addPickedTag(pickedTagName: string) {
+    if (!fields.tags.includes(pickedTagName)) onFieldsChange({ ...fields, tags: [...fields.tags, pickedTagName] })
     setTypedTagName('')
   }
 
@@ -116,14 +115,13 @@ function QuestionCardEditor({ fields, aboutText, onAttachToCursorBlock, onFields
           </span>
         ))}
         {fields.tags.length < MAX_TAGS_PER_QUESTION && (
-          <input
-            className="tag-stamp-input"
-            value={typedTagName}
-            onChange={(e) => setTypedTagName(e.target.value)}
-            onKeyDown={addTypedTagOnEnter}
-            maxLength={50}
+          <TagNameInput
+            typedTagName={typedTagName}
+            onTypedTagNameChange={setTypedTagName}
+            takenTagNames={fields.tags}
+            onPickTagName={addPickedTag}
             placeholder="+ Tag"
-            aria-label="Add a tag to this question"
+            ariaLabel="Add a tag to this question"
           />
         )}
       </div>
