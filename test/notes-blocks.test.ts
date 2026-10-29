@@ -361,7 +361,7 @@ describe("PUT /api/notes/:id with bold and italic", () => {
   it.each<[string, unknown]>([
     ["marks is not an array", { type: "bold", from: 0, to: 4 }],
     ["a mark is not an object", ["bold"]],
-    ["a mark type is unknown", [{ type: "underline", from: 0, to: 4 }]],
+    ["a mark type is unknown", [{ type: "highlight", from: 0, to: 4 }]],
     ["from is missing", [{ type: "bold", to: 4 }]],
     ["from is not an integer", [{ type: "bold", from: 0.5, to: 4 }]],
     ["from is negative", [{ type: "bold", from: -1, to: 4 }]],
@@ -392,5 +392,89 @@ describe("PUT /api/notes/:id with bold and italic", () => {
     const res = await saveNoteBlocks(app, noteId, [badItem], user.cookie);
     expect(res.status).toBe(400);
     expect(res.body).toEqual(invalidBlocks);
+  });
+});
+
+describe("PUT /api/notes/:id with underline and strikethrough", () => {
+  it("saves underline and strike marks on a paragraph and a list item, and GET returns them", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const formattedParagraph = paragraphBlock("milk and eggs");
+    formattedParagraph.properties.marks = [
+      { type: "underline", from: 0, to: 4 },
+      { type: "strike", from: 9, to: 13 },
+    ];
+    const formattedItem = listItemBlock("bread", "bullet");
+    // All four marks on one run: they can be combined.
+    formattedItem.properties.marks = [
+      { type: "bold", from: 0, to: 5 },
+      { type: "italic", from: 0, to: 5 },
+      { type: "underline", from: 0, to: 5 },
+      { type: "strike", from: 0, to: 5 },
+    ];
+
+    await saveNoteBlocks(app, noteId, [formattedParagraph, formattedItem], user.cookie).expect(200);
+    expect(await blocksFromGet(app, noteId, user.cookie)).toEqual([formattedParagraph, formattedItem]);
+  });
+});
+
+function headingBlock(text: string, level: unknown): BlockInTree {
+  return { id: randomUUID(), type: "heading", properties: { text, level } };
+}
+
+describe("PUT /api/notes/:id with headings", () => {
+  it("saves headings at each level between paragraphs, and GET returns them in order with the same ids", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const formattedHeading = headingBlock("Cells", 1);
+    formattedHeading.properties.marks = [{ type: "italic", from: 0, to: 5 }];
+    const sentBlocks = [
+      formattedHeading,
+      paragraphBlock("the basic unit of life"),
+      headingBlock("Mitochondria", 2),
+      headingBlock("ATP", 3),
+    ];
+
+    await saveNoteBlocks(app, noteId, sentBlocks, user.cookie).expect(200);
+    expect(await blocksFromGet(app, noteId, user.cookie)).toEqual(sentBlocks);
+  });
+
+  // Typing "# " in the editor keeps the paragraph's id, so a question pointing at it stays linked.
+  it("turns a paragraph into a heading in place, keeping its id", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const paragraphThenHeadingId = randomUUID();
+    await saveNoteBlocks(app, noteId, [paragraphBlock("Cells", paragraphThenHeadingId)], user.cookie).expect(200);
+
+    const sameBlockAsHeading = { ...headingBlock("Cells", 1), id: paragraphThenHeadingId };
+    await saveNoteBlocks(app, noteId, [sameBlockAsHeading], user.cookie).expect(200);
+    expect(await blocksFromGet(app, noteId, user.cookie)).toEqual([sameBlockAsHeading]);
+    expect(await storedBlockIdsSorted(noteId)).toEqual([paragraphThenHeadingId]);
+  });
+
+  it.each<[string, unknown]>([
+    ["level is 0", headingBlock("Cells", 0)],
+    ["level is 4", headingBlock("Cells", 4)],
+    ["level is missing", { id: randomUUID(), type: "heading", properties: { text: "Cells" } }],
+    ["level is a string", headingBlock("Cells", "1")],
+    ["a heading has children", { ...headingBlock("Cells", 1), children: [listItemBlock("milk", "bullet")] }],
+    ["a heading is a list item's child", { ...listItemBlock("milk", "bullet"), children: [headingBlock("Cells", 1)] }],
+    // "ATP" has length 3, so to: 9 runs past the end.
+    ["a heading's mark runs past its text", { ...headingBlock("", 3), properties: { text: "ATP", level: 3, marks: [{ type: "bold", from: 0, to: 9 }] } }],
+    ["a heading's mark type is unknown", { ...headingBlock("", 3), properties: { text: "ATP", level: 3, marks: [{ type: "highlight", from: 0, to: 3 }] } }],
+  ])("returns 400 when %s, and writes nothing", async (_, badBlock) => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    await saveNoteBlocks(app, noteId, [paragraphBlock("kept")], user.cookie).expect(200);
+    const rowsBefore = await storedNoteRows(noteId);
+
+    const res = await saveNoteBlocks(app, noteId, [badBlock], user.cookie);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(invalidBlocks);
+    expect(await storedNoteRows(noteId)).toEqual(rowsBefore);
   });
 });

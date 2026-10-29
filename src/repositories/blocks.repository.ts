@@ -3,14 +3,18 @@ import type { BlockProperties } from "../db/types.js";
 
 // What one block holds, whether it's in a tree or a row.
 type TextBlockContent = { id: string; type: "text"; properties: BlockProperties["text"] };
+type HeadingBlockContent = { id: string; type: "heading"; properties: BlockProperties["heading"] };
 type ListItemBlockContent = { id: string; type: "list_item"; properties: BlockProperties["list_item"] };
 
 // One block as the API and service see it. Order and nesting come from the tree, so there's no
 // parent_id or position. Only list items nest; the controller lets only list items in as children.
-export type NoteBlock = TextBlockContent | (ListItemBlockContent & { children: NoteBlock[] });
+export type NoteBlock =
+  | TextBlockContent
+  | HeadingBlockContent
+  | (ListItemBlockContent & { children: NoteBlock[] });
 
 // A block's content plus where it sits. The service generates parent_id and position from the tree.
-export type NoteBlockRow = (TextBlockContent | ListItemBlockContent) & {
+export type NoteBlockRow = (TextBlockContent | HeadingBlockContent | ListItemBlockContent) & {
   parent_id: string | null; position: string;
 };
 

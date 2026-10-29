@@ -2,16 +2,18 @@ import { useEditorState, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { commandKey } from '../keyboardLabels.ts'
 
-// B and I buttons that float above selected text, for when there's no keyboard (phones).
+// B, I, U and S buttons that float above selected text, for when there's no keyboard (phones).
 // BubbleMenu shows it only while the selection is non-empty.
 function FormatBubbleMenu({ editor }: { editor: Editor }) {
   // The editor doesn't re-render React on every change, so read the active marks through
-  // useEditorState: it re-renders only when one of these two values flips.
+  // useEditorState: it re-renders only when one of these values flips.
   const activeMarks = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => ({
       isBold: currentEditor.isActive('bold'),
       isItalic: currentEditor.isActive('italic'),
+      isUnderline: currentEditor.isActive('underline'),
+      isStrike: currentEditor.isActive('strike'),
     }),
   })
 
@@ -37,6 +39,26 @@ function FormatBubbleMenu({ editor }: { editor: Editor }) {
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         I
+      </button>
+      <button
+        type="button"
+        className="format-menu-button underline"
+        aria-pressed={activeMarks.isUnderline}
+        title={`Underline (${commandKey} + U)`}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+      >
+        U
+      </button>
+      <button
+        type="button"
+        className="format-menu-button line-through"
+        aria-pressed={activeMarks.isStrike}
+        title={`Strikethrough (${commandKey} + Shift + S)`}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+      >
+        S
       </button>
     </BubbleMenu>
   )

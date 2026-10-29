@@ -62,7 +62,7 @@ function isNoteContent(value: unknown): value is NoteContent {
   )
 }
 
-// A paragraph, or a list item whose children are all valid blocks too.
+// A paragraph, a heading, or a list item whose children are all valid blocks too.
 function isNoteBlock(value: unknown): value is NoteBlock {
   if (
     typeof value !== 'object' ||
@@ -77,6 +77,10 @@ function isNoteBlock(value: unknown): value is NoteBlock {
     typeof value.properties.text !== 'string'
   ) return false
   if (value.type === 'text') return true
+  if (value.type === 'heading') {
+    return 'level' in value.properties &&
+      (value.properties.level === 1 || value.properties.level === 2 || value.properties.level === 3)
+  }
   return (
     value.type === 'list_item' &&
     'style' in value.properties &&

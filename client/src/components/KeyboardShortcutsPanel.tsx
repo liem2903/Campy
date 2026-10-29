@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { addQuestionKeys, commandKey } from '../keyboardLabels.ts'
+import { addQuestionKeys, commandKey, isMac } from '../keyboardLabels.ts'
 
 const shortcuts = [
   { keys: addQuestionKeys, action: 'Add a question' },
@@ -10,7 +10,10 @@ const shortcuts = [
   { keys: '1 / 2', action: 'Mark the answer Wrong or Right while testing' },
   { keys: `${commandKey} + Shift + Enter`, action: 'Blurt this note' },
   { keys: `${commandKey} + B / ${commandKey} + I`, action: 'Bold or italic (or select text and tap B / I)' },
-  { keys: '**text** / *text*', action: 'Type bold or italic' },
+  { keys: `${commandKey} + U / ${commandKey} + Shift + S`, action: 'Underline or strikethrough (or tap U / S)' },
+  { keys: '**text** / *text* / ~~text~~', action: 'Type bold, italic or strikethrough' },
+  { keys: '# / ## / ### then Space', action: 'Start a big, medium or small heading' },
+  { keys: `${commandKey} + ${isMac ? 'Option' : 'Alt'} + 1 / 2 / 3`, action: 'Turn the line into a heading, or back' },
   { keys: 'Tab', action: 'Insert 4 spaces (outside a list)' },
   { keys: '- or 1. then Space', action: 'Start a dot or numbered list' },
   { keys: 'Tab / Shift + Tab', action: 'Indent or outdent a list item' },

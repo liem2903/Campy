@@ -118,6 +118,7 @@ function blockTreeFromRows(rows: NoteBlockRow[]): NoteBlock[] {
   // Drops the storage-only fields and attaches each list item's children.
   const toNoteBlock = (row: NoteBlockRow): NoteBlock => {
     if (row.type === "text") return { id: row.id, type: row.type, properties: row.properties };
+    if (row.type === "heading") return { id: row.id, type: row.type, properties: row.properties };
     const childRows = rowsByParentId.get(row.id) ?? [];
     return { id: row.id, type: row.type, properties: row.properties, children: childRows.map(toNoteBlock) };
   };

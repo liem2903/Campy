@@ -62,7 +62,7 @@ const BackspaceJoinsParagraphIntoListAbove = Extension.create({
   },
 })
 
-// What a note body can hold, plus what typing needs. UniqueID gives each paragraph and item the
+// What a note body can hold, plus what typing needs. UniqueID gives each paragraph, heading and item the
 // id its block is saved under.
 const bodyExtensions = [
   ...noteBodyContentExtensions,
@@ -70,7 +70,7 @@ const bodyExtensions = [
   ListKeymap,
   TabInsertsSpaces,
   UndoRedo,
-  UniqueID.configure({ types: ['paragraph', 'listItem'] }),
+  UniqueID.configure({ types: ['paragraph', 'heading', 'listItem'] }),
   Placeholder.configure({ placeholder: 'Start writing...' }),
 ]
 

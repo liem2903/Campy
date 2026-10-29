@@ -32,13 +32,16 @@ export type Note = {
 // How a list item's marker is drawn: dots or numbers.
 export type ListItemStyle = "bullet" | "numbered";
 
-// A bold or italic run inside a block's text. from/to are string indexes into text, to exclusive.
-export type TextMark = { type: "bold" | "italic"; from: number; to: number };
+// A formatted run inside a block's text. from/to are string indexes into text, to exclusive.
+export type TextMark = { type: "bold" | "italic" | "underline" | "strike"; from: number; to: number };
+
+// How big a heading is drawn: 1 is the largest.
+export type HeadingLevel = 1 | 2 | 3;
 
 // The shape of blocks.properties for each block type. marks is left out when the text has no formatting.
 export type BlockProperties = {
   text: { text: string; marks?: TextMark[] };
-  heading: { text: string };
+  heading: { text: string; level: HeadingLevel; marks?: TextMark[] };
   list_item: { text: string; style: ListItemStyle; marks?: TextMark[] };
 };
 

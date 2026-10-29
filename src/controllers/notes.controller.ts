@@ -10,9 +10,9 @@ const INVALID_BLOCKS = "Invalid blocks";
 // Top level is depth 1.
 const MAX_LIST_DEPTH = 9;
 
-// A bold or italic run. Whether it fits inside its block's text is checked by marksFitText.
+// A formatted run. Whether it fits inside its block's text is checked by marksFitText.
 const textMarkSchema = z.object({
-  type: z.enum(["bold", "italic"]),
+  type: z.enum(["bold", "italic", "underline", "strike"]),
   from: z.number().int().nonnegative(),
   to: z.number().int(),
 });
@@ -25,6 +25,20 @@ const textBlockSchema = z.object({
     .object({ text: z.string().transform(withoutNul), marks: z.array(textMarkSchema).optional() })
     .refine(marksFitText),
   // Listed so it's rejected, not silently dropped: a text block can't have children.
+  children: z.never().optional(),
+});
+
+// Top level only: a list item's children must be list items, and a heading can't have children.
+const headingBlockSchema = z.object({
+  id: z.string().regex(uuidPattern),
+  type: z.literal("heading"),
+  properties: z
+    .object({
+      text: z.string().transform(withoutNul),
+      level: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+      marks: z.array(textMarkSchema).optional(),
+    })
+    .refine(marksFitText),
   children: z.never().optional(),
 });
 
@@ -51,7 +65,7 @@ function listItemSchemaAtDepth(depth: number): z.ZodType<NoteBlock, unknown> {
 // row twice, which Postgres rejects with a 500. The type is a compile error if the schema and
 // NoteBlock drift apart.
 const noteBlocksSchema: z.ZodType<NoteBlock[], unknown> = z
-  .array(z.union([textBlockSchema, listItemSchemaAtDepth(1)]))
+  .array(z.union([textBlockSchema, headingBlockSchema, listItemSchemaAtDepth(1)]))
   .refine((blocks) => {
     const allIds = idsInTree(blocks);
     return new Set(allIds).size === allIds.length;
