@@ -70,7 +70,30 @@ back at their sizes, stored as `heading` blocks with levels 1 and 2.
 
 ---
 
-## Ticket 3: Rich blurts 🟡
+## Ticket 3: Gentler flashcard start 🟡 (added 2026-10-29)
+
+**Slice:** grade a new card Good → tomorrow it shows **now / 1d / 3d / 4d** (was 1d / 1d / 6d / 8d)
+→ Good → due in 3 days.
+
+🟡 because it changes how existing grading behaves (`flashcardSchedule.ts`) and one label in
+`FlashcardStudySession.tsx`. No API or schema change.
+
+| # | Decision |
+|---|---|
+| 3.1 | Good on a card at 1 day → **3 days** (SM-2's 6 was too big a jump). Easy follows: 3 × 1.3 ≈ 4. Every other rule stays (FEAT-005 T4.10). Cards already past that step keep their interval. |
+| 3.2 | The Again button's label is **"now"**, not "1d": the card comes back at the end of the session. It's still also due tomorrow. |
+
+### Acceptance tests
+- [x] A card at 1 day gives 1 / 1 / 3 / 4 days
+- [x] A new card graded Again then Good is due in 3 days
+- [x] The grade endpoint returns `good: 3, easy: 4` after a first Good
+
+### Manual checklist
+- [ ] Again shows "now"; the other buttons show days
+
+---
+
+## Ticket 4: Rich blurts 🟡
 
 **Slice:** open a blurt → type `* mitochondria`, Enter, `**ATP**` → "I'm done" → the left
 column shows your dot points with bold, next to the note.

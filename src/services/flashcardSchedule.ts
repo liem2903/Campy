@@ -12,6 +12,8 @@ export type NextSchedule = { ease: number; intervalDays: number };
 const MIN_EASE = 1.3;
 const HARD_FACTOR = 1.2;
 const EASY_BONUS = 1.3;
+// Good on a card at 1 day. SM-2 uses 6; 3 is about 1 day × the 2.5 starting ease, a gentler step.
+const SECOND_GOOD_DAYS = 3;
 const MAX_INTERVAL_DAYS = 36500; // 100 years, Anki's default; keeps due_on far inside Postgres's date range
 const EASE_CHANGE: Record<FlashcardGrade, number> = { again: -0.2, hard: -0.15, good: 0, easy: 0.15 };
 
@@ -26,7 +28,7 @@ export function scheduleAfterGrade(card: CardSchedule, grade: FlashcardGrade): N
 function intervalDaysAfterGrade(card: CardSchedule, grade: FlashcardGrade): number {
   if (grade === "again") return 1;
   if (card.isNew) return grade === "easy" ? 4 : 1;
-  const goodDays = card.intervalDays <= 1 ? 6 : Math.round(card.intervalDays * card.ease);
+  const goodDays = card.intervalDays <= 1 ? SECOND_GOOD_DAYS : Math.round(card.intervalDays * card.ease);
   switch (grade) {
     case "hard": return Math.max(1, Math.round(card.intervalDays * HARD_FACTOR));
     case "good": return goodDays;

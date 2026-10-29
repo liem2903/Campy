@@ -257,7 +257,7 @@ describe("POST /api/flashcards/:questionId/grade", () => {
 
     expect(await gradedCard(app, questionId, "good", user.cookie)).toEqual({
       questionId, question: "What is a stack?", answer: "Answer to What is a stack?",
-      isNew: false, nextIntervalDays: { again: 1, hard: 1, good: 6, easy: 8 },
+      isNew: false, nextIntervalDays: { again: 1, hard: 1, good: 3, easy: 4 },
     });
     expect(await storedSchedule(questionId)).toMatchObject({ ease: 2.5, intervalDays: 1 });
   });
@@ -297,7 +297,7 @@ describe("POST /api/flashcards/:questionId/grade", () => {
 
     await gradedCard(app, questionId, "again", user.cookie);
     await gradedCard(app, questionId, "good", user.cookie);
-    expect(await storedSchedule(questionId)).toMatchObject({ intervalDays: 6 });
+    expect(await storedSchedule(questionId)).toMatchObject({ intervalDays: 3 });
     await gradeCard(app, questionId, { grade: "good", timeZone }, user.cookie).expect(409, notUpToday);
   });
 

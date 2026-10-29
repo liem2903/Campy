@@ -14,8 +14,8 @@ describe("flashcard schedule (SM-2)", () => {
     expect(nextIntervalDaysForEveryGrade(newCard)).toEqual({ again: 1, hard: 1, good: 1, easy: 4 });
   });
 
-  it("goes from 1 day to 6 on Good, and Easy beats Good", () => {
-    expect(nextIntervalDaysForEveryGrade(oneDayCard)).toMatchObject({ good: 6, easy: 8 });
+  it("goes from 1 day to 3 on Good, and Easy beats Good", () => {
+    expect(nextIntervalDaysForEveryGrade(oneDayCard)).toEqual({ again: 1, hard: 1, good: 3, easy: 4 });
   });
 
   it("multiplies a 6-day interval: Hard ×1.2, Good ×ease, Easy ×ease ×1.3", () => {
@@ -35,10 +35,10 @@ describe("flashcard schedule (SM-2)", () => {
     expect(scheduleAfterGrade({ ...sixDayCard, ease: 1.35 }, "again").ease).toBe(1.3);
   });
 
-  it("counts every grade: a new card graded Again then Good is due in 6 days", () => {
+  it("counts every grade: a new card graded Again then Good is due in 3 days", () => {
     const afterAgain = scheduleAfterGrade(newCard, "again");
     const afterGood = scheduleAfterGrade({ ...afterAgain, isNew: false, wasGradedToday: true }, "good");
-    expect(afterGood.intervalDays).toBe(6);
+    expect(afterGood.intervalDays).toBe(3);
   });
 
   it("never schedules a card more than 100 years out", () => {

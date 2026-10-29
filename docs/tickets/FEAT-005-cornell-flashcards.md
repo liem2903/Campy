@@ -129,8 +129,8 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 | # | Area | Decision |
 |---|---|---|
 | T4.1 | Storage | Schedule columns on `questions`: `ease` (default 2.5), `interval_days` (default 0), `due_on date` (null = new card), `last_graded_on date`. `users.new_cards_per_day` (default 20). |
-| T4.2 | Grades | **Again / Hard / Good / Easy** (keys 1–4), each showing its next interval. SM-2: interval 1 → 6 → `interval × ease`; Again → interval 1, ease −0.2 (min 1.3); Easy → ease +0.15. |
-| T4.3 | Again in session | The card goes to the end of the queue until passed. **Every grade counts** (Again then Good → 1 → 6 days), but Again lowers the ease only once per day (`last_graded_on` = today → no second −0.2). Changed 2026-10-27. |
+| T4.2 | Grades | **Again / Hard / Good / Easy** (keys 1–4), each showing its next interval (Again shows "now", FEAT-008 T3). SM-2: interval 1 → 3 → `interval × ease` (3, not 6, since FEAT-008 T3); Again → interval 1, ease −0.2 (min 1.3); Easy → ease +0.15. |
+| T4.3 | Again in session | The card goes to the end of the queue until passed. **Every grade counts** (Again then Good → 1 → 3 days), but Again lowers the ease only once per day (`last_graded_on` = today → no second −0.2). Changed 2026-10-27. |
 | T4.4 | Days | Calendar days in the user's time zone (browser sends it, e.g. `Australia/Sydney`); the day starts at **4 am**. |
 | T4.5 | New-card cap | Per day, set on a settings page (default 20). |
 | T4.6 | Edits | Editing a question keeps its schedule. |
@@ -142,8 +142,8 @@ tomorrow the cards graded Good are not due, the ones graded Again are.
 | # | Area | Decision |
 |---|---|---|
 | T4.9 | Slices | **T4a** schedule + `/flashcards` session page, new-card cap fixed at 20 → **T4b** tag filter + "Study" link on the Tags page → **T4c** settings page for `new_cards_per_day`. Branch `feature/flashcards` from `main`. |
-| T4.10 | Review cards | Anki-style. Again → interval 1, ease −0.2. Hard → interval × 1.2, ease −0.15. Good → interval 1 → 6 → interval × ease. Easy → Good's interval × 1.3 (Easy bonus, so Easy always beats Good: interval 1 → 8, not 3), ease +0.15. Ease never below 1.3. Intervals rounded to whole days. |
-| T4.11 | New cards (`due_on` null) | Again → back at the end of this session and due tomorrow. Hard → 1 day. Good → 1 day. Easy → 4 days. Ease changes as in T4.10. The step comes from the card's own numbers (null `due_on` → new, interval 1 → next Good is 6), no review-count column. |
+| T4.10 | Review cards | Anki-style. Again → interval 1, ease −0.2. Hard → interval × 1.2, ease −0.15. Good → interval 1 → 3 → interval × ease (3, not SM-2's 6, since FEAT-008 Ticket 3). Easy → Good's interval × 1.3 (Easy bonus, so Easy always beats Good: interval 1 → 4), ease +0.15. Ease never below 1.3. Intervals rounded to whole days. |
+| T4.11 | New cards (`due_on` null) | Again → back at the end of this session and due tomorrow. Hard → 1 day. Good → 1 day. Easy → 4 days. Ease changes as in T4.10. The step comes from the card's own numbers (null `due_on` → new, interval 1 → next Good is 3), no review-count column. |
 | T4.12 | Cap counting | New column `questions.first_graded_on date`, set on a card's first grade. New cards left today = cap − cards with `first_graded_on` = today. The cap limits new cards only; due cards are never capped. No "study ahead": a card isn't shown before its `due_on`. |
 | T4.13 | Button labels | The server sends `nextIntervalDays: { again, hard, good, easy }` with each card, from the same SM-2 function that grades, so the browser has no copy of the maths. |
 | T4.14 | Order | New cards first (oldest question first), then due cards (oldest `due_on` first). Again → end of the queue. |

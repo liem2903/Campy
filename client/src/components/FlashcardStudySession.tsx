@@ -96,7 +96,11 @@ function FlashcardStudySession({ cards, onBack }: { cards: Flashcard[]; onBack: 
                   aria-keyshortcuts={String(gradeIndex + 1)}
                 >
                   {gradeLabels[grade]}
-                  <span className="text-[11px] text-muted">{shownCard.nextIntervalDays[grade]}d</span>
+                  {/* Again also makes the card due tomorrow, but what you see is it coming back
+                      at the end of this session, so its label says "now". */}
+                  <span className="text-[11px] text-muted">
+                    {grade === 'again' ? 'now' : `${shownCard.nextIntervalDays[grade]}d`}
+                  </span>
                 </button>
               ))}
             </div>
