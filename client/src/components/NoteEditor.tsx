@@ -8,11 +8,12 @@ import { Link, useNavigate } from 'react-router'
 import { blockIdAtSelectionStart, blocksToEditorDoc, blockTextsInReadingOrder, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { commandKey } from '../keyboardLabels.ts'
-import { noteBodyNodeExtensions } from '../noteBodyNodeExtensions.ts'
+import { noteBodyContentExtensions } from '../noteBodyContentExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import type { NoteBodyForQuestions } from '../questions.ts'
 import type { Tag } from '../tags.ts'
 import { useAutosave, type SaveStatus } from '../useAutosave.ts'
+import FormatBubbleMenu from './FormatBubbleMenu.tsx'
 import KeyboardShortcutsPanel from './KeyboardShortcutsPanel.tsx'
 import NoteTagChips from './NoteTagChips.tsx'
 import QuestionColumn from './QuestionColumn.tsx'
@@ -64,7 +65,7 @@ const BackspaceJoinsParagraphIntoListAbove = Extension.create({
 // What a note body can hold, plus what typing needs. UniqueID gives each paragraph and item the
 // id its block is saved under.
 const bodyExtensions = [
-  ...noteBodyNodeExtensions,
+  ...noteBodyContentExtensions,
   BackspaceJoinsParagraphIntoListAbove,
   ListKeymap,
   TabInsertsSpaces,
@@ -184,6 +185,7 @@ function NoteEditor(
             onTestingChange={setIsTestingQuestions}
           />
           <EditorContent ref={bodyElementRef} editor={bodyEditor} className="note-body" inert={isTestingQuestions} />
+          <FormatBubbleMenu editor={bodyEditor} />
         </div>
       </article>
       <KeyboardShortcutsPanel />

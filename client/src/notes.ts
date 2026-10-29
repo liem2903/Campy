@@ -5,11 +5,14 @@ import type { Tag } from './tags.ts'
 export type NoteSummary = { id: string; title: string; updatedAt: string; tagIds: string[] }
 // How a list item's marker is drawn: dots or numbers.
 export type ListItemStyle = 'bullet' | 'numbered'
+// A bold or italic run inside a block's text. from/to are string indexes into text, to exclusive.
+export type TextMark = { type: 'bold' | 'italic'; from: number; to: number }
 // One block of a note's body, as GET and PUT /api/notes/:id carry it: a paragraph, or a list
-// item with its nested items. Consecutive list items form one list.
+// item with its nested items. Consecutive list items form one list. marks is left out when the
+// text has no formatting.
 export type NoteBlock =
-  | { id: string; type: 'text'; properties: { text: string } }
-  | { id: string; type: 'list_item'; properties: { text: string; style: ListItemStyle }; children: NoteBlock[] }
+  | { id: string; type: 'text'; properties: { text: string; marks?: TextMark[] } }
+  | { id: string; type: 'list_item'; properties: { text: string; style: ListItemStyle; marks?: TextMark[] }; children: NoteBlock[] }
 // One note from GET /api/notes/:id. Tags are in name order and saved on their own, not by autosave.
 export type NoteDetail = Omit<NoteSummary, 'tagIds'> & { blocks: NoteBlock[]; tags: Tag[] }
 // The part of a note the user edits. Autosave sends both fields on every save.

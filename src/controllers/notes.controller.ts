@@ -3,17 +3,27 @@ import { z } from "zod";
 import { BlockOfAnotherNoteError, NoteIdTakenError, NoteNotFoundError } from "../errors.js";
 import * as notesService from "../services/notes.service.js";
 import type { Note, NoteBlock, NoteDetail, NoteWithTagIds } from "../services/notes.service.js";
+import type { TextMark } from "../db/types.js";
 import { uuidPattern } from "./validation.js";
 const MAX_TITLE_LENGTH = 200;
 const INVALID_BLOCKS = "Invalid blocks";
 // Top level is depth 1.
 const MAX_LIST_DEPTH = 9;
 
+// A bold or italic run. Whether it fits inside its block's text is checked by marksFitText.
+const textMarkSchema = z.object({
+  type: z.enum(["bold", "italic"]),
+  from: z.number().int().nonnegative(),
+  to: z.number().int(),
+});
+
 // z.object drops keys it doesn't list (e.g. properties.color), so only known fields reach the service.
 const textBlockSchema = z.object({
   id: z.string().regex(uuidPattern),
   type: z.literal("text"),
-  properties: z.object({ text: z.string().transform(withoutNul) }),
+  properties: z
+    .object({ text: z.string().transform(withoutNul), marks: z.array(textMarkSchema).optional() })
+    .refine(marksFitText),
   // Listed so it's rejected, not silently dropped: a text block can't have children.
   children: z.never().optional(),
 });
@@ -24,10 +34,13 @@ function listItemSchemaAtDepth(depth: number): z.ZodType<NoteBlock, unknown> {
   return z.object({
     id: z.string().regex(uuidPattern),
     type: z.literal("list_item"),
-    properties: z.object({
-      text: z.string().transform(withoutNul),
-      style: z.enum(["bullet", "numbered"]),
-    }),
+    properties: z
+      .object({
+        text: z.string().transform(withoutNul),
+        style: z.enum(["bullet", "numbered"]),
+        marks: z.array(textMarkSchema).optional(),
+      })
+      .refine(marksFitText),
     children: depth < MAX_LIST_DEPTH
       ? z.array(listItemSchemaAtDepth(depth + 1)).default([])
       : z.tuple([]).default([]),
@@ -151,6 +164,12 @@ export async function remove(req: Request, res: Response, next: NextFunction): P
 // A function declaration so it's hoisted: noteBlocksSchema, near the top, uses it.
 function withoutNul(text: string): string {
   return text.replaceAll("\u0000", "");
+}
+
+// Each mark covers at least one character and ends inside the text (checked after NUL removal).
+// A function declaration so the block schemas, near the top, can use it.
+function marksFitText(properties: { text: string; marks?: TextMark[] }): boolean {
+  return (properties.marks ?? []).every((mark) => mark.from < mark.to && mark.to <= properties.text.length);
 }
 
 // Every block's id, at every depth. A function declaration so noteBlocksSchema can use it.

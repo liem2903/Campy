@@ -1787,3 +1787,32 @@
     display: none;
   }
 }
+
+/* Floating B / I buttons over selected note text (FormatBubbleMenu). */
+.format-menu {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--text) 6%, transparent),
+    0 12px 24px -12px color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+.format-menu-button {
+  /* 36px: big enough to tap on a phone */
+  min-width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.format-menu-button:hover { background: var(--hover); }
+.format-menu-button[aria-pressed='true'] { background: var(--active); color: var(--accent); }
+.format-menu-button:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }

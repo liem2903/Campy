@@ -9,6 +9,8 @@ const shortcuts = [
   { keys: 'Enter', action: 'Show the answer from the "Your answer" box' },
   { keys: '1 / 2', action: 'Mark the answer Wrong or Right while testing' },
   { keys: `${commandKey} + Shift + Enter`, action: 'Blurt this note' },
+  { keys: `${commandKey} + B / ${commandKey} + I`, action: 'Bold or italic (or select text and tap B / I)' },
+  { keys: '**text** / *text*', action: 'Type bold or italic' },
   { keys: 'Tab', action: 'Insert 4 spaces (outside a list)' },
   { keys: '- or 1. then Space', action: 'Start a dot or numbered list' },
   { keys: 'Tab / Shift + Tab', action: 'Indent or outdent a list item' },

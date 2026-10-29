@@ -32,11 +32,14 @@ export type Note = {
 // How a list item's marker is drawn: dots or numbers.
 export type ListItemStyle = "bullet" | "numbered";
 
-// The shape of blocks.properties for each block type.
+// A bold or italic run inside a block's text. from/to are string indexes into text, to exclusive.
+export type TextMark = { type: "bold" | "italic"; from: number; to: number };
+
+// The shape of blocks.properties for each block type. marks is left out when the text has no formatting.
 export type BlockProperties = {
-  text: { text: string };
+  text: { text: string; marks?: TextMark[] };
   heading: { text: string };
-  list_item: { text: string; style: ListItemStyle };
+  list_item: { text: string; style: ListItemStyle; marks?: TextMark[] };
 };
 
 type BlockOf<T extends BlockType> = {

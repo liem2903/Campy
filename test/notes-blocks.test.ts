@@ -315,3 +315,82 @@ describe("PUT /api/notes/:id with lists", () => {
     expect(await storedNoteRows(noteId)).toEqual(ownRowsBefore);
   });
 });
+
+describe("PUT /api/notes/:id with bold and italic", () => {
+  it("saves marks on a paragraph and a list item, and GET returns them", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const formattedParagraph = paragraphBlock("milk and eggs");
+    formattedParagraph.properties.marks = [
+      // Overlapping marks are allowed: "milk and" is bold, "and eggs" italic, so "and" is both.
+      { type: "bold", from: 0, to: 8 },
+      { type: "italic", from: 5, to: 13 },
+    ];
+    const formattedItem = listItemBlock("bread", "bullet");
+    formattedItem.properties.marks = [{ type: "bold", from: 0, to: 5 }];
+
+    await saveNoteBlocks(app, noteId, [formattedParagraph, formattedItem], user.cookie).expect(200);
+    expect(await blocksFromGet(app, noteId, user.cookie)).toEqual([formattedParagraph, formattedItem]);
+  });
+
+  // toEqual treats a key set to undefined as missing, so check the key itself.
+  it("returns a block saved without marks with no marks key", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+
+    await saveNoteBlocks(app, noteId, [paragraphBlock("milk")], user.cookie).expect(200);
+    const [returnedParagraph] = await blocksFromGet(app, noteId, user.cookie);
+    expect(returnedParagraph.properties).not.toHaveProperty("marks");
+  });
+
+  it("drops keys it doesn't know inside a mark", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const sentParagraph = paragraphBlock("milk");
+    sentParagraph.properties.marks = [{ type: "bold", from: 0, to: 4, color: "red" }];
+
+    await saveNoteBlocks(app, noteId, [sentParagraph], user.cookie).expect(200);
+    const [returnedParagraph] = await blocksFromGet(app, noteId, user.cookie);
+    expect(returnedParagraph.properties.marks).toEqual([{ type: "bold", from: 0, to: 4 }]);
+  });
+
+  // Each row is the marks sent on a paragraph whose text is "milk" (length 4).
+  it.each<[string, unknown]>([
+    ["marks is not an array", { type: "bold", from: 0, to: 4 }],
+    ["a mark is not an object", ["bold"]],
+    ["a mark type is unknown", [{ type: "underline", from: 0, to: 4 }]],
+    ["from is missing", [{ type: "bold", to: 4 }]],
+    ["from is not an integer", [{ type: "bold", from: 0.5, to: 4 }]],
+    ["from is negative", [{ type: "bold", from: -1, to: 4 }]],
+    ["to is past the end of the text", [{ type: "bold", from: 0, to: 5 }]],
+    ["from equals to (an empty range)", [{ type: "bold", from: 2, to: 2 }]],
+    ["from is after to", [{ type: "bold", from: 3, to: 1 }]],
+  ])("returns 400 when %s, and writes nothing", async (_, badMarks) => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    await saveNoteBlocks(app, noteId, [paragraphBlock("kept")], user.cookie).expect(200);
+    const rowsBefore = await storedNoteRows(noteId);
+
+    const badParagraph = { ...paragraphBlock(""), properties: { text: "milk", marks: badMarks } };
+    const res = await saveNoteBlocks(app, noteId, [badParagraph], user.cookie);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(invalidBlocks);
+    expect(await storedNoteRows(noteId)).toEqual(rowsBefore);
+  });
+
+  it("returns 400 when a list item's mark runs past its text", async () => {
+    const app = makeApp();
+    const user = await signedUp(app);
+    const noteId = await createdNote(app, user.cookie);
+    const badItem = listItemBlock("milk", "bullet");
+    badItem.properties.marks = [{ type: "bold", from: 0, to: 9 }];
+
+    const res = await saveNoteBlocks(app, noteId, [badItem], user.cookie);
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual(invalidBlocks);
+  });
+});

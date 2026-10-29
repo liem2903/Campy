@@ -1,12 +1,13 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 import type { Selection } from '@tiptap/pm/state'
 import type { JSONContent } from '@tiptap/react'
-import type { ListItemStyle, NoteBlock } from './notes.ts'
+import type { ListItemStyle, NoteBlock, TextMark } from './notes.ts'
 
 // Turns a note's blocks into TipTap's document and back. A `text` block is a paragraph node. A
 // `list_item` block is a listItem node: its text in a paragraph, then its children in nested
 // lists. TipTap wraps items in bulletList/orderedList containers that the blocks don't store, so
 // loading groups consecutive items of the same style into one container, and saving unwraps them.
+// Bold and italic are runs over the plain text in the blocks, and marks on text nodes in TipTap.
 
 const listNodeTypeByStyle: Record<ListItemStyle, string> = { bullet: 'bulletList', numbered: 'orderedList' }
 
@@ -21,7 +22,11 @@ export function blocksToEditorDoc(blocks: NoteBlock[]): JSONContent {
 export function editorDocToBlocks(editorDoc: ProseMirrorNode): NoteBlock[] {
   return editorDoc.children.flatMap((topLevelNode) =>
     topLevelNode.type.name === 'paragraph'
-      ? [{ id: String(topLevelNode.attrs.id), type: 'text', properties: { text: topLevelNode.textContent } }]
+      ? [{
+          id: String(topLevelNode.attrs.id),
+          type: 'text',
+          properties: { text: topLevelNode.textContent, ...marksPropertyOf(topLevelNode) },
+        }]
       : listNodeToBlocks(topLevelNode))
 }
 
@@ -54,7 +59,7 @@ function blocksToNodes(blocks: NoteBlock[]): JSONContent[] {
   const nodes: JSONContent[] = []
   for (const block of blocks) {
     if (block.type === 'text') {
-      nodes.push(paragraphNode(block.id, block.properties.text))
+      nodes.push(paragraphNode(block.id, block.properties.text, block.properties.marks))
       continue
     }
     // The paragraph inside an item isn't saved, so a fresh id each load is fine. Giving it one
@@ -62,7 +67,10 @@ function blocksToNodes(blocks: NoteBlock[]): JSONContent[] {
     const listItemNode: JSONContent = {
       type: 'listItem',
       attrs: { id: block.id },
-      content: [paragraphNode(crypto.randomUUID(), block.properties.text), ...blocksToNodes(block.children)],
+      content: [
+        paragraphNode(crypto.randomUUID(), block.properties.text, block.properties.marks),
+        ...blocksToNodes(block.children),
+      ],
     }
     const listNodeType = listNodeTypeByStyle[block.properties.style]
     const previousNode = nodes.at(-1)
@@ -79,12 +87,48 @@ function listNodeToBlocks(listNode: ProseMirrorNode): NoteBlock[] {
     id: String(listItemNode.attrs.id),
     type: 'list_item',
     // The schema makes the first child the item's paragraph; the rest are nested lists.
-    properties: { text: listItemNode.firstChild?.textContent ?? '', style },
+    properties: { text: listItemNode.firstChild?.textContent ?? '', style, ...marksPropertyOf(listItemNode.firstChild) },
     children: listItemNode.children.slice(1).flatMap(listNodeToBlocks),
   }))
 }
 
-function paragraphNode(id: string, text: string): JSONContent {
-  // ProseMirror doesn't allow empty text nodes, so an empty paragraph has no content.
-  return { type: 'paragraph', attrs: { id }, content: text ? [{ type: 'text', text }] : [] }
+function paragraphNode(id: string, text: string, marks: TextMark[] = []): JSONContent {
+  return { type: 'paragraph', attrs: { id }, content: textNodesWithMarks(text, marks) }
+}
+
+// The text cut at every mark edge, each piece a text node with the marks that cover all of it.
+// "milk and eggs" with bold 0–4 → "milk" (bold), " and eggs" (plain).
+function textNodesWithMarks(text: string, marks: TextMark[]): JSONContent[] {
+  const markEdges = marks.flatMap((mark) => [mark.from, mark.to])
+  const cutPoints = [...new Set([0, text.length, ...markEdges])].sort((a, b) => a - b)
+  return cutPoints.slice(0, -1).flatMap((pieceStart, index) => {
+    const pieceEnd = cutPoints[index + 1]
+    const pieceText = text.slice(pieceStart, pieceEnd)
+    // ProseMirror doesn't allow empty text nodes (an empty paragraph, or a mark past the end).
+    if (!pieceText) return []
+    const markTypesOnPiece = new Set(
+      marks.filter((mark) => mark.from <= pieceStart && pieceEnd <= mark.to).map((mark) => mark.type),
+    )
+    const pieceNode: JSONContent = { type: 'text', text: pieceText }
+    if (markTypesOnPiece.size > 0) pieceNode.marks = [...markTypesOnPiece].map((type) => ({ type }))
+    return [pieceNode]
+  })
+}
+
+// A paragraph's bold and italic runs, joined across its text nodes: in "milk and" with milk bold
+// and "and" bold italic, bold is one run over three nodes. Left out (not []) when there are none,
+// so unformatted blocks are saved the same as before formatting existed.
+function marksPropertyOf(paragraph: ProseMirrorNode | null): { marks?: TextMark[] } {
+  const marks: TextMark[] = []
+  paragraph?.forEach((textNode, textNodeStart) => {
+    const textNodeEnd = textNodeStart + textNode.nodeSize
+    for (const mark of textNode.marks) {
+      const markType = mark.type.name
+      if (markType !== 'bold' && markType !== 'italic') continue
+      const runEndingHere = marks.find((run) => run.type === markType && run.to === textNodeStart)
+      if (runEndingHere) runEndingHere.to = textNodeEnd
+      else marks.push({ type: markType, from: textNodeStart, to: textNodeEnd })
+    }
+  })
+  return marks.length > 0 ? { marks } : {}
 }
