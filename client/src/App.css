@@ -476,6 +476,15 @@
   opacity: 0.6;
 }
 
+/* The blurt editor: a bigger font than a note, and the editable area fills the column, so a
+   click anywhere below the text still lands in it */
+.blurt-body {
+  font-size: 19px;
+}
+.blurt-body .ProseMirror {
+  min-height: 100%;
+}
+
 .note-title::placeholder {
   color: var(--muted);
   opacity: 0.6;

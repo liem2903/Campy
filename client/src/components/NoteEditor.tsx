@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { ListKeymap } from '@tiptap/extension-list'
-import { Selection, TextSelection } from '@tiptap/pm/state'
 import UniqueID from '@tiptap/extension-unique-id'
-import { Placeholder, UndoRedo } from '@tiptap/extensions'
-import { EditorContent, Extension, useEditor } from '@tiptap/react'
+import { Placeholder } from '@tiptap/extensions'
+import { EditorContent, useEditor } from '@tiptap/react'
 import { Link, useNavigate } from 'react-router'
 import { blockIdAtSelectionStart, blocksToEditorDoc, blockTextsInReadingOrder, editorDocToBlocks } from '../blockTreeConversion.ts'
 import { readDraft } from '../drafts.ts'
 import { commandKey } from '../keyboardLabels.ts'
 import { noteBodyContentExtensions } from '../noteBodyContentExtensions.ts'
+import { noteBodyTypingExtensions } from '../noteBodyTypingExtensions.ts'
 import { useNotes, type NoteContent } from '../notes.ts'
 import type { NoteBodyForQuestions } from '../questions.ts'
 import type { Tag } from '../tags.ts'
@@ -24,52 +23,11 @@ const saveStatusLabels: Record<Exclude<SaveStatus['kind'], 'rejected'>, string> 
   retrying: "Couldn't save. Retrying…",
 }
 
-// Tab outside a list inserts 4 spaces instead of moving focus out of the editor (decision 8).
-// Inside a list it returns false, so the list's own Tab (nest the item) runs instead.
-const TabInsertsSpaces = Extension.create({
-  name: 'tabInsertsSpaces',
-  addKeyboardShortcuts() {
-    return {
-      Tab: ({ editor }) => !editor.isActive('listItem') && editor.commands.insertContent('    '),
-    }
-  },
-})
-
-// Backspace at the start of a paragraph right after a list moves its text onto the end of the
-// list's last item. ListKeymap's own version moves the whole paragraph into that item, which an
-// item's one-paragraph schema can't hold, so ProseMirror wrapped it in a new item: the dot came back.
-const BackspaceJoinsParagraphIntoListAbove = Extension.create({
-  name: 'backspaceJoinsParagraphIntoListAbove',
-  priority: 101, // runs before ListKeymap's Backspace
-  addKeyboardShortcuts() {
-    return {
-      Backspace: ({ editor }) => {
-        const { $from, empty } = editor.state.selection
-        if (!empty || $from.depth !== 1 || $from.parentOffset !== 0) return false
-        const paragraphStart = $from.before()
-        const $paragraphStart = editor.state.doc.resolve(paragraphStart)
-        const listAbove = $paragraphStart.nodeBefore
-        if (listAbove?.type.name !== 'bulletList' && listAbove?.type.name !== 'orderedList') return false
-        const lastItemTextEnd = Selection.findFrom($paragraphStart, -1, true)?.from
-        if (lastItemTextEnd === undefined) return false
-        return editor.commands.command(({ tr }) => {
-          tr.delete(paragraphStart, $from.after()).insert(lastItemTextEnd, $from.parent.content)
-          tr.setSelection(TextSelection.create(tr.doc, lastItemTextEnd))
-          return true
-        })
-      },
-    }
-  },
-})
-
 // What a note body can hold, plus what typing needs. UniqueID gives each paragraph, heading and item the
 // id its block is saved under.
 const bodyExtensions = [
   ...noteBodyContentExtensions,
-  BackspaceJoinsParagraphIntoListAbove,
-  ListKeymap,
-  TabInsertsSpaces,
-  UndoRedo,
+  ...noteBodyTypingExtensions,
   UniqueID.configure({ types: ['paragraph', 'heading', 'listItem'] }),
   Placeholder.configure({ placeholder: 'Start writing...' }),
 ]

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import type { JSONContent } from '@tiptap/react'
 import { Link } from 'react-router'
+import { blocksToEditorDoc } from '../blockTreeConversion.ts'
 import type { NoteBlock } from '../notes.ts'
 import IconPillButton from './IconPillButton.tsx'
 import NoteBodyViewer from './NoteBodyViewer.tsx'
@@ -15,14 +17,14 @@ const halfLabel = 'm-0 mb-6 text-[12px] tracking-[0.08em] text-muted uppercase'
 type BlurtRevealProps = {
   noteId: string
   title: string
-  blurtText: string
+  blurtDoc: JSONContent
   revealedNote: RevealedNote
   onRetry: () => void
   onBlurtAgain: () => void
 }
 
-// Your blurt and the note side by side, each half scrolling on its own.
-function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtAgain }: BlurtRevealProps) {
+// Your blurt (read-only, with its formatting) and the note side by side, each half scrolling on its own.
+function BlurtReveal({ noteId, title, blurtDoc, revealedNote, onRetry, onBlurtAgain }: BlurtRevealProps) {
   // Disabled while loading, so a late reply can't reveal the note over a new attempt.
   const canBlurtAgain = revealedNote.status !== 'loading'
 
@@ -31,7 +33,7 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
     const blurtAgainOnR = (event: KeyboardEvent) => {
       const typingInField = event.target instanceof HTMLElement && event.target.matches('input, textarea, [contenteditable="true"]')
       if (event.key.toLowerCase() !== 'r' || event.ctrlKey || event.metaKey || event.altKey || typingInField || !canBlurtAgain) return
-      // Otherwise the "r" lands in the new attempt's textarea, which is focused straight away.
+      // Otherwise the "r" lands in the new attempt's editor, which is focused straight away.
       event.preventDefault()
       onBlurtAgain()
     }
@@ -45,7 +47,7 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
         <section className={`bg-[color-mix(in_srgb,var(--brand)_7%,var(--bg))] ${halfEnter}`}>
           <p className={halfLabel}>From memory</p>
           <h1 className="note-title">{title}</h1>
-          <p className="m-0 text-[17px] leading-[1.7] whitespace-pre-wrap">{blurtText}</p>
+          <NoteBodyViewer bodyDoc={blurtDoc} />
         </section>
         <section className={`delay-[60ms] ${halfEnter}`}>
           <p className={halfLabel}>The note</p>
@@ -64,7 +66,7 @@ function BlurtReveal({ noteId, title, blurtText, revealedNote, onRetry, onBlurtA
               </button>
             </p>
           )}
-          {revealedNote.status === 'loaded' && <NoteBodyViewer blocks={revealedNote.blocks} />}
+          {revealedNote.status === 'loaded' && <NoteBodyViewer bodyDoc={blocksToEditorDoc(revealedNote.blocks)} />}
         </section>
       </div>
       <footer className="flex items-center justify-center gap-6 border-t border-[var(--line)] py-4">

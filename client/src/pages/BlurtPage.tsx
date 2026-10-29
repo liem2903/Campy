@@ -1,10 +1,15 @@
 import { useState } from 'react'
+import { Placeholder } from '@tiptap/extensions'
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import { Link, useParams } from 'react-router'
 import { getNoteFromServer } from '../api.ts'
 import BlurtReveal, { type RevealedNote } from '../components/BlurtReveal.tsx'
+import FormatBubbleMenu from '../components/FormatBubbleMenu.tsx'
 import IconPillButton from '../components/IconPillButton.tsx'
 import NoteNotFound from '../components/NoteNotFound.tsx'
 import { commandKey } from '../keyboardLabels.ts'
+import { noteBodyContentExtensions } from '../noteBodyContentExtensions.ts'
+import { noteBodyTypingExtensions } from '../noteBodyTypingExtensions.ts'
 import { useNotes } from '../notes.ts'
 import { useAskBeforeClosingTab } from '../useAskBeforeClosingTab.ts'
 import { useElapsedSeconds } from '../useElapsedSeconds.ts'
@@ -17,6 +22,14 @@ const keyHint = 'rounded border border-[var(--line)] px-1.5 py-0.5 [font-family:
 
 const countWords = (text: string) => (text.trim() === '' ? 0 : text.trim().split(/\s+/).length)
 
+// Typed like a note body (lists, headings, bold and the rest), but with no UniqueID: a blurt is
+// never saved, so its blocks need no ids.
+const blurtExtensions = [
+  ...noteBodyContentExtensions,
+  ...noteBodyTypingExtensions,
+  Placeholder.configure({ placeholder: "Go. Don't stop to check." }),
+]
+
 function formatMinutesSeconds(totalSeconds: number) {
   return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, '0')}`
 }
@@ -27,48 +40,62 @@ function BlurtPage() {
   const { noteId: noteIdFromUrl } = useParams()
   const { notes: noteList, loading } = useNotes()
   const listEntry = noteList.find((n) => n.id === noteIdFromUrl)
-  const [blurtText, setBlurtText] = useState('')
-  const blurtIsEmpty = blurtText.trim() === ''
-  // null while writing. Once revealed, nothing is lost by leaving, so there's no warning.
-  const [revealedNote, setRevealedNote] = useState<RevealedNote | null>(null)
-  const isWriting = revealedNote === null
-  const [attemptStartedAt, setAttemptStartedAt] = useState(() => Date.now())
-  const elapsedSeconds = useElapsedSeconds(attemptStartedAt, isWriting)
-  useAskBeforeClosingTab(isWriting && !blurtIsEmpty)
+  // "Blurt again" bumps this, so the attempt remounts: a new empty editor, timer and reveal.
+  const [attemptNumber, setAttemptNumber] = useState(1)
 
   if (loading) return null
   if (!listEntry) return <NoteNotFound />
-  const title = listEntry.title || 'Untitled'
+
+  return (
+    <div className={`fixed inset-0 z-50 flex flex-col bg-bg ${sheetEnter}`}>
+      <BlurtAttempt
+        key={attemptNumber}
+        noteId={listEntry.id}
+        title={listEntry.title || 'Untitled'}
+        onBlurtAgain={() => setAttemptNumber((previousAttemptNumber) => previousAttemptNumber + 1)}
+      />
+    </div>
+  )
+}
+
+type BlurtAttemptProps = { noteId: string; title: string; onBlurtAgain: () => void }
+
+// One blurt, from the empty editor to the reveal.
+function BlurtAttempt({ noteId, title, onBlurtAgain }: BlurtAttemptProps) {
+  // null while writing. Once revealed, nothing is lost by leaving, so there's no warning.
+  const [revealedNote, setRevealedNote] = useState<RevealedNote | null>(null)
+  const isWriting = revealedNote === null
+  const [attemptStartedAt] = useState(() => Date.now())
+  const elapsedSeconds = useElapsedSeconds(attemptStartedAt, isWriting)
+  // Outlives the writing view, so the reveal can read the blurt from it.
+  const blurtEditor = useEditor({ extensions: blurtExtensions, autofocus: true })
+  const blurtWordCount = useEditorState({ editor: blurtEditor, selector: ({ editor }) => countWords(editor.getText()) })
+  const blurtIsEmpty = blurtWordCount === 0
+  useAskBeforeClosingTab(isWriting && !blurtIsEmpty)
 
   // Fetched only now, so the body never reaches the browser while you blurt.
   const revealNote = async () => {
     setRevealedNote({ status: 'loading' })
     try {
       // null = 404 Not Found: deleted while you blurted, so it shows as an empty note.
-      const noteDetailOrNull = await getNoteFromServer(listEntry.id)
+      const noteDetailOrNull = await getNoteFromServer(noteId)
       setRevealedNote({ status: 'loaded', blocks: noteDetailOrNull?.blocks ?? [] })
     } catch {
       setRevealedNote({ status: 'failed' })
     }
   }
 
-  const startNewAttempt = () => {
-    setBlurtText('')
-    setRevealedNote(null)
-    setAttemptStartedAt(Date.now())
-  }
-
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col bg-bg ${sheetEnter}`}>
+    <>
       <header className="flex items-center justify-between border-b border-[var(--line)] px-6 py-3 text-[13px] text-muted">
         <span className="truncate">
           Blurting · <span className="text-text">{title}</span>
         </span>
         <span className="flex shrink-0 items-center gap-4 tabular-nums">
           <span>{formatMinutesSeconds(elapsedSeconds)}</span>
-          <span>{countWords(blurtText)} words</span>
+          <span>{blurtWordCount} words</span>
           <Link
-            to={`/notes/${listEntry.id}`}
+            to={`/notes/${noteId}`}
             onClick={(event) => {
               if (isWriting && !blurtIsEmpty && !window.confirm("Leave? Your blurt won't be kept.")) event.preventDefault()
             }}
@@ -80,26 +107,24 @@ function BlurtPage() {
       </header>
       {revealedNote ? (
         <BlurtReveal
-          noteId={listEntry.id}
+          noteId={noteId}
           title={title}
-          blurtText={blurtText}
+          blurtDoc={blurtEditor.getJSON()}
           revealedNote={revealedNote}
           onRetry={revealNote}
-          onBlurtAgain={startNewAttempt}
+          onBlurtAgain={onBlurtAgain}
         />
       ) : (
-        <div className="mx-auto box-border flex w-full max-w-[680px] flex-1 flex-col px-6 pt-[10vh]">
+        <div className="mx-auto box-border flex min-h-0 w-full max-w-[680px] flex-1 flex-col px-6 pt-[10vh]">
           <h1 className="note-title !m-0 !mb-10 text-center !text-[52px]">{title}</h1>
-          <textarea
-            autoFocus
-            className="block w-full flex-1 resize-none border-0 bg-transparent p-0 text-[19px] leading-[1.7] text-text caret-brand outline-none placeholder:text-muted placeholder:opacity-60 [font-family:inherit]"
-            value={blurtText}
-            onChange={(event) => setBlurtText(event.target.value)}
+          <EditorContent
+            editor={blurtEditor}
+            className="note-body blurt-body min-h-0 flex-1 overflow-y-auto"
             onKeyDown={(event) => {
               if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && !blurtIsEmpty) void revealNote()
             }}
-            placeholder="Go. Don't stop to check."
           />
+          <FormatBubbleMenu editor={blurtEditor} />
           <div className="flex flex-col items-center gap-3 py-8">
             <IconPillButton onClick={revealNote} disabled={blurtIsEmpty} icon="→">
               I'm done
@@ -113,7 +138,7 @@ function BlurtPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

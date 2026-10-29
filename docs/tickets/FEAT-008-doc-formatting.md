@@ -101,8 +101,8 @@ column shows your dot points with bold, next to the note.
 🟡 because it's client only (`BlurtPage.tsx`, `BlurtReveal.tsx`) and only uses existing shared
 extensions; no contracts change.
 
-### Manual checklist
-- [ ] Every format from tickets 1–2, plus lists, bold and italic, works in the blurt editor, bubble menu included
-- [ ] The word count, leave warning (non-empty blurt only) and ⌘+Enter = "I'm done" still work
-- [ ] The reveal shows the blurt with its formatting, read-only; "Blurt again" empties it, and R still works
-- [ ] Nothing about the blurt is sent to the server
+### Manual checklist (checked 2026-10-29 by a scripted Chromium run)
+- [x] Every format from tickets 1–2, plus lists, bold and italic, works in the blurt editor, bubble menu included
+- [x] The word count, leave warning (non-empty blurt only) and ⌘+Enter = "I'm done" still work
+- [x] The reveal shows the blurt with its formatting, read-only; "Blurt again" empties it, and R still works
+- [x] Nothing about the blurt is sent to the server
